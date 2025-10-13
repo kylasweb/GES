@@ -20,6 +20,8 @@ const nextConfig: NextConfig = {
     // 构建时忽略ESLint错误
     ignoreDuringBuilds: true,
   },
+  // Enable standalone output for custom server deployment
+  output: 'standalone',
 };
 
 export default nextConfig;
