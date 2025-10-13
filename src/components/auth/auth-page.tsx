@@ -108,10 +108,13 @@ export default function AuthPage() {
     setError(null);
 
     try {
+      console.log('Attempting login with:', data.email);
       const user = await login(data.email, data.password);
+      console.log('Login successful, user:', user);
 
       // Check if there's a redirect URL
       if (redirectUrl) {
+        console.log('Redirecting to:', redirectUrl);
         router.push(redirectUrl);
         return;
       }
@@ -119,11 +122,14 @@ export default function AuthPage() {
       // Role-based redirection
       if (user?.role === 'SUPER_ADMIN' || user?.role === 'CONTENT_MANAGER' ||
         user?.role === 'ORDER_MANAGER' || user?.role === 'FINANCE_MANAGER') {
+        console.log('Redirecting admin to /admin');
         router.push('/admin');
       } else {
+        console.log('Redirecting customer to /dashboard');
         router.push('/dashboard');
       }
     } catch (err) {
+      console.error('Login error:', err);
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
       setIsLoading(false);

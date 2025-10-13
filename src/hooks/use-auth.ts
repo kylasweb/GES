@@ -41,6 +41,8 @@ export function useAuth(): AuthContextType {
   });
 
   const login = async (email: string, password: string): Promise<AuthUser> => {
+    console.log('[Auth] Login attempt for:', email);
+
     const response = await fetch('/api/v1/auth/login', {
       method: 'POST',
       headers: {
@@ -49,12 +51,17 @@ export function useAuth(): AuthContextType {
       body: JSON.stringify({ email, password }),
     });
 
+    console.log('[Auth] Login response status:', response.status);
+
     if (!response.ok) {
       const error = await response.json();
+      console.error('[Auth] Login failed:', error);
       throw new Error(error.error || 'Login failed');
     }
 
     const data = await response.json();
+    console.log('[Auth] Login successful:', data);
+
     setState({
       user: data.user,
       token: data.token,
