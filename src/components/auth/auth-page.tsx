@@ -80,6 +80,10 @@ export default function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // Get redirect URL from query params
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const redirectUrl = searchParams?.get('redirect') || null;
+
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -106,6 +110,12 @@ export default function AuthPage() {
     try {
       const user = await login(data.email, data.password);
 
+      // Check if there's a redirect URL
+      if (redirectUrl) {
+        router.push(redirectUrl);
+        return;
+      }
+
       // Role-based redirection
       if (user?.role === 'SUPER_ADMIN' || user?.role === 'CONTENT_MANAGER' ||
         user?.role === 'ORDER_MANAGER' || user?.role === 'FINANCE_MANAGER') {
@@ -128,6 +138,12 @@ export default function AuthPage() {
       const { confirmPassword, ...registerData } = data;
       const user = await register(registerData);
 
+      // Check if there's a redirect URL
+      if (redirectUrl) {
+        router.push(redirectUrl);
+        return;
+      }
+
       // Role-based redirection (new users are CUSTOMER by default)
       if (user?.role === 'SUPER_ADMIN' || user?.role === 'CONTENT_MANAGER' ||
         user?.role === 'ORDER_MANAGER' || user?.role === 'FINANCE_MANAGER') {
@@ -148,6 +164,12 @@ export default function AuthPage() {
 
     try {
       const user = await login(email, password);
+
+      // Check if there's a redirect URL
+      if (redirectUrl) {
+        router.push(redirectUrl);
+        return;
+      }
 
       // Role-based redirection
       if (user?.role === 'SUPER_ADMIN' || user?.role === 'CONTENT_MANAGER' ||
