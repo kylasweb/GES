@@ -141,7 +141,7 @@ export function useAuth(): AuthContextType {
 
       if (!response.ok) {
         if (response.status === 401) {
-          // Token is invalid, logout
+          // Token is invalid or not present (expected on initial load)
           setState({
             user: null,
             token: null,
@@ -160,7 +160,7 @@ export function useAuth(): AuthContextType {
         isAuthenticated: true,
       });
     } catch (error) {
-      console.error('Refresh user error:', error);
+      // Silently handle errors on initial auth check
       setState({
         user: null,
         token: null,
