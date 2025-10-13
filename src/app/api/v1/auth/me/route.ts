@@ -8,8 +8,6 @@ export async function GET(request: NextRequest) {
     const token = request.cookies.get('auth-token')?.value ||
       request.headers.get('authorization')?.replace('Bearer ', '');
 
-    console.log('/me called, token present:', !!token);
-
     if (!token) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },
@@ -19,7 +17,6 @@ export async function GET(request: NextRequest) {
 
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
-    console.log('Token decoded successfully for user:', decoded.email);
 
     // Get user from database
     const user = await db.user.findUnique({

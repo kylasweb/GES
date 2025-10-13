@@ -20,9 +20,6 @@ export async function POST(request: NextRequest) {
             where: { email },
         });
 
-        console.log('Login attempt for email:', email);
-        console.log('User found:', !!user);
-
         if (!user) {
             return NextResponse.json(
                 { error: 'Invalid email or password' },
@@ -40,7 +37,6 @@ export async function POST(request: NextRequest) {
 
         // Verify password
         const isPasswordValid = await bcrypt.compare(password, user.password);
-        console.log('Password valid:', isPasswordValid);
 
         if (!isPasswordValid) {
             return NextResponse.json(
@@ -76,9 +72,6 @@ export async function POST(request: NextRequest) {
             sameSite: 'lax',
             maxAge: 60 * 60 * 24 * 7, // 7 days
         });
-
-        console.log('Login successful for user:', user.email);
-        console.log('Cookie set, secure:', process.env.NODE_ENV === 'production');
 
         return response;
     } catch (error) {
