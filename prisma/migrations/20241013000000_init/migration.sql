@@ -1,0 +1,2 @@
+-- This is an empty migration file because the database already contains the schema.
+-- This migration is used for baselining an existing database.

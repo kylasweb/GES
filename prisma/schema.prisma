@@ -1,0 +1,340 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String          @id @default(cuid())
+  email     String          @unique
+  name      String?
+  password  String
+  phone     String?
+  role      UserRole        @default(CUSTOMER)
+  isActive  Boolean         @default(true)
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  addresses Address[]
+  orders    Order[]
+  reviews   ProductReview[]
+
+  @@map("users")
+}
+
+model Address {
+  id          String      @id @default(cuid())
+  userId      String
+  type        AddressType
+  name        String
+  phone       String
+  addressLine String
+  city        String
+  state       String
+  postalCode  String
+  country     String      @default("India")
+  isDefault   Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("addresses")
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  image       String?
+  isActive    Boolean   @default(true)
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  products    Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id            String            @id @default(cuid())
+  name          String
+  slug          String            @unique
+  description   String
+  shortDesc     String?
+  sku           String            @unique
+  price         Decimal           @db.Decimal(10, 2)
+  comparePrice  Decimal?          @db.Decimal(10, 2)
+  costPrice     Decimal?          @db.Decimal(10, 2)
+  trackQuantity Boolean           @default(true)
+  quantity      Int               @default(0)
+  weight        Decimal?          @db.Decimal(8, 3)
+  dimensions    Json?
+  images        Json
+  tags          Json?
+  isActive      Boolean           @default(true)
+  featured      Boolean           @default(false)
+  seoTitle      String?
+  seoDesc       String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  categoryId    String
+  orderItems    OrderItem[]
+  inventory     ProductInventory?
+  reviews       ProductReview[]
+  category      Category          @relation(fields: [categoryId], references: [id])
+
+  @@map("products")
+}
+
+model ProductInventory {
+  id                String    @id @default(cuid())
+  productId         String    @unique
+  quantity          Int       @default(0)
+  reserved          Int       @default(0)
+  lowStockThreshold Int       @default(10)
+  reorderPoint      Int       @default(5)
+  lastRestocked     DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  product           Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_inventory")
+}
+
+model ProductReview {
+  id         String   @id @default(cuid())
+  productId  String
+  userId     String
+  rating     Int
+  title      String?
+  content    String
+  isVerified Boolean  @default(false)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, userId])
+  @@map("product_reviews")
+}
+
+model Order {
+  id              String        @id @default(cuid())
+  orderNumber     String        @unique
+  userId          String?
+  status          OrderStatus   @default(PENDING)
+  paymentStatus   PaymentStatus @default(PENDING)
+  paymentMethod   PaymentMethod
+  currency        String        @default("INR")
+  subtotal        Decimal       @db.Decimal(10, 2)
+  taxAmount       Decimal       @default(0) @db.Decimal(10, 2)
+  shippingAmount  Decimal       @default(0) @db.Decimal(10, 2)
+  discountAmount  Decimal       @default(0) @db.Decimal(10, 2)
+  totalAmount     Decimal       @db.Decimal(10, 2)
+  notes           String?
+  shippingAddress Json?
+  billingAddress  Json?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  documents       Document[]
+  items           OrderItem[]
+  user            User?         @relation(fields: [userId], references: [id])
+  transactions    Transaction[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  productId   String
+  productName String
+  productSku  String
+  quantity    Int
+  unitPrice   Decimal  @db.Decimal(10, 2)
+  totalPrice  Decimal  @db.Decimal(10, 2)
+  createdAt   DateTime @default(now())
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product     Product  @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+model Transaction {
+  id                   String         @id @default(cuid())
+  orderId              String
+  gateway              PaymentGateway
+  gatewayTransactionId String?        @unique
+  gatewayStatus        String?
+  amount               Decimal        @db.Decimal(10, 2)
+  currency             String         @default("INR")
+  paymentMethod        PaymentMethod
+  metadata             Json?
+  webhookReceived      Boolean        @default(false)
+  webhookData          Json?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  gatewayResponse      Json?
+  provider             String         @default("PHONEPE")
+  status               String         @default("PENDING")
+  transactionId        String         @unique
+  refunds              Refund[]
+  order                Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("transactions")
+}
+
+model Refund {
+  id            String      @id @default(cuid())
+  refundId      String      @unique
+  transactionId String
+  amount        Decimal     @db.Decimal(10, 2)
+  reason        String
+  status        String      @default("PENDING")
+  refundData    Json?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@map("refunds")
+}
+
+model Document {
+  id        String       @id @default(cuid())
+  orderId   String
+  type      DocumentType
+  name      String
+  fileUrl   String
+  fileSize  Int
+  mimeType  String
+  metadata  Json?
+  createdAt DateTime     @default(now())
+  order     Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("documents")
+}
+
+model ContentBlock {
+  id        String      @id @default(cuid())
+  type      ContentType
+  title     String?
+  content   Json
+  order     Int         @default(0)
+  isActive  Boolean     @default(true)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@map("content_blocks")
+}
+
+model Testimonial {
+  id        String   @id @default(cuid())
+  name      String
+  role      String?
+  company   String?
+  content   String
+  rating    Int
+  image     String?
+  isActive  Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("testimonials")
+}
+
+model Setting {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  value       Json
+  description String?
+  updatedAt   DateTime @updatedAt
+
+  @@map("settings")
+}
+
+model SalesLedger {
+  id            String        @id @default(cuid())
+  orderId       String        @unique
+  orderNumber   String
+  date          DateTime      @default(now())
+  description   String
+  debitAmount   Decimal       @default(0) @db.Decimal(10, 2)
+  creditAmount  Decimal       @default(0) @db.Decimal(10, 2)
+  balance       Decimal       @db.Decimal(10, 2)
+  category      String
+  paymentMethod PaymentMethod
+  createdAt     DateTime      @default(now())
+
+  @@map("sales_ledger")
+}
+
+enum UserRole {
+  CUSTOMER
+  CONTENT_MANAGER
+  ORDER_MANAGER
+  FINANCE_MANAGER
+  SUPER_ADMIN
+}
+
+enum AddressType {
+  SHIPPING
+  BILLING
+}
+
+enum OrderStatus {
+  PENDING
+  AWAITING_PAYMENT
+  COD_PENDING
+  PROCESSING
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum PaymentMethod {
+  PHONEPE
+  COD
+  UPI
+  CREDIT_CARD
+  DEBIT_CARD
+  NET_BANKING
+}
+
+enum PaymentGateway {
+  PHONEPE
+  RAZORPAY
+  STRIPE
+  PAYPAL
+  MANUAL
+}
+
+enum DocumentType {
+  INVOICE
+  SHIPPING_LABEL
+  PACKING_SLIP
+  RECEIPT
+  REFUND_NOTE
+}
+
+enum ContentType {
+  HERO_BANNER
+  FEATURED_PRODUCTS
+  TESTIMONIALS
+  CATEGORIES
+  INFO_SECTION
+  PROMOTION_BANNER
+}
