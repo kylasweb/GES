@@ -279,6 +279,7 @@ export default function AuthPage() {
                         id="password"
                         type={showPassword ? 'text' : 'password'}
                         placeholder="Enter your password"
+                        autoComplete="current-password"
                         {...loginForm.register('password')}
                         disabled={isLoading}
                       />
