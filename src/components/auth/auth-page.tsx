@@ -112,26 +112,23 @@ export default function AuthPage() {
       const user = await login(data.email, data.password);
       console.log('Login successful, user:', user);
 
-      // Check if there's a redirect URL
+      // Determine redirect destination
+      let destination = '/dashboard';
+
       if (redirectUrl) {
-        console.log('Redirecting to:', redirectUrl);
-        router.push(redirectUrl);
-        return;
+        destination = redirectUrl;
+      } else if (user?.role === 'SUPER_ADMIN' || user?.role === 'CONTENT_MANAGER' ||
+        user?.role === 'ORDER_MANAGER' || user?.role === 'FINANCE_MANAGER') {
+        destination = '/admin';
       }
 
-      // Role-based redirection
-      if (user?.role === 'SUPER_ADMIN' || user?.role === 'CONTENT_MANAGER' ||
-        user?.role === 'ORDER_MANAGER' || user?.role === 'FINANCE_MANAGER') {
-        console.log('Redirecting admin to /admin');
-        router.push('/admin');
-      } else {
-        console.log('Redirecting customer to /dashboard');
-        router.push('/dashboard');
-      }
+      console.log('Redirecting to:', destination);
+
+      // Use window.location for full page reload to ensure cookies are set
+      window.location.href = destination;
     } catch (err) {
       console.error('Login error:', err);
       setError(err instanceof Error ? err.message : 'Login failed');
-    } finally {
       setIsLoading(false);
     }
   };
@@ -144,22 +141,20 @@ export default function AuthPage() {
       const { confirmPassword, ...registerData } = data;
       const user = await register(registerData);
 
-      // Check if there's a redirect URL
+      // Determine redirect destination
+      let destination = '/dashboard';
+
       if (redirectUrl) {
-        router.push(redirectUrl);
-        return;
+        destination = redirectUrl;
+      } else if (user?.role === 'SUPER_ADMIN' || user?.role === 'CONTENT_MANAGER' ||
+        user?.role === 'ORDER_MANAGER' || user?.role === 'FINANCE_MANAGER') {
+        destination = '/admin';
       }
 
-      // Role-based redirection (new users are CUSTOMER by default)
-      if (user?.role === 'SUPER_ADMIN' || user?.role === 'CONTENT_MANAGER' ||
-        user?.role === 'ORDER_MANAGER' || user?.role === 'FINANCE_MANAGER') {
-        router.push('/admin');
-      } else {
-        router.push('/dashboard');
-      }
+      // Use window.location for full page reload to ensure cookies are set
+      window.location.href = destination;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
-    } finally {
       setIsLoading(false);
     }
   };
@@ -171,22 +166,20 @@ export default function AuthPage() {
     try {
       const user = await login(email, password);
 
-      // Check if there's a redirect URL
+      // Determine redirect destination
+      let destination = '/dashboard';
+
       if (redirectUrl) {
-        router.push(redirectUrl);
-        return;
+        destination = redirectUrl;
+      } else if (user?.role === 'SUPER_ADMIN' || user?.role === 'CONTENT_MANAGER' ||
+        user?.role === 'ORDER_MANAGER' || user?.role === 'FINANCE_MANAGER') {
+        destination = '/admin';
       }
 
-      // Role-based redirection
-      if (user?.role === 'SUPER_ADMIN' || user?.role === 'CONTENT_MANAGER' ||
-        user?.role === 'ORDER_MANAGER' || user?.role === 'FINANCE_MANAGER') {
-        router.push('/admin');
-      } else {
-        router.push('/dashboard');
-      }
+      // Use window.location for full page reload to ensure cookies are set
+      window.location.href = destination;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
-    } finally {
       setIsLoading(false);
     }
   };
