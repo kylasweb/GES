@@ -4,9 +4,10 @@ import jwt from 'jsonwebtoken';
 
 export async function GET(request: NextRequest) {
   try {
-    // Get token from Authorization header
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    
+    // Get token from cookie or Authorization header
+    const token = request.cookies.get('auth-token')?.value ||
+      request.headers.get('authorization')?.replace('Bearer ', '');
+
     if (!token) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },
@@ -16,10 +17,10 @@ export async function GET(request: NextRequest) {
 
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
-    
+
     // Get user from database
     const user = await db.user.findUnique({
-      where: { 
+      where: {
         id: decoded.userId,
         isActive: true
       },
@@ -44,11 +45,12 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      data: user
+      user: user,
+      token: token
     });
   } catch (error) {
     console.error('Get user error:', error);
-    
+
     if (error instanceof jwt.JsonWebTokenError) {
       return NextResponse.json(
         { success: false, error: 'Invalid token' },
@@ -65,9 +67,10 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    // Get token from Authorization header
-    const token = request.headers.get('authorization')?.replace('Bearer ', '');
-    
+    // Get token from cookie or Authorization header
+    const token = request.cookies.get('auth-token')?.value ||
+      request.headers.get('authorization')?.replace('Bearer ', '');
+
     if (!token) {
       return NextResponse.json(
         { success: false, error: 'Authentication required' },
@@ -76,9 +79,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
-    
-    const body = await request.json();
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any; const body = await request.json();
     const { name, phone } = body;
 
     // Update user
@@ -107,7 +108,7 @@ export async function PUT(request: NextRequest) {
     });
   } catch (error) {
     console.error('Update user error:', error);
-    
+
     if (error instanceof jwt.JsonWebTokenError) {
       return NextResponse.json(
         { success: false, error: 'Invalid token' },
@@ -115,6 +116,26 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    // Logout - clear the auth cookie
+    const response = NextResponse.json({
+      success: true,
+      message: 'Logged out successfully'
+    });
+
+    response.cookies.delete('auth-token');
+
+    return response;
+  } catch (error) {
+    console.error('Logout error:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }
