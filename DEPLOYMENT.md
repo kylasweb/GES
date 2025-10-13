@@ -16,11 +16,11 @@ JWT_SECRET=0d706d263e90a7418c1159a406bcb3750960e93980eec4fb477e04105f8b769a6e2c3
 # Application URL (UPDATE WITH YOUR VERCEL URL!)
 NEXT_PUBLIC_APP_URL=https://ges-five.vercel.app
 
-# PhonePe Configuration
-PHONEPE_MERCHANT_ID=your-merchant-id
-PHONEPE_SALT_KEY=your-salt-key
+# PhonePe Configuration (Optional - can be configured later by client admin)
+PHONEPE_MERCHANT_ID=placeholder
+PHONEPE_SALT_KEY=placeholder
 PHONEPE_SALT_INDEX=1
-PHONEPE_ENV=production
+PHONEPE_ENV=development
 
 # Node Environment
 NODE_ENV=production
@@ -37,8 +37,8 @@ NODE_ENV=production
 - Current URL appears to be: `https://ges-five.vercel.app`
 
 ### 3. PhonePe Credentials
-- Replace `PHONEPE_MERCHANT_ID`, `PHONEPE_SALT_KEY` with your actual PhonePe production credentials
-- If you don't have PhonePe credentials yet, use placeholder values for now
+- **Not required now** - These will be configured later by the client from the admin panel
+- Use placeholder values (`placeholder`) for now - the payment gateway will be set up when ready
 
 ## Database Setup
 
