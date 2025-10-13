@@ -104,8 +104,15 @@ export default function AuthPage() {
     setError(null);
 
     try {
-      await login(data.email, data.password);
-      router.push('/');
+      const user = await login(data.email, data.password);
+
+      // Role-based redirection
+      if (user?.role === 'SUPER_ADMIN' || user?.role === 'CONTENT_MANAGER' ||
+        user?.role === 'ORDER_MANAGER' || user?.role === 'FINANCE_MANAGER') {
+        router.push('/admin');
+      } else {
+        router.push('/dashboard');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
@@ -119,8 +126,15 @@ export default function AuthPage() {
 
     try {
       const { confirmPassword, ...registerData } = data;
-      await register(registerData);
-      router.push('/');
+      const user = await register(registerData);
+
+      // Role-based redirection (new users are CUSTOMER by default)
+      if (user?.role === 'SUPER_ADMIN' || user?.role === 'CONTENT_MANAGER' ||
+        user?.role === 'ORDER_MANAGER' || user?.role === 'FINANCE_MANAGER') {
+        router.push('/admin');
+      } else {
+        router.push('/dashboard');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
     } finally {
@@ -133,8 +147,15 @@ export default function AuthPage() {
     setError(null);
 
     try {
-      await login(email, password);
-      router.push('/');
+      const user = await login(email, password);
+
+      // Role-based redirection
+      if (user?.role === 'SUPER_ADMIN' || user?.role === 'CONTENT_MANAGER' ||
+        user?.role === 'ORDER_MANAGER' || user?.role === 'FINANCE_MANAGER') {
+        router.push('/admin');
+      } else {
+        router.push('/dashboard');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
@@ -213,7 +234,7 @@ export default function AuthPage() {
                       <AlertDescription>{error}</AlertDescription>
                     </Alert>
                   )}
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
                     <Input
@@ -291,7 +312,7 @@ export default function AuthPage() {
                       <AlertDescription>{error}</AlertDescription>
                     </Alert>
                   )}
-                  
+
                   <div className="space-y-2">
                     <Label htmlFor="name">Full Name</Label>
                     <Input

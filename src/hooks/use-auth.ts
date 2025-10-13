@@ -11,8 +11,8 @@ interface AuthState {
 }
 
 interface AuthContextType extends AuthState {
-  login: (email: string, password: string) => Promise<void>;
-  register: (data: RegisterData) => Promise<void>;
+  login: (email: string, password: string) => Promise<AuthUser>;
+  register: (data: RegisterData) => Promise<AuthUser>;
   logout: () => void;
   updateProfile: (data: UpdateProfileData) => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -40,7 +40,7 @@ export function useAuth(): AuthContextType {
     isAuthenticated: false,
   });
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<AuthUser> => {
     const response = await fetch('/api/v1/auth/login', {
       method: 'POST',
       headers: {
@@ -61,9 +61,11 @@ export function useAuth(): AuthContextType {
       isLoading: false,
       isAuthenticated: true,
     });
+
+    return data.user;
   };
 
-  const register = async (data: RegisterData) => {
+  const register = async (data: RegisterData): Promise<AuthUser> => {
     const response = await fetch('/api/v1/auth/register', {
       method: 'POST',
       headers: {
@@ -84,6 +86,8 @@ export function useAuth(): AuthContextType {
       isLoading: false,
       isAuthenticated: true,
     });
+
+    return responseData.user;
   };
 
   const logout = async () => {
@@ -127,7 +131,7 @@ export function useAuth(): AuthContextType {
   const refreshUser = async () => {
     try {
       const response = await fetch('/api/v1/auth/me');
-      
+
       if (!response.ok) {
         if (response.status === 401) {
           // Token is invalid, logout
