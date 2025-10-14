@@ -109,9 +109,7 @@ export default function AuthPage() {
     setError(null);
 
     try {
-      console.log('Attempting login with:', data.email);
       const user = await login(data.email, data.password);
-      console.log('Login successful, user:', user);
 
       // Determine redirect destination
       let destination = '/dashboard';
@@ -122,10 +120,6 @@ export default function AuthPage() {
         user?.role === 'ORDER_MANAGER' || user?.role === 'FINANCE_MANAGER') {
         destination = '/admin';
       }
-
-      console.log('Redirecting to:', destination);
-
-      console.log('Store state after login:', useAuthStore.getState());
 
       // Use router.push for client-side navigation to preserve auth state
       router.push(destination);

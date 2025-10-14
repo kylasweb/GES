@@ -5,11 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  BarChart3, 
-  Users, 
-  ShoppingCart, 
-  Package, 
+import {
+  BarChart3,
+  Users,
+  ShoppingCart,
+  Package,
   DollarSign,
   TrendingUp,
   TrendingDown,
@@ -274,11 +274,9 @@ export default function AdminDashboard() {
                       <ShoppingCart className="w-5 h-5 mr-2" />
                       Recent Orders
                     </CardTitle>
-                    <Link href="/admin/orders">
-                      <Button variant="outline" size="sm">
-                        View All Orders
-                      </Button>
-                    </Link>
+                    <Button variant="outline" size="sm" disabled>
+                      View All Orders (Coming Soon)
+                    </Button>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
@@ -300,7 +298,7 @@ export default function AdminDashboard() {
                                 Customer: {order.user?.name || 'Unknown'} | {order.user?.email || 'No email'}
                               </p>
                               <p className="text-sm text-gray-600">
-                                {order.items?.length || 0} items | 
+                                {order.items?.length || 0} items |
                                 Total: ₹{order.totalAmount?.toLocaleString('en-IN') || 0}
                               </p>
                               <p className="text-xs text-gray-500">
@@ -339,11 +337,9 @@ export default function AdminDashboard() {
                       <TrendingUp className="w-5 h-5 mr-2" />
                       Top Selling Products
                     </CardTitle>
-                    <Link href="/admin/products">
-                      <Button variant="outline" size="sm">
-                        Manage Products
-                      </Button>
-                    </Link>
+                    <Button variant="outline" size="sm" disabled>
+                      Manage Products (Coming Soon)
+                    </Button>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
@@ -377,11 +373,9 @@ export default function AdminDashboard() {
                       <AlertCircle className="w-5 h-5 mr-2 text-orange-600" />
                       Low Stock Alert
                     </CardTitle>
-                    <Link href="/admin/inventory">
-                      <Button variant="outline" size="sm">
-                        Manage Inventory
-                      </Button>
-                    </Link>
+                    <Button variant="outline" size="sm" disabled>
+                      Manage Inventory (Coming Soon)
+                    </Button>
                   </CardHeader>
                   <CardContent>
                     {stats.lowStockProducts.length === 0 ? (
@@ -426,24 +420,18 @@ export default function AdminDashboard() {
                       <CardTitle>Quick Actions</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <Link href="/admin/products/new">
-                        <Button className="w-full justify-start">
-                          <Package className="w-4 h-4 mr-2" />
-                          Add New Product
-                        </Button>
-                      </Link>
-                      <Link href="/admin/orders">
-                        <Button variant="outline" className="w-full justify-start">
-                          <ShoppingCart className="w-4 h-4 mr-2" />
-                          Manage Orders
-                        </Button>
-                      </Link>
-                      <Link href="/admin/users">
-                        <Button variant="outline" className="w-full justify-start">
-                          <Users className="w-4 h-4 mr-2" />
-                          Manage Users
-                        </Button>
-                      </Link>
+                      <Button className="w-full justify-start" disabled>
+                        <Package className="w-4 h-4 mr-2" />
+                        Add New Product (Coming Soon)
+                      </Button>
+                      <Button variant="outline" className="w-full justify-start" disabled>
+                        <ShoppingCart className="w-4 h-4 mr-2" />
+                        Manage Orders (Coming Soon)
+                      </Button>
+                      <Button variant="outline" className="w-full justify-start" disabled>
+                        <Users className="w-4 h-4 mr-2" />
+                        Manage Users (Coming Soon)
+                      </Button>
                       <Link href="/admin/content">
                         <Button variant="outline" className="w-full justify-start">
                           <Edit className="w-4 h-4 mr-2" />
