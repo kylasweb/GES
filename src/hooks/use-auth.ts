@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { User } from '@prisma/client';
+import { useAuthStore } from '@/lib/store';
 
 type AuthUser = Omit<User, 'password'>;
 
@@ -69,6 +70,10 @@ export function useAuth(): AuthContextType {
       isAuthenticated: true,
     });
 
+    // Also update the Zustand store
+    useAuthStore.getState().setUser(data.user);
+    useAuthStore.getState().setToken(data.token);
+
     return data.user;
   };
 
@@ -94,6 +99,10 @@ export function useAuth(): AuthContextType {
       isAuthenticated: true,
     });
 
+    // Also update the Zustand store
+    useAuthStore.getState().setUser(responseData.user);
+    useAuthStore.getState().setToken(responseData.token);
+
     return responseData.user;
   };
 
@@ -112,6 +121,9 @@ export function useAuth(): AuthContextType {
       isLoading: false,
       isAuthenticated: false,
     });
+
+    // Also clear the Zustand store
+    useAuthStore.getState().logout();
   };
 
   const updateProfile = async (data: UpdateProfileData) => {
@@ -159,6 +171,10 @@ export function useAuth(): AuthContextType {
         isLoading: false,
         isAuthenticated: true,
       });
+
+      // Also update the Zustand store
+      useAuthStore.getState().setUser(data.user);
+      useAuthStore.getState().setToken(data.token);
     } catch (error) {
       // Silently handle errors on initial auth check
       setState({

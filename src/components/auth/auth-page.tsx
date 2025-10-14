@@ -84,9 +84,6 @@ export default function AuthPage() {
   const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
   const redirectUrl = searchParams?.get('redirect') || null;
 
-  console.log('Auth page loaded, current URL:', typeof window !== 'undefined' ? window.location.href : 'SSR');
-  console.log('Redirect URL from params:', redirectUrl);
-
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -118,20 +115,14 @@ export default function AuthPage() {
       // Determine redirect destination
       let destination = '/dashboard';
 
-      console.log('Initial destination:', destination);
-      console.log('redirectUrl:', redirectUrl);
-      console.log('user role:', user?.role);
-
       if (redirectUrl) {
         destination = redirectUrl;
-        console.log('Using redirectUrl, destination now:', destination);
       } else if (user?.role === 'SUPER_ADMIN' || user?.role === 'CONTENT_MANAGER' ||
         user?.role === 'ORDER_MANAGER' || user?.role === 'FINANCE_MANAGER') {
         destination = '/admin';
-        console.log('User is admin, destination now:', destination);
       }
 
-      console.log('Final redirect destination:', destination);
+      console.log('Redirecting to:', destination);
 
       // Use window.location for full page reload to ensure cookies are set
       window.location.href = destination;
@@ -178,20 +169,12 @@ export default function AuthPage() {
       // Determine redirect destination
       let destination = '/dashboard';
 
-      console.log('Quick login - Initial destination:', destination);
-      console.log('Quick login - redirectUrl:', redirectUrl);
-      console.log('Quick login - user role:', user?.role);
-
       if (redirectUrl) {
         destination = redirectUrl;
-        console.log('Quick login - Using redirectUrl, destination now:', destination);
       } else if (user?.role === 'SUPER_ADMIN' || user?.role === 'CONTENT_MANAGER' ||
         user?.role === 'ORDER_MANAGER' || user?.role === 'FINANCE_MANAGER') {
         destination = '/admin';
-        console.log('Quick login - User is admin, destination now:', destination);
       }
-
-      console.log('Quick login - Final redirect destination:', destination);
 
       // Use window.location for full page reload to ensure cookies are set
       window.location.href = destination;
