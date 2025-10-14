@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/use-auth';
+import { useAuthStore } from '@/lib/store';
 import { Loader2, Eye, EyeOff, User, Shield, Package, DollarSign } from 'lucide-react';
 
 const loginSchema = z.object({
@@ -123,6 +124,8 @@ export default function AuthPage() {
       }
 
       console.log('Redirecting to:', destination);
+
+      console.log('Store state after login:', useAuthStore.getState());
 
       // Use router.push for client-side navigation to preserve auth state
       router.push(destination);

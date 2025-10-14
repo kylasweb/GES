@@ -5,11 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Package, 
-  ShoppingCart, 
-  User, 
-  MapPin, 
+import {
+  Package,
+  ShoppingCart,
+  User,
+  MapPin,
   CreditCard,
   Eye,
   Download,
@@ -57,12 +57,17 @@ export default function DashboardPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  console.log('Dashboard page - token:', token, 'user:', user);
+
   useEffect(() => {
+    console.log('Dashboard useEffect - token check:', token);
     if (!token) {
+      console.log('Dashboard - no token, redirecting to /auth/login');
       window.location.href = '/auth/login';
       return;
     }
 
+    console.log('Dashboard - token found, fetching data');
     fetchDashboardData();
   }, [token]);
 
@@ -342,8 +347,8 @@ export default function DashboardPage() {
                               View Details
                             </Button>
                             {order.paymentStatus === 'PAID' && (
-                              <Button 
-                                variant="outline" 
+                              <Button
+                                variant="outline"
                                 size="sm"
                                 onClick={() => downloadInvoice(order.id)}
                               >
