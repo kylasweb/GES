@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
     Package,
     Plus,
@@ -17,11 +16,7 @@ import {
     Eye,
     MoreHorizontal,
     Filter,
-    Sparkles,
-    CheckSquare,
-    Square,
-    Download,
-    Upload
+    Sparkles
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store/auth';
 import Link from 'next/link';
@@ -52,8 +47,6 @@ export default function ProductsManagementPage() {
     const [error, setError] = useState<string | null>(null);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [isAIToolsOpen, setIsAIToolsOpen] = useState(false);
-    const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
-    const [isBulkMode, setIsBulkMode] = useState(false);
 
     useEffect(() => {
         fetchProducts();
@@ -103,140 +96,6 @@ export default function ProductsManagementPage() {
             }
         } catch (err) {
             setError('Failed to delete product');
-        }
-    };
-
-    // Bulk operations
-    const handleSelectProduct = (productId: string, checked: boolean) => {
-        const newSelected = new Set(selectedProducts);
-        if (checked) {
-            newSelected.add(productId);
-        } else {
-            newSelected.delete(productId);
-        }
-        setSelectedProducts(newSelected);
-        setIsBulkMode(newSelected.size > 0);
-    };
-
-    const handleSelectAll = (checked: boolean) => {
-        if (checked) {
-            const allIds = new Set(filteredProducts.map(p => p.id));
-            setSelectedProducts(allIds);
-            setIsBulkMode(true);
-        } else {
-            setSelectedProducts(new Set());
-            setIsBulkMode(false);
-        }
-    };
-
-    const handleBulkDelete = async () => {
-        if (selectedProducts.size === 0) return;
-        if (!confirm(`Are you sure you want to delete ${selectedProducts.size} products?`)) return;
-
-        try {
-            const deletePromises = Array.from(selectedProducts).map(productId =>
-                fetch(`/api/v1/products/${productId}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                })
-            );
-
-            const responses = await Promise.all(deletePromises);
-            const results = await Promise.all(responses.map(r => r.json()));
-
-            const successCount = results.filter(r => r.success).length;
-            const failCount = results.length - successCount;
-
-            if (successCount > 0) {
-                setProducts(products.filter(p => !selectedProducts.has(p.id)));
-                setSelectedProducts(new Set());
-                setIsBulkMode(false);
-                if (failCount > 0) {
-                    setError(`${successCount} products deleted, ${failCount} failed`);
-                }
-            } else {
-                setError('Failed to delete products');
-            }
-        } catch (err) {
-            setError('Failed to delete products');
-        }
-    };
-
-    const handleBulkStatusUpdate = async (isActive: boolean) => {
-        if (selectedProducts.size === 0) return;
-
-        try {
-            const updatePromises = Array.from(selectedProducts).map(productId =>
-                fetch(`/api/v1/products/${productId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ isActive })
-                })
-            );
-
-            const responses = await Promise.all(updatePromises);
-            const results = await Promise.all(responses.map(r => r.json()));
-
-            const successCount = results.filter(r => r.success).length;
-            const failCount = results.length - successCount;
-
-            if (successCount > 0) {
-                // Update local state
-                setProducts(products.map(p =>
-                    selectedProducts.has(p.id) ? { ...p, isActive } : p
-                ));
-                setSelectedProducts(new Set());
-                setIsBulkMode(false);
-                if (failCount > 0) {
-                    setError(`${successCount} products updated, ${failCount} failed`);
-                }
-            } else {
-                setError('Failed to update products');
-            }
-        } catch (err) {
-            setError('Failed to update products');
-        }
-    };
-
-    const handleBulkFeatureUpdate = async (featured: boolean) => {
-        if (selectedProducts.size === 0) return;
-
-        try {
-            const updatePromises = Array.from(selectedProducts).map(productId =>
-                fetch(`/api/v1/products/${productId}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ featured })
-                })
-            );
-
-            const responses = await Promise.all(updatePromises);
-            const results = await Promise.all(responses.map(r => r.json()));
-
-            const successCount = results.filter(r => r.success).length;
-            const failCount = results.length - successCount;
-
-            if (successCount > 0) {
-                // Update local state
-                setProducts(products.map(p =>
-                    selectedProducts.has(p.id) ? { ...p, featured } : p
-                ));
-                setSelectedProducts(new Set());
-                setIsBulkMode(false);
-                if (failCount > 0) {
-                    setError(`${successCount} products updated, ${failCount} failed`);
-                }
-            } else {
-                setError('Failed to update products');
-            }
-        } catch (err) {
-            setError('Failed to update products');
         }
     };
 
@@ -302,73 +161,6 @@ export default function ProductsManagementPage() {
                         </CardContent>
                     </Card>
 
-                    {/* Bulk Actions Toolbar */}
-                    {isBulkMode && (
-                        <Card className="mb-6 bg-blue-50 border-blue-200">
-                            <CardContent className="p-4">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center space-x-4">
-                                        <span className="text-sm font-medium text-blue-900">
-                                            {selectedProducts.size} product{selectedProducts.size !== 1 ? 's' : ''} selected
-                                        </span>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => handleBulkStatusUpdate(true)}
-                                            className="text-green-700 border-green-300 hover:bg-green-50"
-                                        >
-                                            Activate
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => handleBulkStatusUpdate(false)}
-                                            className="text-orange-700 border-orange-300 hover:bg-orange-50"
-                                        >
-                                            Deactivate
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => handleBulkFeatureUpdate(true)}
-                                            className="text-purple-700 border-purple-300 hover:bg-purple-50"
-                                        >
-                                            Feature
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => handleBulkFeatureUpdate(false)}
-                                            className="text-gray-700 border-gray-300 hover:bg-gray-50"
-                                        >
-                                            Unfeature
-                                        </Button>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => {
-                                                setSelectedProducts(new Set());
-                                                setIsBulkMode(false);
-                                            }}
-                                        >
-                                            Clear Selection
-                                        </Button>
-                                        <Button
-                                            variant="destructive"
-                                            size="sm"
-                                            onClick={handleBulkDelete}
-                                        >
-                                            <Trash2 className="w-4 h-4 mr-2" />
-                                            Delete Selected
-                                        </Button>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    )}
-
                     {/* Products Table */}
                     <Card>
                         <CardHeader>
@@ -381,12 +173,6 @@ export default function ProductsManagementPage() {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead className="w-12">
-                                            <Checkbox
-                                                checked={selectedProducts.size === filteredProducts.length && filteredProducts.length > 0}
-                                                onCheckedChange={handleSelectAll}
-                                            />
-                                        </TableHead>
                                         <TableHead>Product</TableHead>
                                         <TableHead>SKU</TableHead>
                                         <TableHead>Category</TableHead>
@@ -399,12 +185,6 @@ export default function ProductsManagementPage() {
                                 <TableBody>
                                     {filteredProducts.map((product) => (
                                         <TableRow key={product.id}>
-                                            <TableCell>
-                                                <Checkbox
-                                                    checked={selectedProducts.has(product.id)}
-                                                    onCheckedChange={(checked) => handleSelectProduct(product.id, checked as boolean)}
-                                                />
-                                            </TableCell>
                                             <TableCell>
                                                 <div>
                                                     <p className="font-medium">{product.name}</p>
@@ -485,36 +265,37 @@ export default function ProductsManagementPage() {
                     </Card>
                 </div>
             </div>
-
-            <Dialog open={isAIToolsOpen} onOpenChange={setIsAIToolsOpen}>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center">
-                            <Sparkles className="w-5 h-5 mr-2 text-purple-600" />
-                            AI Content Generator - {selectedProduct?.name}
-                        </DialogTitle>
-                    </DialogHeader>
-                    {selectedProduct && (
-                        <AITools
-                            productName={selectedProduct!.name}
-                            productCategory={selectedProduct!.category.name}
-                            onDescriptionGenerated={(description) => {
-                                // Could auto-fill form fields here
-                                console.log('Generated description:', description);
-                            }}
-                            onTitleGenerated={(title) => {
-                                console.log('Generated title:', title);
-                            }}
-                            onImageGenerated={(imageUrl) => {
-                                console.log('Generated image:', imageUrl);
-                            }}
-                            onContentGenerated={(content) => {
-                                console.log('Generated content:', content);
-                            }}
-                        />
-                    )}
-                </DialogContent>
-            </Dialog>
         </div>
+
+        {/* AI Tools Dialog */}
+    <Dialog open={isAIToolsOpen} onOpenChange={setIsAIToolsOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+                <DialogTitle className="flex items-center">
+                    <Sparkles className="w-5 h-5 mr-2 text-purple-600" />
+                    AI Content Generator - {selectedProduct?.name}
+                </DialogTitle>
+            </DialogHeader>
+            {selectedProduct && (
+                <AITools
+                    productName={selectedProduct!.name}
+                    productCategory={selectedProduct!.category.name}
+                    onDescriptionGenerated={(description) => {
+                        // Could auto-fill form fields here
+                        console.log('Generated description:', description);
+                    }}
+                    onTitleGenerated={(title) => {
+                        console.log('Generated title:', title);
+                    }}
+                    onImageGenerated={(imageUrl) => {
+                        console.log('Generated image:', imageUrl);
+                    }}
+                    onContentGenerated={(content) => {
+                        console.log('Generated content:', content);
+                    }}
+                />
+            )}
+        </DialogContent>
+    </Dialog>
     );
 }

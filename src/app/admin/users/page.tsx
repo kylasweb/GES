@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Users,
     Search,
@@ -16,7 +17,8 @@ import {
     Shield,
     Crown,
     Package,
-    BarChart3
+    BarChart3,
+    Download
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store/auth';
 import { AdminSidebar } from '@/components/admin/sidebar';
@@ -65,6 +67,8 @@ export default function UsersManagementPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [roleFilter, setRoleFilter] = useState('all');
     const [error, setError] = useState<string | null>(null);
+    const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+    const [isBulkMode, setIsBulkMode] = useState(false);
 
     useEffect(() => {
         fetchUsers();
@@ -140,6 +144,132 @@ export default function UsersManagementPage() {
         }
     };
 
+    // Bulk operations
+    const handleSelectUser = (userId: string, checked: boolean) => {
+        const newSelected = new Set(selectedUsers);
+        if (checked) {
+            newSelected.add(userId);
+        } else {
+            newSelected.delete(userId);
+        }
+        setSelectedUsers(newSelected);
+        setIsBulkMode(newSelected.size > 0);
+    };
+
+    const handleSelectAll = (checked: boolean) => {
+        if (checked) {
+            const allIds = new Set(filteredUsers.map(u => u.id));
+            setSelectedUsers(allIds);
+            setIsBulkMode(true);
+        } else {
+            setSelectedUsers(new Set());
+            setIsBulkMode(false);
+        }
+    };
+
+    const handleBulkStatusUpdate = async (isActive: boolean) => {
+        if (selectedUsers.size === 0) return;
+
+        try {
+            const updatePromises = Array.from(selectedUsers).map(userId =>
+                fetch(`/api/v1/admin/users/${userId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ isActive })
+                })
+            );
+
+            const responses = await Promise.all(updatePromises);
+            const results = await Promise.all(responses.map(r => r.json()));
+
+            const successCount = results.filter(r => r.success).length;
+            const failCount = results.length - successCount;
+
+            if (successCount > 0) {
+                // Update local state
+                setUsers(users.map(u =>
+                    selectedUsers.has(u.id) ? { ...u, isActive } : u
+                ));
+                setSelectedUsers(new Set());
+                setIsBulkMode(false);
+                if (failCount > 0) {
+                    setError(`${successCount} users updated, ${failCount} failed`);
+                }
+            } else {
+                setError('Failed to update users');
+            }
+        } catch (err) {
+            setError('Failed to update users');
+        }
+    };
+
+    const handleBulkRoleUpdate = async (newRole: string) => {
+        if (selectedUsers.size === 0) return;
+
+        try {
+            const updatePromises = Array.from(selectedUsers).map(userId =>
+                fetch(`/api/v1/admin/users/${userId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ role: newRole })
+                })
+            );
+
+            const responses = await Promise.all(updatePromises);
+            const results = await Promise.all(responses.map(r => r.json()));
+
+            const successCount = results.filter(r => r.success).length;
+            const failCount = results.length - successCount;
+
+            if (successCount > 0) {
+                // Update local state
+                setUsers(users.map(u =>
+                    selectedUsers.has(u.id) ? { ...u, role: newRole } : u
+                ));
+                setSelectedUsers(new Set());
+                setIsBulkMode(false);
+                if (failCount > 0) {
+                    setError(`${successCount} users updated, ${failCount} failed`);
+                }
+            } else {
+                setError('Failed to update users');
+            }
+        } catch (err) {
+            setError('Failed to update users');
+        }
+    };
+
+    const handleBulkExport = () => {
+        if (selectedUsers.size === 0) return;
+
+        const selectedUserData = users.filter(u => selectedUsers.has(u.id));
+        const csvContent = [
+            ['Name', 'Email', 'Role', 'Status', 'Orders', 'Joined Date'],
+            ...selectedUserData.map(user => [
+                user.name,
+                user.email,
+                user.role,
+                user.isActive ? 'Active' : 'Inactive',
+                (user._count?.orders || 0).toString(),
+                new Date(user.createdAt).toLocaleDateString()
+            ])
+        ].map(row => row.join(',')).join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `users_export_${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+    };
+
     const filteredUsers = users.filter(user => {
         const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             user.email.toLowerCase().includes(searchTerm.toLowerCase());
@@ -209,6 +339,67 @@ export default function UsersManagementPage() {
                         </CardContent>
                     </Card>
 
+                    {/* Bulk Actions Toolbar */}
+                    {isBulkMode && (
+                        <Card className="mb-6 bg-blue-50 border-blue-200">
+                            <CardContent className="p-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-4">
+                                        <span className="text-sm font-medium text-blue-900">
+                                            {selectedUsers.size} user{selectedUsers.size !== 1 ? 's' : ''} selected
+                                        </span>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handleBulkStatusUpdate(true)}
+                                            className="text-green-700 border-green-300 hover:bg-green-50"
+                                        >
+                                            Activate
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handleBulkStatusUpdate(false)}
+                                            className="text-orange-700 border-orange-300 hover:bg-orange-50"
+                                        >
+                                            Deactivate
+                                        </Button>
+                                        <Select onValueChange={handleBulkRoleUpdate}>
+                                            <SelectTrigger className="w-40">
+                                                <SelectValue placeholder="Update Role" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="CUSTOMER">Customer</SelectItem>
+                                                <SelectItem value="ORDER_MANAGER">Order Manager</SelectItem>
+                                                <SelectItem value="FINANCE_MANAGER">Finance Manager</SelectItem>
+                                                <SelectItem value="CONTENT_MANAGER">Content Manager</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={handleBulkExport}
+                                            className="text-green-700 border-green-300 hover:bg-green-50"
+                                        >
+                                            <Download className="w-4 h-4 mr-2" />
+                                            Export CSV
+                                        </Button>
+                                    </div>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                            setSelectedUsers(new Set());
+                                            setIsBulkMode(false);
+                                        }}
+                                    >
+                                        Clear Selection
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
                     {/* Users Table */}
                     <Card>
                         <CardHeader>
@@ -221,6 +412,12 @@ export default function UsersManagementPage() {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
+                                        <TableHead className="w-12">
+                                            <Checkbox
+                                                checked={selectedUsers.size === filteredUsers.length && filteredUsers.length > 0}
+                                                onCheckedChange={handleSelectAll}
+                                            />
+                                        </TableHead>
                                         <TableHead>User</TableHead>
                                         <TableHead>Role</TableHead>
                                         <TableHead>Status</TableHead>
@@ -234,6 +431,12 @@ export default function UsersManagementPage() {
                                         const RoleIcon = roleIcons[user.role as keyof typeof roleIcons] || Shield;
                                         return (
                                             <TableRow key={user.id}>
+                                                <TableCell>
+                                                    <Checkbox
+                                                        checked={selectedUsers.has(user.id)}
+                                                        onCheckedChange={(checked) => handleSelectUser(user.id, checked as boolean)}
+                                                    />
+                                                </TableCell>
                                                 <TableCell>
                                                     <div>
                                                         <p className="font-medium">{user.name}</p>

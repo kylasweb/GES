@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     ShoppingCart,
     Search,
@@ -16,7 +17,8 @@ import {
     CheckCircle,
     AlertCircle,
     Clock,
-    RefreshCw
+    RefreshCw,
+    Download
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store/auth';
 import Link from 'next/link';
@@ -52,6 +54,8 @@ export default function OrdersManagementPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [error, setError] = useState<string | null>(null);
+    const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
+    const [isBulkMode, setIsBulkMode] = useState(false);
 
     useEffect(() => {
         fetchOrders();
@@ -100,6 +104,94 @@ export default function OrdersManagementPage() {
         } catch (err) {
             setError('Failed to update order status');
         }
+    };
+
+    // Bulk operations
+    const handleSelectOrder = (orderId: string, checked: boolean) => {
+        const newSelected = new Set(selectedOrders);
+        if (checked) {
+            newSelected.add(orderId);
+        } else {
+            newSelected.delete(orderId);
+        }
+        setSelectedOrders(newSelected);
+        setIsBulkMode(newSelected.size > 0);
+    };
+
+    const handleSelectAll = (checked: boolean) => {
+        if (checked) {
+            const allIds = new Set(filteredOrders.map(o => o.id));
+            setSelectedOrders(allIds);
+            setIsBulkMode(true);
+        } else {
+            setSelectedOrders(new Set());
+            setIsBulkMode(false);
+        }
+    };
+
+    const handleBulkStatusUpdate = async (newStatus: string) => {
+        if (selectedOrders.size === 0) return;
+
+        try {
+            const updatePromises = Array.from(selectedOrders).map(orderId =>
+                fetch(`/api/v1/orders/${orderId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                })
+            );
+
+            const responses = await Promise.all(updatePromises);
+            const results = await Promise.all(responses.map(r => r.json()));
+
+            const successCount = results.filter(r => r.success).length;
+            const failCount = results.length - successCount;
+
+            if (successCount > 0) {
+                // Update local state
+                setOrders(orders.map(o =>
+                    selectedOrders.has(o.id) ? { ...o, status: newStatus } : o
+                ));
+                setSelectedOrders(new Set());
+                setIsBulkMode(false);
+                if (failCount > 0) {
+                    setError(`${successCount} orders updated, ${failCount} failed`);
+                }
+            } else {
+                setError('Failed to update orders');
+            }
+        } catch (err) {
+            setError('Failed to update orders');
+        }
+    };
+
+    const handleBulkExport = () => {
+        if (selectedOrders.size === 0) return;
+
+        const selectedOrderData = orders.filter(o => selectedOrders.has(o.id));
+        const csvContent = [
+            ['Order Number', 'Customer', 'Email', 'Status', 'Payment Status', 'Total', 'Date'],
+            ...selectedOrderData.map(order => [
+                order.orderNumber,
+                order.user.name,
+                order.user.email,
+                order.status,
+                order.paymentStatus,
+                order.totalAmount.toString(),
+                new Date(order.createdAt).toLocaleDateString()
+            ])
+        ].map(row => row.join(',')).join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `orders_export_${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
     };
 
     const filteredOrders = orders.filter(order => {
@@ -202,6 +294,51 @@ export default function OrdersManagementPage() {
                         </CardContent>
                     </Card>
 
+                    {/* Bulk Actions Toolbar */}
+                    {isBulkMode && (
+                        <Card className="mb-6 bg-blue-50 border-blue-200">
+                            <CardContent className="p-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-4">
+                                        <span className="text-sm font-medium text-blue-900">
+                                            {selectedOrders.size} order{selectedOrders.size !== 1 ? 's' : ''} selected
+                                        </span>
+                                        <Select onValueChange={handleBulkStatusUpdate}>
+                                            <SelectTrigger className="w-40">
+                                                <SelectValue placeholder="Update Status" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="processing">Processing</SelectItem>
+                                                <SelectItem value="shipped">Shipped</SelectItem>
+                                                <SelectItem value="delivered">Delivered</SelectItem>
+                                                <SelectItem value="cancelled">Cancelled</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={handleBulkExport}
+                                            className="text-green-700 border-green-300 hover:bg-green-50"
+                                        >
+                                            <Download className="w-4 h-4 mr-2" />
+                                            Export CSV
+                                        </Button>
+                                    </div>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                            setSelectedOrders(new Set());
+                                            setIsBulkMode(false);
+                                        }}
+                                    >
+                                        Clear Selection
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
                     {/* Orders Table */}
                     <Card>
                         <CardHeader>
@@ -214,6 +351,12 @@ export default function OrdersManagementPage() {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
+                                        <TableHead className="w-12">
+                                            <Checkbox
+                                                checked={selectedOrders.size === filteredOrders.length && filteredOrders.length > 0}
+                                                onCheckedChange={handleSelectAll}
+                                            />
+                                        </TableHead>
                                         <TableHead>Order #</TableHead>
                                         <TableHead>Customer</TableHead>
                                         <TableHead>Status</TableHead>
@@ -226,6 +369,12 @@ export default function OrdersManagementPage() {
                                 <TableBody>
                                     {filteredOrders.map((order) => (
                                         <TableRow key={order.id}>
+                                            <TableCell>
+                                                <Checkbox
+                                                    checked={selectedOrders.has(order.id)}
+                                                    onCheckedChange={(checked) => handleSelectOrder(order.id, checked as boolean)}
+                                                />
+                                            </TableCell>
                                             <TableCell className="font-mono font-medium">
                                                 {order.orderNumber}
                                             </TableCell>

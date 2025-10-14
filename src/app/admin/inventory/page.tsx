@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     AlertTriangle,
     Package,
@@ -15,7 +16,8 @@ import {
     TrendingUp,
     TrendingDown,
     AlertCircle,
-    CheckCircle
+    CheckCircle,
+    Download
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store/auth';
 import { AdminSidebar } from '@/components/admin/sidebar';
@@ -42,6 +44,8 @@ export default function InventoryManagementPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [updatingStock, setUpdatingStock] = useState<string | null>(null);
+    const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+    const [isBulkMode, setIsBulkMode] = useState(false);
 
     useEffect(() => {
         fetchInventory();
@@ -95,6 +99,103 @@ export default function InventoryManagementPage() {
         } finally {
             setUpdatingStock(null);
         }
+    };
+
+    // Bulk operations
+    const handleSelectItem = (itemId: string, checked: boolean) => {
+        const newSelected = new Set(selectedItems);
+        if (checked) {
+            newSelected.add(itemId);
+        } else {
+            newSelected.delete(itemId);
+        }
+        setSelectedItems(newSelected);
+        setIsBulkMode(newSelected.size > 0);
+    };
+
+    const handleSelectAll = (checked: boolean) => {
+        if (checked) {
+            const allIds = new Set(filteredInventory.map(i => i.id));
+            setSelectedItems(allIds);
+            setIsBulkMode(true);
+        } else {
+            setSelectedItems(new Set());
+            setIsBulkMode(false);
+        }
+    };
+
+    const handleBulkStockUpdate = async (quantityChange: number) => {
+        if (selectedItems.size === 0) return;
+
+        try {
+            const updatePromises = Array.from(selectedItems).map(itemId => {
+                const item = inventory.find(i => i.id === itemId);
+                if (!item) return Promise.resolve({ success: false });
+
+                const newQuantity = Math.max(0, item.quantity + quantityChange);
+                return fetch(`/api/v1/admin/inventory/${itemId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ quantity: newQuantity })
+                });
+            });
+
+            const responses = await Promise.all(updatePromises);
+            const results = await Promise.all(responses.map(r => r.json()));
+
+            const successCount = results.filter(r => r.success).length;
+            const failCount = results.length - successCount;
+
+            if (successCount > 0) {
+                // Update local state
+                setInventory(inventory.map(item => {
+                    if (selectedItems.has(item.id)) {
+                        const newQuantity = Math.max(0, item.quantity + quantityChange);
+                        return { ...item, quantity: newQuantity, lastUpdated: new Date().toISOString() };
+                    }
+                    return item;
+                }));
+                setSelectedItems(new Set());
+                setIsBulkMode(false);
+                if (failCount > 0) {
+                    setError(`${successCount} items updated, ${failCount} failed`);
+                }
+            } else {
+                setError('Failed to update inventory');
+            }
+        } catch (err) {
+            setError('Failed to update inventory');
+        }
+    };
+
+    const handleBulkExport = () => {
+        if (selectedItems.size === 0) return;
+
+        const selectedInventoryData = inventory.filter(i => selectedItems.has(i.id));
+        const csvContent = [
+            ['Product Name', 'SKU', 'Current Stock', 'Reserved', 'Available', 'Low Stock Threshold', 'Reorder Point', 'Last Updated'],
+            ...selectedInventoryData.map(item => [
+                item.product.name,
+                item.product.sku,
+                item.quantity.toString(),
+                item.reserved.toString(),
+                (item.quantity - item.reserved).toString(),
+                item.lowStockThreshold.toString(),
+                item.reorderPoint.toString(),
+                new Date(item.lastUpdated).toLocaleDateString()
+            ])
+        ].map(row => row.join(',')).join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `inventory_export_${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
     };
 
     const getStockStatus = (item: InventoryItem) => {
@@ -213,6 +314,67 @@ export default function InventoryManagementPage() {
                         </CardContent>
                     </Card>
 
+                    {/* Bulk Actions Toolbar */}
+                    {isBulkMode && (
+                        <Card className="mb-6 bg-blue-50 border-blue-200">
+                            <CardContent className="p-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-4">
+                                        <span className="text-sm font-medium text-blue-900">
+                                            {selectedItems.size} item{selectedItems.size !== 1 ? 's' : ''} selected
+                                        </span>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handleBulkStockUpdate(-1)}
+                                            className="text-orange-700 border-orange-300 hover:bg-orange-50"
+                                        >
+                                            <Minus className="w-4 h-4 mr-2" />
+                                            Decrease (-1)
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handleBulkStockUpdate(1)}
+                                            className="text-green-700 border-green-300 hover:bg-green-50"
+                                        >
+                                            <Plus className="w-4 h-4 mr-2" />
+                                            Increase (+1)
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handleBulkStockUpdate(10)}
+                                            className="text-blue-700 border-blue-300 hover:bg-blue-50"
+                                        >
+                                            <Plus className="w-4 h-4 mr-2" />
+                                            Increase (+10)
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={handleBulkExport}
+                                            className="text-purple-700 border-purple-300 hover:bg-purple-50"
+                                        >
+                                            <Download className="w-4 h-4 mr-2" />
+                                            Export CSV
+                                        </Button>
+                                    </div>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                            setSelectedItems(new Set());
+                                            setIsBulkMode(false);
+                                        }}
+                                    >
+                                        Clear Selection
+                                    </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
                     {/* Inventory Table */}
                     <Card>
                         <CardHeader>
@@ -225,6 +387,20 @@ export default function InventoryManagementPage() {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
+                                        <TableHead className="w-12">
+                                            <Checkbox
+                                                checked={selectedItems.size === filteredInventory.length && filteredInventory.length > 0}
+                                                onCheckedChange={(checked) => {
+                                                    if (checked) {
+                                                        setSelectedItems(new Set(filteredInventory.map(item => item.id)));
+                                                        setIsBulkMode(true);
+                                                    } else {
+                                                        setSelectedItems(new Set());
+                                                        setIsBulkMode(false);
+                                                    }
+                                                }}
+                                            />
+                                        </TableHead>
                                         <TableHead>Product</TableHead>
                                         <TableHead>SKU</TableHead>
                                         <TableHead>Available</TableHead>
@@ -242,6 +418,21 @@ export default function InventoryManagementPage() {
 
                                         return (
                                             <TableRow key={item.id}>
+                                                <TableCell>
+                                                    <Checkbox
+                                                        checked={selectedItems.has(item.id)}
+                                                        onCheckedChange={(checked) => {
+                                                            const newSelected = new Set(selectedItems);
+                                                            if (checked) {
+                                                                newSelected.add(item.id);
+                                                            } else {
+                                                                newSelected.delete(item.id);
+                                                            }
+                                                            setSelectedItems(newSelected);
+                                                            setIsBulkMode(newSelected.size > 0);
+                                                        }}
+                                                    />
+                                                </TableCell>
                                                 <TableCell>
                                                     <div>
                                                         <p className="font-medium">{item.product.name}</p>

@@ -8,13 +8,14 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Eye, 
-  Save, 
+import {
+  Plus,
+  Edit,
+  Trash2,
+  Eye,
+  Save,
   X,
   GripVertical,
   RefreshCw,
@@ -23,7 +24,8 @@ import {
   Star,
   Package,
   Info,
-  Megaphone
+  Megaphone,
+  Download
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store/auth';
 
@@ -64,6 +66,8 @@ export default function ContentManagementPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [isBulkMode, setIsBulkMode] = useState(false);
 
   useEffect(() => {
     fetchContentBlocks();
@@ -193,6 +197,109 @@ export default function ContentManagementPage() {
 
     setEditingBlock(newBlock);
     setIsCreating(true);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedItems.size === 0) return;
+
+    if (!confirm(`Are you sure you want to delete ${selectedItems.size} content block${selectedItems.size !== 1 ? 's' : ''}?`)) {
+      return;
+    }
+
+    try {
+      const results = await Promise.all(
+        Array.from(selectedItems).map(id =>
+          fetch(`/api/v1/content/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+          }).then(res => res.json())
+        )
+      );
+
+      const successCount = results.filter(result => result.success).length;
+      const failCount = results.length - successCount;
+
+      if (successCount > 0) {
+        setSuccess(`${successCount} content block${successCount !== 1 ? 's' : ''} deleted successfully!`);
+        setSelectedItems(new Set());
+        setIsBulkMode(false);
+        fetchContentBlocks();
+        if (failCount > 0) {
+          setError(`${failCount} deletion${failCount !== 1 ? 's' : ''} failed`);
+        }
+      } else {
+        setError('Failed to delete content blocks');
+      }
+    } catch (err) {
+      setError('Failed to delete content blocks');
+    }
+  };
+
+  const handleBulkToggleActive = async (activate: boolean) => {
+    if (selectedItems.size === 0) return;
+
+    try {
+      const results = await Promise.all(
+        Array.from(selectedItems).map(id => {
+          const block = contentBlocks.find(b => b.id === id);
+          if (!block) return Promise.resolve({ success: false });
+
+          return fetch(`/api/v1/content/${id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              ...block,
+              isActive: activate
+            })
+          }).then(res => res.json());
+        })
+      );
+
+      const successCount = results.filter(result => result.success).length;
+      const failCount = results.length - successCount;
+
+      if (successCount > 0) {
+        setSuccess(`${successCount} content block${successCount !== 1 ? 's' : ''} ${activate ? 'activated' : 'deactivated'} successfully!`);
+        setSelectedItems(new Set());
+        setIsBulkMode(false);
+        fetchContentBlocks();
+        if (failCount > 0) {
+          setError(`${failCount} update${failCount !== 1 ? 's' : ''} failed`);
+        }
+      } else {
+        setError('Failed to update content blocks');
+      }
+    } catch (err) {
+      setError('Failed to update content blocks');
+    }
+  };
+
+  const handleBulkExport = () => {
+    if (selectedItems.size === 0) return;
+
+    const selectedContent = contentBlocks.filter(block => selectedItems.has(block.id));
+    const csvContent = [
+      ['Type', 'Title', 'Order', 'Active', 'Created', 'Updated'],
+      ...selectedContent.map(block => [
+        contentTypeLabels[block.type as keyof typeof contentTypeLabels] || block.type,
+        block.title || '',
+        block.order.toString(),
+        block.isActive ? 'Yes' : 'No',
+        new Date(block.createdAt).toLocaleDateString(),
+        new Date(block.updatedAt).toLocaleDateString()
+      ])
+    ].map(row => row.join(',')).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `content_blocks_export_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
   };
 
   const renderContentForm = (block: ContentBlock) => {
@@ -431,7 +538,21 @@ export default function ContentManagementPage() {
           <div className="lg:col-span-2">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Content Blocks</CardTitle>
+                <div className="flex items-center space-x-3">
+                  <Checkbox
+                    checked={selectedItems.size === contentBlocks.length && contentBlocks.length > 0}
+                    onCheckedChange={(checked) => {
+                      if (checked) {
+                        setSelectedItems(new Set(contentBlocks.map(block => block.id)));
+                        setIsBulkMode(true);
+                      } else {
+                        setSelectedItems(new Set());
+                        setIsBulkMode(false);
+                      }
+                    }}
+                  />
+                  <CardTitle>Content Blocks</CardTitle>
+                </div>
                 <div className="flex space-x-2">
                   <Button variant="outline" size="sm" onClick={fetchContentBlocks}>
                     <RefreshCw className="w-4 h-4 mr-2" />
@@ -440,6 +561,64 @@ export default function ContentManagementPage() {
                 </div>
               </CardHeader>
               <CardContent>
+
+                {/* Bulk Actions Toolbar */}
+                {isBulkMode && (
+                  <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <span className="text-sm font-medium text-blue-900">
+                          {selectedItems.size} item{selectedItems.size !== 1 ? 's' : ''} selected
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleBulkToggleActive(true)}
+                          className="text-green-700 border-green-300 hover:bg-green-50"
+                        >
+                          Activate
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleBulkToggleActive(false)}
+                          className="text-orange-700 border-orange-300 hover:bg-orange-50"
+                        >
+                          Deactivate
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleBulkDelete}
+                          className="text-red-700 border-red-300 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Delete
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleBulkExport}
+                          className="text-purple-700 border-purple-300 hover:bg-purple-50"
+                        >
+                          <Download className="w-4 h-4 mr-2" />
+                          Export CSV
+                        </Button>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedItems(new Set());
+                          setIsBulkMode(false);
+                        }}
+                      >
+                        Clear Selection
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-4">
                   {contentBlocks.map((block, index) => {
                     const IconComponent = contentTypeIcons[block.type as keyof typeof contentTypeIcons];
@@ -447,6 +626,20 @@ export default function ContentManagementPage() {
                       <div key={block.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
                         <div className="flex items-start justify-between">
                           <div className="flex items-start space-x-3">
+                            <Checkbox
+                              checked={selectedItems.has(block.id)}
+                              onCheckedChange={(checked) => {
+                                const newSelected = new Set(selectedItems);
+                                if (checked) {
+                                  newSelected.add(block.id);
+                                } else {
+                                  newSelected.delete(block.id);
+                                }
+                                setSelectedItems(newSelected);
+                                setIsBulkMode(newSelected.size > 0);
+                              }}
+                              className="mt-1"
+                            />
                             <GripVertical className="w-5 h-5 text-gray-400 mt-1" />
                             <div className="flex-1">
                               <div className="flex items-center space-x-2 mb-2">
@@ -462,7 +655,7 @@ export default function ContentManagementPage() {
                                 {block.title || `${contentTypeLabels[block.type as keyof typeof contentTypeLabels]} ${index + 1}`}
                               </h3>
                               <p className="text-sm text-gray-600">
-                                Order: {block.order} | 
+                                Order: {block.order} |
                                 Created: {new Date(block.createdAt).toLocaleDateString()}
                               </p>
                             </div>
@@ -519,7 +712,7 @@ export default function ContentManagementPage() {
                 <p className="text-sm text-gray-600">
                   Choose a content block type to add to your landing page:
                 </p>
-                
+
                 {Object.entries(contentTypeLabels).map(([type, label]) => {
                   const IconComponent = contentTypeIcons[type as keyof typeof contentTypeIcons];
                   return (
