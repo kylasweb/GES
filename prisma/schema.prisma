@@ -58,35 +58,122 @@ model Category {
   @@map("categories")
 }
 
+model Brand {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  logo        String?
+  website     String?
+  isActive    Boolean   @default(true)
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  products    Product[]
+
+  @@map("brands")
+}
+
+model ProductTag {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  slug      String    @unique
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  products  Product[]
+
+  @@map("product_tags")
+}
+
+model ProductAttribute {
+  id           String                  @id @default(cuid())
+  name         String
+  slug         String                  @unique
+  type         AttributeType           @default(TEXT)
+  isVisible    Boolean                 @default(true)
+  isFilterable Boolean                 @default(false)
+  sortOrder    Int                     @default(0)
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+  values       ProductAttributeValue[]
+  products     Product[]
+
+  @@map("product_attributes")
+}
+
+model ProductAttributeValue {
+  id          String             @id @default(cuid())
+  attributeId String
+  value       String
+  slug        String
+  sortOrder   Int                @default(0)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  attribute   ProductAttribute   @relation(fields: [attributeId], references: [id], onDelete: Cascade)
+  variations  ProductVariation[]
+
+  @@unique([attributeId, value])
+  @@map("product_attribute_values")
+}
+
 model Product {
-  id            String            @id @default(cuid())
+  id            String             @id @default(cuid())
   name          String
-  slug          String            @unique
+  slug          String             @unique
   description   String
   shortDesc     String?
-  sku           String            @unique
-  price         Decimal           @db.Decimal(10, 2)
-  comparePrice  Decimal?          @db.Decimal(10, 2)
-  costPrice     Decimal?          @db.Decimal(10, 2)
-  trackQuantity Boolean           @default(true)
-  quantity      Int               @default(0)
-  weight        Decimal?          @db.Decimal(8, 3)
+  sku           String             @unique
+  price         Decimal            @db.Decimal(10, 2)
+  comparePrice  Decimal?           @db.Decimal(10, 2)
+  costPrice     Decimal?           @db.Decimal(10, 2)
+  trackQuantity Boolean            @default(true)
+  quantity      Int                @default(0)
+  weight        Decimal?           @db.Decimal(8, 3)
   dimensions    Json?
   images        Json
   tags          Json?
-  isActive      Boolean           @default(true)
-  featured      Boolean           @default(false)
+  type          ProductType        @default(SIMPLE)
+  isActive      Boolean            @default(true)
+  featured      Boolean            @default(false)
   seoTitle      String?
   seoDesc       String?
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
   categoryId    String
+  brandId       String?
   orderItems    OrderItem[]
   inventory     ProductInventory?
   reviews       ProductReview[]
-  category      Category          @relation(fields: [categoryId], references: [id])
+  variations    ProductVariation[]
+  attributes    ProductAttribute[]
+  productTags   ProductTag[]
+  category      Category           @relation(fields: [categoryId], references: [id])
+  brand         Brand?             @relation(fields: [brandId], references: [id])
 
   @@map("products")
+}
+
+model ProductVariation {
+  id              String                  @id @default(cuid())
+  productId       String
+  sku             String?                 @unique
+  price           Decimal?                @db.Decimal(10, 2)
+  comparePrice    Decimal?                @db.Decimal(10, 2)
+  costPrice       Decimal?                @db.Decimal(10, 2)
+  quantity        Int                     @default(0)
+  weight          Decimal?                @db.Decimal(8, 3)
+  dimensions      Json?
+  image           String?
+  isActive        Boolean                 @default(true)
+  sortOrder       Int                     @default(0)
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+  product         Product                 @relation(fields: [productId], references: [id], onDelete: Cascade)
+  attributeValues ProductAttributeValue[]
+  orderItems      OrderItem[]
+
+  @@map("product_variations")
 }
 
 model ProductInventory {
@@ -149,17 +236,19 @@ model Order {
 }
 
 model OrderItem {
-  id          String   @id @default(cuid())
-  orderId     String
-  productId   String
-  productName String
-  productSku  String
-  quantity    Int
-  unitPrice   Decimal  @db.Decimal(10, 2)
-  totalPrice  Decimal  @db.Decimal(10, 2)
-  createdAt   DateTime @default(now())
-  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product     Product  @relation(fields: [productId], references: [id])
+  id                 String            @id @default(cuid())
+  orderId            String
+  productId          String
+  productName        String
+  productSku         String
+  quantity           Int
+  unitPrice          Decimal           @db.Decimal(10, 2)
+  totalPrice         Decimal           @db.Decimal(10, 2)
+  createdAt          DateTime          @default(now())
+  order              Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product            Product           @relation(fields: [productId], references: [id])
+  ProductVariation   ProductVariation? @relation(fields: [productVariationId], references: [id])
+  productVariationId String?
 
   @@map("order_items")
 }
@@ -337,4 +426,18 @@ enum ContentType {
   CATEGORIES
   INFO_SECTION
   PROMOTION_BANNER
+}
+
+enum AttributeType {
+  TEXT
+  COLOR
+  IMAGE
+  SELECT
+}
+
+enum ProductType {
+  SIMPLE
+  VARIABLE
+  GROUPED
+  EXTERNAL
 }

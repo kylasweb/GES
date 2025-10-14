@@ -11,7 +11,11 @@ import {
     AlertTriangle,
     FileText,
     BarChart3,
-    Settings
+    Settings,
+    Tag,
+    Layers,
+    Palette,
+    Box
 } from 'lucide-react';
 
 const navigation = [
@@ -24,6 +28,26 @@ const navigation = [
         name: 'Products',
         href: '/admin/products',
         icon: Package,
+    },
+    {
+        name: 'Brands',
+        href: '/admin/brands',
+        icon: Tag,
+    },
+    {
+        name: 'Attributes',
+        href: '/admin/attributes',
+        icon: Layers,
+    },
+    {
+        name: 'Tags',
+        href: '/admin/tags',
+        icon: Palette,
+    },
+    {
+        name: 'Variations',
+        href: '/admin/variations',
+        icon: Box,
     },
     {
         name: 'Orders',
