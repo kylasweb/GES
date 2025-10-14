@@ -17,7 +17,9 @@ import {
     TrendingDown,
     AlertCircle,
     CheckCircle,
-    Download
+    Download,
+    Edit,
+    Trash2
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store/auth';
 import { AdminSidebar } from '@/components/admin/sidebar';
@@ -198,6 +200,85 @@ export default function InventoryManagementPage() {
         window.URL.revokeObjectURL(url);
     };
 
+    const handleCreateInventoryItem = async (itemData: {
+        productId: string;
+        quantity: number;
+        lowStockThreshold: number;
+        reorderPoint: number;
+    }) => {
+        try {
+            const response = await fetch('/api/v1/admin/inventory', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(itemData)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setInventory([...inventory, data.data]);
+                setError(null);
+            } else {
+                setError(data.error || 'Failed to create inventory item');
+            }
+        } catch (err) {
+            setError('Failed to create inventory item');
+        }
+    };
+
+    const handleEditInventoryItem = async (itemId: string, itemData: Partial<InventoryItem>) => {
+        try {
+            const response = await fetch(`/api/v1/admin/inventory/${itemId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(itemData)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setInventory(inventory.map(item =>
+                    item.id === itemId ? { ...item, ...itemData } : item
+                ));
+                setError(null);
+            } else {
+                setError(data.error || 'Failed to update inventory item');
+            }
+        } catch (err) {
+            setError('Failed to update inventory item');
+        }
+    };
+
+    const handleDeleteInventoryItem = async (itemId: string) => {
+        if (!confirm('Are you sure you want to delete this inventory item? This action cannot be undone.')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/v1/admin/inventory/${itemId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setInventory(inventory.filter(item => item.id !== itemId));
+                setError(null);
+            } else {
+                setError(data.error || 'Failed to delete inventory item');
+            }
+        } catch (err) {
+            setError('Failed to delete inventory item');
+        }
+    };
+
     const getStockStatus = (item: InventoryItem) => {
         const available = item.quantity - item.reserved;
         if (available <= 0) return { status: 'Out of Stock', color: 'bg-red-100 text-red-800', icon: AlertCircle };
@@ -234,10 +315,32 @@ export default function InventoryManagementPage() {
                 <div className="p-8">
                     {/* Header */}
                     <div className="mb-8">
-                        <h1 className="text-3xl font-bold text-gray-900">Inventory Management</h1>
-                        <p className="text-gray-600 mt-2">
-                            Monitor stock levels, manage inventory, and handle restocking.
-                        </p>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h1 className="text-3xl font-bold text-gray-900">Inventory Management</h1>
+                                <p className="text-gray-600 mt-2">
+                                    Monitor stock levels, manage inventory, and handle restocking.
+                                </p>
+                            </div>
+                            <Button onClick={() => {
+                                const productId = prompt('Enter Product ID:');
+                                const quantity = parseInt(prompt('Enter initial quantity:') || '0');
+                                const lowStockThreshold = parseInt(prompt('Enter low stock threshold:') || '5');
+                                const reorderPoint = parseInt(prompt('Enter reorder point:') || '10');
+
+                                if (productId && quantity >= 0) {
+                                    handleCreateInventoryItem({
+                                        productId,
+                                        quantity,
+                                        lowStockThreshold,
+                                        reorderPoint
+                                    });
+                                }
+                            }}>
+                                <Plus className="w-4 h-4 mr-2" />
+                                Add Item
+                            </Button>
+                        </div>
                     </div>
 
                     {error && (
@@ -408,6 +511,7 @@ export default function InventoryManagementPage() {
                                         <TableHead>Total</TableHead>
                                         <TableHead>Status</TableHead>
                                         <TableHead>Actions</TableHead>
+                                        <TableHead>Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -451,6 +555,31 @@ export default function InventoryManagementPage() {
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="flex items-center space-x-2">
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => {
+                                                                const newThreshold = parseInt(prompt('Enter new low stock threshold:', item.lowStockThreshold.toString()) || '0');
+                                                                const newReorderPoint = parseInt(prompt('Enter new reorder point:', item.reorderPoint.toString()) || '0');
+
+                                                                if (newThreshold >= 0 && newReorderPoint >= 0) {
+                                                                    handleEditInventoryItem(item.id, {
+                                                                        lowStockThreshold: newThreshold,
+                                                                        reorderPoint: newReorderPoint
+                                                                    });
+                                                                }
+                                                            }}
+                                                        >
+                                                            <Edit className="w-4 h-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => handleDeleteInventoryItem(item.id)}
+                                                            className="text-red-600 hover:text-red-700"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </Button>
                                                         <Button
                                                             variant="outline"
                                                             size="sm"

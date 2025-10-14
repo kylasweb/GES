@@ -18,7 +18,9 @@ import {
     Crown,
     Package,
     BarChart3,
-    Download
+    Download,
+    Plus,
+    Trash2
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store/auth';
 import { AdminSidebar } from '@/components/admin/sidebar';
@@ -67,6 +69,7 @@ export default function UsersManagementPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [roleFilter, setRoleFilter] = useState('all');
     const [error, setError] = useState<string | null>(null);
+    const [success, setSuccess] = useState<string | null>(null);
     const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
     const [isBulkMode, setIsBulkMode] = useState(false);
 
@@ -270,6 +273,83 @@ export default function UsersManagementPage() {
         window.URL.revokeObjectURL(url);
     };
 
+    const handleCreateUser = async (userData: { name: string; email: string; role: string; isActive: boolean }) => {
+        try {
+            const response = await fetch('/api/v1/admin/users', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(userData)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setUsers([...users, data.data]);
+                setSuccess('User created successfully!');
+                setTimeout(() => setSuccess(null), 3000);
+            } else {
+                setError(data.error || 'Failed to create user');
+            }
+        } catch (err) {
+            setError('Failed to create user');
+        }
+    };
+
+    const handleEditUser = async (userId: string, userData: Partial<User>) => {
+        try {
+            const response = await fetch(`/api/v1/admin/users/${userId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(userData)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setUsers(users.map(user =>
+                    user.id === userId ? { ...user, ...userData } : user
+                ));
+                setSuccess('User updated successfully!');
+                setTimeout(() => setSuccess(null), 3000);
+            } else {
+                setError(data.error || 'Failed to update user');
+            }
+        } catch (err) {
+            setError('Failed to update user');
+        }
+    };
+
+    const handleDeleteUser = async (userId: string) => {
+        if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/v1/admin/users/${userId}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setUsers(users.filter(user => user.id !== userId));
+                setSuccess('User deleted successfully!');
+                setTimeout(() => setSuccess(null), 3000);
+            } else {
+                setError(data.error || 'Failed to delete user');
+            }
+        } catch (err) {
+            setError('Failed to delete user');
+        }
+    };
+
     const filteredUsers = users.filter(user => {
         const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             user.email.toLowerCase().includes(searchTerm.toLowerCase());
@@ -298,15 +378,40 @@ export default function UsersManagementPage() {
                 <div className="p-8">
                     {/* Header */}
                     <div className="mb-8">
-                        <h1 className="text-3xl font-bold text-gray-900">Users Management</h1>
-                        <p className="text-gray-600 mt-2">
-                            Manage user accounts, roles, and permissions.
-                        </p>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h1 className="text-3xl font-bold text-gray-900">Users Management</h1>
+                                <p className="text-gray-600 mt-2">
+                                    Manage user accounts, roles, and permissions.
+                                </p>
+                            </div>
+                            <Button onClick={() => {
+                                const name = prompt('Enter user name:');
+                                const email = prompt('Enter user email:');
+                                if (name && email) {
+                                    handleCreateUser({
+                                        name,
+                                        email,
+                                        role: 'CUSTOMER',
+                                        isActive: true
+                                    });
+                                }
+                            }}>
+                                <Plus className="w-4 h-4 mr-2" />
+                                Create User
+                            </Button>
+                        </div>
                     </div>
 
                     {error && (
                         <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
                             <p className="text-red-800">{error}</p>
+                        </div>
+                    )}
+
+                    {success && (
+                        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+                            <p className="text-green-800">{success}</p>
                         </div>
                     )}
 
@@ -481,6 +586,26 @@ export default function UsersManagementPage() {
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="flex items-center space-x-2">
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => {
+                                                                const newName = prompt('Enter new name:', user.name);
+                                                                if (newName && newName !== user.name) {
+                                                                    handleEditUser(user.id, { name: newName });
+                                                                }
+                                                            }}
+                                                        >
+                                                            <Edit className="w-4 h-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => handleDeleteUser(user.id)}
+                                                            className="text-red-600 hover:text-red-700"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </Button>
                                                         <Button
                                                             variant="outline"
                                                             size="sm"

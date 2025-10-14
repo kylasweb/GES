@@ -25,9 +25,13 @@ import {
   Package,
   Info,
   Megaphone,
-  Download
+  Download,
+  Sparkles,
+  Bot,
+  Lightbulb
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store/auth';
+import { AdminSidebar } from '@/components/admin/sidebar';
 
 interface ContentBlock {
   id: string;
@@ -511,301 +515,368 @@ export default function ContentManagementPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Content Management</h1>
-          <p className="text-gray-600 mt-2">
-            Manage your landing page content and layout.
-          </p>
-        </div>
-
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-800">{error}</p>
+    <div className="flex min-h-screen bg-gray-50">
+      <AdminSidebar />
+      <div className="flex-1 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">Content Management</h1>
+            <p className="text-gray-600 mt-2">
+              Manage your landing page content and layout.
+            </p>
           </div>
-        )}
 
-        {success && (
-          <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
-            <p className="text-green-800">{success}</p>
-          </div>
-        )}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-800">{error}</p>
+            </div>
+          )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Content Blocks List */}
-          <div className="lg:col-span-2">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Checkbox
-                    checked={selectedItems.size === contentBlocks.length && contentBlocks.length > 0}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        setSelectedItems(new Set(contentBlocks.map(block => block.id)));
-                        setIsBulkMode(true);
-                      } else {
-                        setSelectedItems(new Set());
-                        setIsBulkMode(false);
-                      }
-                    }}
-                  />
-                  <CardTitle>Content Blocks</CardTitle>
-                </div>
-                <div className="flex space-x-2">
-                  <Button variant="outline" size="sm" onClick={fetchContentBlocks}>
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                    Refresh
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
+          {success && (
+            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <p className="text-green-800">{success}</p>
+            </div>
+          )}
 
-                {/* Bulk Actions Toolbar */}
-                {isBulkMode && (
-                  <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        <span className="text-sm font-medium text-blue-900">
-                          {selectedItems.size} item{selectedItems.size !== 1 ? 's' : ''} selected
-                        </span>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleBulkToggleActive(true)}
-                          className="text-green-700 border-green-300 hover:bg-green-50"
-                        >
-                          Activate
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleBulkToggleActive(false)}
-                          className="text-orange-700 border-orange-300 hover:bg-orange-50"
-                        >
-                          Deactivate
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleBulkDelete}
-                          className="text-red-700 border-red-300 hover:bg-red-50"
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Delete
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleBulkExport}
-                          className="text-purple-700 border-purple-300 hover:bg-purple-50"
-                        >
-                          <Download className="w-4 h-4 mr-2" />
-                          Export CSV
-                        </Button>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Content Blocks List */}
+            <div className="lg:col-span-2">
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Checkbox
+                      checked={selectedItems.size === contentBlocks.length && contentBlocks.length > 0}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          setSelectedItems(new Set(contentBlocks.map(block => block.id)));
+                          setIsBulkMode(true);
+                        } else {
                           setSelectedItems(new Set());
                           setIsBulkMode(false);
-                        }}
-                      >
-                        Clear Selection
-                      </Button>
-                    </div>
+                        }
+                      }}
+                    />
+                    <CardTitle>Content Blocks</CardTitle>
                   </div>
-                )}
+                  <div className="flex space-x-2">
+                    <Button variant="outline" size="sm" onClick={fetchContentBlocks}>
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Refresh
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
 
-                <div className="space-y-4">
-                  {contentBlocks.map((block, index) => {
-                    const IconComponent = contentTypeIcons[block.type as keyof typeof contentTypeIcons];
-                    return (
-                      <div key={block.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start space-x-3">
-                            <Checkbox
-                              checked={selectedItems.has(block.id)}
-                              onCheckedChange={(checked) => {
-                                const newSelected = new Set(selectedItems);
-                                if (checked) {
-                                  newSelected.add(block.id);
-                                } else {
-                                  newSelected.delete(block.id);
-                                }
-                                setSelectedItems(newSelected);
-                                setIsBulkMode(newSelected.size > 0);
-                              }}
-                              className="mt-1"
-                            />
-                            <GripVertical className="w-5 h-5 text-gray-400 mt-1" />
-                            <div className="flex-1">
-                              <div className="flex items-center space-x-2 mb-2">
-                                <IconComponent className="w-4 h-4 text-blue-600" />
-                                <Badge variant="outline">
-                                  {contentTypeLabels[block.type as keyof typeof contentTypeLabels]}
-                                </Badge>
-                                <Badge className={block.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
-                                  {block.isActive ? 'Active' : 'Inactive'}
-                                </Badge>
-                              </div>
-                              <h3 className="font-semibold text-lg mb-1">
-                                {block.title || `${contentTypeLabels[block.type as keyof typeof contentTypeLabels]} ${index + 1}`}
-                              </h3>
-                              <p className="text-sm text-gray-600">
-                                Order: {block.order} |
-                                Created: {new Date(block.createdAt).toLocaleDateString()}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleToggleActive(block)}
-                            >
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => startEditing(block)}
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDelete(block.id)}
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
-                          </div>
+                  {/* Bulk Actions Toolbar */}
+                  {isBulkMode && (
+                    <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          <span className="text-sm font-medium text-blue-900">
+                            {selectedItems.size} item{selectedItems.size !== 1 ? 's' : ''} selected
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleBulkToggleActive(true)}
+                            className="text-green-700 border-green-300 hover:bg-green-50"
+                          >
+                            Activate
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleBulkToggleActive(false)}
+                            className="text-orange-700 border-orange-300 hover:bg-orange-50"
+                          >
+                            Deactivate
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleBulkDelete}
+                            className="text-red-700 border-red-300 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Delete
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleBulkExport}
+                            className="text-purple-700 border-purple-300 hover:bg-purple-50"
+                          >
+                            <Download className="w-4 h-4 mr-2" />
+                            Export CSV
+                          </Button>
                         </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedItems(new Set());
+                            setIsBulkMode(false);
+                          }}
+                        >
+                          Clear Selection
+                        </Button>
                       </div>
-                    );
-                  })}
-
-                  {contentBlocks.length === 0 && (
-                    <div className="text-center py-12">
-                      <Type className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">No content blocks yet</h3>
-                      <p className="text-gray-600 mb-6">
-                        Create your first content block to get started.
-                      </p>
                     </div>
                   )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
 
-          {/* Add New Content Block */}
-          <div className="lg:col-span-1">
-            <Card>
-              <CardHeader>
-                <CardTitle>Add New Block</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-sm text-gray-600">
-                  Choose a content block type to add to your landing page:
-                </p>
-
-                {Object.entries(contentTypeLabels).map(([type, label]) => {
-                  const IconComponent = contentTypeIcons[type as keyof typeof contentTypeIcons];
-                  return (
-                    <Button
-                      key={type}
-                      variant="outline"
-                      className="w-full justify-start h-auto p-4"
-                      onClick={() => startCreating(type)}
-                    >
-                      <IconComponent className="w-5 h-5 mr-3" />
-                      <div className="text-left">
-                        <div className="font-medium">{label}</div>
-                        <div className="text-xs text-gray-500">
-                          {type.replace(/_/g, ' ').toLowerCase()}
+                  <div className="space-y-4">
+                    {contentBlocks.map((block, index) => {
+                      const IconComponent = contentTypeIcons[block.type as keyof typeof contentTypeIcons];
+                      return (
+                        <div key={block.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-start space-x-3">
+                              <Checkbox
+                                checked={selectedItems.has(block.id)}
+                                onCheckedChange={(checked) => {
+                                  const newSelected = new Set(selectedItems);
+                                  if (checked) {
+                                    newSelected.add(block.id);
+                                  } else {
+                                    newSelected.delete(block.id);
+                                  }
+                                  setSelectedItems(newSelected);
+                                  setIsBulkMode(newSelected.size > 0);
+                                }}
+                                className="mt-1"
+                              />
+                              <GripVertical className="w-5 h-5 text-gray-400 mt-1" />
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-2 mb-2">
+                                  <IconComponent className="w-4 h-4 text-blue-600" />
+                                  <Badge variant="outline">
+                                    {contentTypeLabels[block.type as keyof typeof contentTypeLabels]}
+                                  </Badge>
+                                  <Badge className={block.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                                    {block.isActive ? 'Active' : 'Inactive'}
+                                  </Badge>
+                                </div>
+                                <h3 className="font-semibold text-lg mb-1">
+                                  {block.title || `${contentTypeLabels[block.type as keyof typeof contentTypeLabels]} ${index + 1}`}
+                                </h3>
+                                <p className="text-sm text-gray-600">
+                                  Order: {block.order} |
+                                  Created: {new Date(block.createdAt).toLocaleDateString()}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleToggleActive(block)}
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => startEditing(block)}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDelete(block.id)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </Button>
-                  );
-                })}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+                      );
+                    })}
 
-        {/* Edit/Create Modal */}
-        {editingBlock && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold">
-                    {isCreating ? 'Create Content Block' : 'Edit Content Block'}
-                  </h2>
+                    {contentBlocks.length === 0 && (
+                      <div className="text-center py-12">
+                        <Type className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">No content blocks yet</h3>
+                        <p className="text-gray-600 mb-6">
+                          Create your first content block to get started.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* AI Assistant */}
+            <div className="lg:col-span-1">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Sparkles className="w-5 h-5 mr-2 text-purple-600" />
+                    AI Assistant
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-gray-600">
+                    Get AI-powered suggestions for your content:
+                  </p>
+
                   <Button
                     variant="outline"
-                    size="sm"
+                    className="w-full justify-start"
                     onClick={() => {
-                      setEditingBlock(null);
-                      setIsCreating(false);
+                      const suggestions = [
+                        "Create a hero banner with compelling headline about solar energy benefits",
+                        "Add customer testimonials showcasing successful installations",
+                        "Include a featured products section highlighting best-sellers",
+                        "Create an info section about government solar subsidies"
+                      ];
+                      const randomSuggestion = suggestions[Math.floor(Math.random() * suggestions.length)];
+                      alert(`💡 AI Suggestion: ${randomSuggestion}`);
                     }}
                   >
-                    <X className="w-4 h-4" />
+                    <Lightbulb className="w-4 h-4 mr-2 text-yellow-500" />
+                    Content Ideas
                   </Button>
-                </div>
 
-                <div className="space-y-6">
-                  <div>
-                    <Label htmlFor="order">Order</Label>
-                    <Input
-                      id="order"
-                      type="number"
-                      value={editingBlock.order}
-                      onChange={(e) => setEditingBlock({
-                        ...editingBlock,
-                        order: parseInt(e.target.value) || 0
-                      })}
-                    />
-                  </div>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => {
+                      const headlines = [
+                        "Power Your Future with Clean Energy",
+                        "Go Solar Today - Save Tomorrow",
+                        "Sustainable Energy for a Better World",
+                        "Join the Solar Revolution"
+                      ];
+                      const randomHeadline = headlines[Math.floor(Math.random() * headlines.length)];
+                      alert(`📝 AI Generated Headline: "${randomHeadline}"`);
+                    }}
+                  >
+                    <Bot className="w-4 h-4 mr-2 text-blue-500" />
+                    Generate Headlines
+                  </Button>
 
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="isActive"
-                      checked={editingBlock.isActive}
-                      onCheckedChange={(checked) => setEditingBlock({
-                        ...editingBlock,
-                        isActive: checked
-                      })}
-                    />
-                    <Label htmlFor="isActive">Active</Label>
-                  </div>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => {
+                      alert("🎯 AI Tip: Use action-oriented language in your CTAs. Words like 'Start Saving', 'Get Started', or 'Learn More' perform better than passive phrases.");
+                    }}
+                  >
+                    <Sparkles className="w-4 h-4 mr-2 text-purple-500" />
+                    Optimization Tips
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
 
-                  {renderContentForm(editingBlock)}
+            {/* Add New Content Block */}
+            <div className="lg:col-span-1">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Add New Block</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-gray-600">
+                    Choose a content block type to add to your landing page:
+                  </p>
 
-                  <div className="flex justify-end space-x-4">
+                  {Object.entries(contentTypeLabels).map(([type, label]) => {
+                    const IconComponent = contentTypeIcons[type as keyof typeof contentTypeIcons];
+                    return (
+                      <Button
+                        key={type}
+                        variant="outline"
+                        className="w-full justify-start h-auto p-4"
+                        onClick={() => startCreating(type)}
+                      >
+                        <IconComponent className="w-5 h-5 mr-3" />
+                        <div className="text-left">
+                          <div className="font-medium">{label}</div>
+                          <div className="text-xs text-gray-500">
+                            {type.replace(/_/g, ' ').toLowerCase()}
+                          </div>
+                        </div>
+                      </Button>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* Edit/Create Modal */}
+          {editingBlock && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-xl font-bold">
+                      {isCreating ? 'Create Content Block' : 'Edit Content Block'}
+                    </h2>
                     <Button
                       variant="outline"
+                      size="sm"
                       onClick={() => {
                         setEditingBlock(null);
                         setIsCreating(false);
                       }}
                     >
-                      Cancel
+                      <X className="w-4 h-4" />
                     </Button>
-                    <Button onClick={() => handleSave(editingBlock)}>
-                      <Save className="w-4 h-4 mr-2" />
-                      {isCreating ? 'Create' : 'Save'}
-                    </Button>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div>
+                      <Label htmlFor="order">Order</Label>
+                      <Input
+                        id="order"
+                        type="number"
+                        value={editingBlock.order}
+                        onChange={(e) => setEditingBlock({
+                          ...editingBlock,
+                          order: parseInt(e.target.value) || 0
+                        })}
+                      />
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="isActive"
+                        checked={editingBlock.isActive}
+                        onCheckedChange={(checked) => setEditingBlock({
+                          ...editingBlock,
+                          isActive: checked
+                        })}
+                      />
+                      <Label htmlFor="isActive">Active</Label>
+                    </div>
+
+                    {renderContentForm(editingBlock)}
+
+                    <div className="flex justify-end space-x-4">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setEditingBlock(null);
+                          setIsCreating(false);
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button onClick={() => handleSave(editingBlock)}>
+                        <Save className="w-4 h-4 mr-2" />
+                        {isCreating ? 'Create' : 'Save'}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
