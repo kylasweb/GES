@@ -8,16 +8,18 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const productId = searchParams.get('productId');
 
-        if (!productId) {
-            return NextResponse.json(
-                { error: 'Product ID is required' },
-                { status: 400 }
-            );
-        }
+        const whereClause = productId ? { productId } : {};
 
         const variations = await db.productVariation.findMany({
-            where: { productId },
+            where: whereClause,
             include: {
+                product: {
+                    select: {
+                        id: true,
+                        name: true,
+                        sku: true,
+                    },
+                },
                 attributeValues: {
                     include: {
                         attribute: true,
