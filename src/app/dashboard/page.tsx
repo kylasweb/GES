@@ -57,8 +57,12 @@ export default function DashboardPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  console.log('Dashboard loading, token:', token, 'user:', user);
+
   useEffect(() => {
+    console.log('Dashboard useEffect, token:', token);
     if (!token) {
+      console.log('No token, redirecting to /auth/login');
       window.location.href = '/auth/login';
       return;
     }

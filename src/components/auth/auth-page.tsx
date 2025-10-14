@@ -121,6 +121,9 @@ export default function AuthPage() {
         destination = '/admin';
       }
 
+      console.log('Login successful, redirecting to:', destination);
+      console.log('Store state:', useAuthStore.getState());
+
       // Use router.push for client-side navigation to preserve auth state
       router.push(destination);
     } catch (err) {
