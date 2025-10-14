@@ -124,8 +124,8 @@ export default function AuthPage() {
 
       console.log('Redirecting to:', destination);
 
-      // Use window.location for full page reload to ensure cookies are set
-      window.location.href = destination;
+      // Use router.push for client-side navigation to preserve auth state
+      router.push(destination);
     } catch (err) {
       console.error('Login error:', err);
       setError(err instanceof Error ? err.message : 'Login failed');
@@ -151,8 +151,8 @@ export default function AuthPage() {
         destination = '/admin';
       }
 
-      // Use window.location for full page reload to ensure cookies are set
-      window.location.href = destination;
+      // Use router.push for client-side navigation to preserve auth state
+      router.push(destination);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Registration failed');
       setIsLoading(false);
@@ -176,8 +176,8 @@ export default function AuthPage() {
         destination = '/admin';
       }
 
-      // Use window.location for full page reload to ensure cookies are set
-      window.location.href = destination;
+      // Use router.push for client-side navigation to preserve auth state
+      router.push(destination);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
       setIsLoading(false);
