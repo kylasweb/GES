@@ -5,11 +5,12 @@ import { verifyAuth, requireAdmin } from '@/lib/auth';
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
+    const { id } = await params;
     try {
         const brand = await db.brand.findUnique({
-            where: { id: params.id },
+            where: { id },
             include: {
                 _count: {
                     select: {
@@ -40,8 +41,9 @@ export async function GET(
 
 export async function PUT(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
+    const { id } = await params;
     try {
         // Verify admin authentication
         requireAdmin(request);
@@ -62,7 +64,7 @@ export async function PUT(
 
         // Check if brand exists
         const existingBrand = await db.brand.findUnique({
-            where: { id: params.id },
+            where: { id },
         });
 
         if (!existingBrand) {
@@ -104,7 +106,7 @@ export async function PUT(
 
         // Update brand
         const brand = await db.brand.update({
-            where: { id: params.id },
+            where: { id },
             data: validatedData,
         });
 
@@ -145,15 +147,16 @@ export async function PUT(
 
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
+    const { id } = await params;
     try {
         // Verify admin authentication
         requireAdmin(request);
 
         // Check if brand exists
         const existingBrand = await db.brand.findUnique({
-            where: { id: params.id },
+            where: { id },
             include: {
                 _count: {
                     select: {
@@ -180,7 +183,7 @@ export async function DELETE(
 
         // Delete brand
         await db.brand.delete({
-            where: { id: params.id },
+            where: { id },
         });
 
         return NextResponse.json({

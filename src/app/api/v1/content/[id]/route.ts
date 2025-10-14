@@ -14,11 +14,12 @@ const contentBlockSchema = z.object({
 // GET individual content block
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const contentBlock = await db.contentBlock.findUnique({
-      where: { id: params.id }
+      where: { id }
     });
 
     if (!contentBlock) {
@@ -44,9 +45,10 @@ export async function GET(
 // PUT update content block
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     // Get user from token
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
@@ -78,7 +80,7 @@ export async function PUT(
 
     // Check if content block exists
     const existingBlock = await db.contentBlock.findUnique({
-      where: { id: params.id }
+      where: { id }
     });
 
     if (!existingBlock) {
@@ -118,9 +120,10 @@ export async function PUT(
 // DELETE content block
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     // Get user from token
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
@@ -149,7 +152,7 @@ export async function DELETE(
 
     // Check if content block exists
     const existingBlock = await db.contentBlock.findUnique({
-      where: { id: params.id }
+      where: { id }
     });
 
     if (!existingBlock) {
@@ -161,7 +164,7 @@ export async function DELETE(
 
     // Delete content block
     await db.contentBlock.delete({
-      where: { id: params.id }
+      where: { id }
     });
 
     return NextResponse.json({

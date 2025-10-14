@@ -4,9 +4,10 @@ import { verifyToken } from '@/lib/auth';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     // Get user from token
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
@@ -24,7 +25,7 @@ export async function GET(
       );
     }
 
-    const orderId = params.id;
+    const orderId = id;
 
     // Get order with full details
     const order = await db.order.findFirst({
@@ -137,9 +138,10 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     // Get user from token
     const token = request.headers.get('authorization')?.replace('Bearer ', '');
     if (!token) {
@@ -157,7 +159,7 @@ export async function PUT(
       );
     }
 
-    const orderId = params.id;
+    const orderId = id;
     const body = await request.json();
     const { action } = body;
 

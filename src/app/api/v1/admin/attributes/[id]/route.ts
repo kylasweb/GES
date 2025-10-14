@@ -5,11 +5,12 @@ import { verifyAuth, requireAdmin } from '@/lib/auth';
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
+    const { id } = await params;
     try {
         const attribute = await db.productAttribute.findUnique({
-            where: { id: params.id },
+            where: { id },
             include: {
                 values: {
                     orderBy: { sortOrder: 'asc' },
@@ -41,8 +42,9 @@ export async function GET(
 
 export async function PUT(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
+    const { id } = await params;
     try {
         // Verify admin authentication
         requireAdmin(request);
@@ -62,7 +64,7 @@ export async function PUT(
 
         // Check if attribute exists
         const existingAttribute = await db.productAttribute.findUnique({
-            where: { id: params.id },
+            where: { id },
         });
 
         if (!existingAttribute) {
@@ -89,7 +91,7 @@ export async function PUT(
 
         // Update attribute
         const attribute = await db.productAttribute.update({
-            where: { id: params.id },
+            where: { id },
             data: validatedData,
         });
 
@@ -130,15 +132,16 @@ export async function PUT(
 
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
+    const { id } = await params;
     try {
         // Verify admin authentication
         requireAdmin(request);
 
         // Check if attribute exists
         const existingAttribute = await db.productAttribute.findUnique({
-            where: { id: params.id },
+            where: { id },
             include: {
                 _count: {
                     select: {
@@ -165,7 +168,7 @@ export async function DELETE(
 
         // Delete attribute (this will cascade delete attribute values)
         await db.productAttribute.delete({
-            where: { id: params.id },
+            where: { id },
         });
 
         return NextResponse.json({

@@ -132,7 +132,7 @@ export default function InventoryManagementPage() {
         try {
             const updatePromises = Array.from(selectedItems).map(itemId => {
                 const item = inventory.find(i => i.id === itemId);
-                if (!item) return Promise.resolve({ success: false });
+                if (!item) return Promise.resolve(new Response(JSON.stringify({ success: false }), { status: 404 }));
 
                 const newQuantity = Math.max(0, item.quantity + quantityChange);
                 return fetch(`/api/v1/admin/inventory/${itemId}`, {
@@ -146,7 +146,12 @@ export default function InventoryManagementPage() {
             });
 
             const responses = await Promise.all(updatePromises);
-            const results = await Promise.all(responses.map(r => r.json()));
+            const results = await Promise.all(responses.map(async (r) => {
+                if (r instanceof Response) {
+                    return r.json();
+                }
+                return { success: false };
+            }));
 
             const successCount = results.filter(r => r.success).length;
             const failCount = results.length - successCount;

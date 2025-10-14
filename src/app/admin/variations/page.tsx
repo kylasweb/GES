@@ -508,7 +508,7 @@ export default function AdminVariationsPage() {
                                                             id="quantity"
                                                             type="number"
                                                             value={formData.quantity}
-                                                            onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                                                            onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 0 })}
                                                             placeholder="0"
                                                         />
                                                     </div>
@@ -842,7 +842,7 @@ export default function AdminVariationsPage() {
                                     id="edit-quantity"
                                     type="number"
                                     value={formData.quantity}
-                                    onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                                    onChange={(e) => setFormData({ ...formData, quantity: parseInt(e.target.value) || 0 })}
                                     placeholder="0"
                                 />
                             </div>

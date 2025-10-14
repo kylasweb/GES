@@ -5,11 +5,12 @@ import { verifyAuth, requireAdmin } from '@/lib/auth';
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
+    const { id } = await params;
     try {
         const variation = await db.productVariation.findUnique({
-            where: { id: params.id },
+            where: { id },
             include: {
                 product: {
                     select: {
@@ -24,9 +25,7 @@ export async function GET(
                     },
                 },
             },
-        });
-
-        if (!variation) {
+        }); if (!variation) {
             return NextResponse.json(
                 { error: 'Variation not found' },
                 { status: 404 }
@@ -45,8 +44,9 @@ export async function GET(
 
 export async function PUT(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
+    const { id } = await params;
     try {
         // Verify admin authentication
         requireAdmin(request);
@@ -75,10 +75,8 @@ export async function PUT(
 
         // Check if variation exists
         const existingVariation = await db.productVariation.findUnique({
-            where: { id: params.id },
-        });
-
-        if (!existingVariation) {
+            where: { id },
+        }); if (!existingVariation) {
             return NextResponse.json(
                 { error: 'Variation not found' },
                 { status: 404 }
@@ -195,15 +193,16 @@ export async function PUT(
 
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
+    const { id } = await params;
     try {
         // Verify admin authentication
         requireAdmin(request);
 
         // Check if variation exists
         const variation = await db.productVariation.findUnique({
-            where: { id: params.id },
+            where: { id },
         });
 
         if (!variation) {
@@ -215,7 +214,7 @@ export async function DELETE(
 
         // Delete variation
         await db.productVariation.delete({
-            where: { id: params.id },
+            where: { id },
         });
 
         return NextResponse.json({

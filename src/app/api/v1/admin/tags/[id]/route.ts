@@ -5,11 +5,12 @@ import { verifyAuth, requireAdmin } from '@/lib/auth';
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
+    const { id } = await params;
     try {
         const tag = await db.productTag.findUnique({
-            where: { id: params.id },
+            where: { id },
             include: {
                 _count: {
                     select: {
@@ -38,8 +39,9 @@ export async function GET(
 
 export async function PUT(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
+    const { id } = await params;
     try {
         // Verify admin authentication
         requireAdmin(request);
@@ -56,7 +58,7 @@ export async function PUT(
 
         // Check if tag exists
         const existingTag = await db.productTag.findUnique({
-            where: { id: params.id },
+            where: { id },
         });
 
         if (!existingTag) {
@@ -85,7 +87,7 @@ export async function PUT(
         const existingSlug = await db.productTag.findFirst({
             where: {
                 slug: validatedData.slug,
-                id: { not: params.id },
+                id: { not: id },
             },
         });
 
@@ -98,7 +100,7 @@ export async function PUT(
 
         // Update tag
         const tag = await db.productTag.update({
-            where: { id: params.id },
+            where: { id },
             data: validatedData,
         });
 
@@ -139,8 +141,9 @@ export async function PUT(
 
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
+    const { id } = await params;
     try {
         // Verify admin authentication
         requireAdmin(request);
