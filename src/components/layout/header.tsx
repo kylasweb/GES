@@ -18,6 +18,7 @@ import {
 import { useAuth } from '@/hooks/use-auth';
 import { useCart } from '@/hooks/use-cart';
 import { useWishlist, useWishlistCount } from '@/hooks/use-wishlist';
+import { useUIStore } from '@/lib/store/ui';
 
 interface HeaderProps {
   variant?: 'default' | 'transparent';
@@ -25,10 +26,10 @@ interface HeaderProps {
 
 export function Header({ variant = 'default' }: HeaderProps) {
   const { user, isAuthenticated, logout } = useAuth();
+  const { isMobile, isMobileMenuOpen, setMobileMenuOpen } = useUIStore();
   const cartCount = useCart((state) => state.getCartCount());
   const wishlistCount = useWishlistCount();
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [scrollY, setScrollY] = useState(0);
 
@@ -124,37 +125,41 @@ export function Header({ variant = 'default' }: HeaderProps) {
               )}
             </div>
 
-            {/* Wishlist */}
-            <Link href="/wishlist">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="hover:bg-red-50 hover:text-red-600 transition-all relative"
-              >
-                <Heart className="h-5 w-5" />
-                {wishlistCount > 0 && (
-                  <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
-                    {wishlistCount > 99 ? '99+' : wishlistCount}
-                  </Badge>
-                )}
-              </Button>
-            </Link>
+            {/* Wishlist - Hidden on mobile */}
+            {!isMobile && (
+              <Link href="/wishlist">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="hover:bg-red-50 hover:text-red-600 transition-all relative"
+                >
+                  <Heart className="h-5 w-5" />
+                  {wishlistCount > 0 && (
+                    <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                      {wishlistCount > 99 ? '99+' : wishlistCount}
+                    </Badge>
+                  )}
+                </Button>
+              </Link>
+            )}
 
-            {/* Cart */}
-            <Link href="/cart">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="hover:bg-blue-50 hover:text-blue-600 transition-all relative"
-              >
-                <ShoppingCart className="h-5 w-5" />
-                {cartCount > 0 && (
-                  <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
-                    {cartCount > 99 ? '99+' : cartCount}
-                  </Badge>
-                )}
-              </Button>
-            </Link>
+            {/* Cart - Hidden on mobile */}
+            {!isMobile && (
+              <Link href="/cart">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="hover:bg-blue-50 hover:text-blue-600 transition-all relative"
+                >
+                  <ShoppingCart className="h-5 w-5" />
+                  {cartCount > 0 && (
+                    <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                      {cartCount > 99 ? '99+' : cartCount}
+                    </Badge>
+                  )}
+                </Button>
+              </Link>
+            )}
 
             {/* Account */}
             {isAuthenticated ? (
@@ -192,7 +197,7 @@ export function Header({ variant = 'default' }: HeaderProps) {
               variant="ghost"
               size="sm"
               className="md:hidden"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
             >
               {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
