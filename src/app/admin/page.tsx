@@ -49,7 +49,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (!token) {
-      window.location.href = '/auth/login';
+      window.location.href = '/auth';
       return;
     }
 

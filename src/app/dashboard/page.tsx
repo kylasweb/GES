@@ -62,8 +62,8 @@ export default function DashboardPage() {
   useEffect(() => {
     console.log('Dashboard useEffect, token:', token);
     if (!token) {
-      console.log('No token, redirecting to /auth/login');
-      window.location.href = '/auth/login';
+      console.log('No token, redirecting to /auth');
+      window.location.href = '/auth';
       return;
     }
 
