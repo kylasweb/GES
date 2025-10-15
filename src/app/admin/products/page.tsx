@@ -21,7 +21,8 @@ import {
     CheckSquare,
     Square,
     Download,
-    Upload
+    Upload,
+    FileSpreadsheet
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store/auth';
 import Link from 'next/link';
@@ -54,6 +55,9 @@ export default function ProductsManagementPage() {
     const [isAIToolsOpen, setIsAIToolsOpen] = useState(false);
     const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
     const [isBulkMode, setIsBulkMode] = useState(false);
+    const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
+    const [isUploading, setIsUploading] = useState(false);
 
     useEffect(() => {
         fetchProducts();
@@ -61,7 +65,7 @@ export default function ProductsManagementPage() {
 
     const fetchProducts = async () => {
         try {
-            const response = await fetch('/api/v1/products?limit=100', {
+            const response = await fetch('/api/v1/admin/products?limit=100', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
@@ -240,6 +244,93 @@ export default function ProductsManagementPage() {
         }
     };
 
+    const handleDownloadTemplate = () => {
+        // Create sample CSV template
+        const headers = [
+            'name',
+            'sku',
+            'description',
+            'shortDesc',
+            'price',
+            'comparePrice',
+            'costPrice',
+            'trackQuantity',
+            'quantity',
+            'weight',
+            'categoryName',
+            'brandName',
+            'isActive',
+            'featured',
+            'seoTitle',
+            'seoDesc',
+            'images'
+        ];
+
+        const sampleData = [
+            'Sample Product 1',
+            'SP001',
+            'This is a detailed description of the product',
+            'Short description',
+            '99.99',
+            '129.99',
+            '50.00',
+            'true',
+            '100',
+            '1.5',
+            'Electronics',
+            'Sample Brand',
+            'true',
+            'false',
+            'Sample Product SEO Title',
+            'Sample product SEO description',
+            'https://example.com/image1.jpg,https://example.com/image2.jpg'
+        ];
+
+        const csvContent = [headers.join(','), sampleData.join(',')].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', 'product_bulk_upload_template.csv');
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const handleBulkUpload = async (file: File) => {
+        if (!file) return;
+
+        setIsUploading(true);
+        setUploadProgress(0);
+
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const response = await fetch('/api/v1/admin/products/bulk-upload', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData,
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setError(`Successfully uploaded ${data.data.successful} products. ${data.data.failed} failed.`);
+                fetchProducts(); // Refresh the list
+            } else {
+                setError(data.error || 'Failed to upload products');
+            }
+        } catch (err) {
+            setError('Failed to upload products');
+        } finally {
+            setIsUploading(false);
+            setUploadProgress(0);
+            setIsBulkUploadOpen(false);
+        }
+    };
+
     if (isLoading) {
         return (
             <div className="flex min-h-screen bg-gray-50">
@@ -267,12 +358,30 @@ export default function ProductsManagementPage() {
                                 Manage your product catalog, inventory, and pricing.
                             </p>
                         </div>
-                        <Link href="/admin/products/new">
-                            <Button className="flex items-center">
-                                <Plus className="w-4 h-4 mr-2" />
-                                Add New Product
+                        <div className="flex items-center space-x-3">
+                            <Button
+                                variant="outline"
+                                onClick={handleDownloadTemplate}
+                                className="flex items-center"
+                            >
+                                <FileSpreadsheet className="w-4 h-4 mr-2" />
+                                Download Template
                             </Button>
-                        </Link>
+                            <Button
+                                variant="outline"
+                                onClick={() => setIsBulkUploadOpen(true)}
+                                className="flex items-center"
+                            >
+                                <Upload className="w-4 h-4 mr-2" />
+                                Bulk Upload
+                            </Button>
+                            <Link href="/admin/products/new">
+                                <Button className="flex items-center">
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    Add New Product
+                                </Button>
+                            </Link>
+                        </div>
                     </div>
 
                     {error && (
@@ -513,6 +622,80 @@ export default function ProductsManagementPage() {
                             }}
                         />
                     )}
+                </DialogContent>
+            </Dialog>
+
+            {/* Bulk Upload Dialog */}
+            <Dialog open={isBulkUploadOpen} onOpenChange={setIsBulkUploadOpen}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center">
+                            <Upload className="w-5 h-5 mr-2 text-blue-600" />
+                            Bulk Upload Products
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <div className="text-sm text-gray-600">
+                            Upload a CSV file with product data. Make sure to use the template format.
+                        </div>
+
+                        {isUploading && (
+                            <div className="space-y-2">
+                                <div className="flex justify-between text-sm">
+                                    <span>Uploading...</span>
+                                    <span>{uploadProgress}%</span>
+                                </div>
+                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                    <div
+                                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                                        style={{ width: `${uploadProgress}%` }}
+                                    ></div>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="flex items-center justify-center w-full">
+                            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                    <FileSpreadsheet className="w-8 h-8 mb-3 text-gray-400" />
+                                    <p className="mb-2 text-sm text-gray-500">
+                                        <span className="font-semibold">Click to upload</span> or drag and drop
+                                    </p>
+                                    <p className="text-xs text-gray-500">CSV files only</p>
+                                </div>
+                                <input
+                                    type="file"
+                                    className="hidden"
+                                    accept=".csv"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                            handleBulkUpload(file);
+                                        }
+                                    }}
+                                    disabled={isUploading}
+                                />
+                            </label>
+                        </div>
+
+                        <div className="flex justify-between">
+                            <Button
+                                variant="outline"
+                                onClick={handleDownloadTemplate}
+                                disabled={isUploading}
+                            >
+                                <Download className="w-4 h-4 mr-2" />
+                                Download Template
+                            </Button>
+                            <Button
+                                variant="outline"
+                                onClick={() => setIsBulkUploadOpen(false)}
+                                disabled={isUploading}
+                            >
+                                Cancel
+                            </Button>
+                        </div>
+                    </div>
                 </DialogContent>
             </Dialog>
         </div>

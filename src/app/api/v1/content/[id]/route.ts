@@ -92,7 +92,7 @@ export async function PUT(
 
     // Update content block
     const updatedBlock = await db.contentBlock.update({
-      where: { id: params.id },
+      where: { id },
       data: validatedData
     });
 

@@ -78,7 +78,7 @@ export async function PUT(
         const existingSlug = await db.productAttribute.findFirst({
             where: {
                 slug: validatedData.slug,
-                id: { not: params.id },
+                id: { not: id },
             },
         });
 

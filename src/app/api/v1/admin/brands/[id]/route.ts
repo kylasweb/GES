@@ -78,7 +78,7 @@ export async function PUT(
         const existingName = await db.brand.findFirst({
             where: {
                 name: validatedData.name,
-                id: { not: params.id },
+                id: { not: id },
             },
         });
 
@@ -93,7 +93,7 @@ export async function PUT(
         const existingSlug = await db.brand.findFirst({
             where: {
                 slug: validatedData.slug,
-                id: { not: params.id },
+                id: { not: id },
             },
         });
 

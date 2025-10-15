@@ -72,7 +72,7 @@ export async function PUT(
         const existingName = await db.productTag.findFirst({
             where: {
                 name: validatedData.name,
-                id: { not: params.id },
+                id: { not: id },
             },
         });
 
@@ -150,7 +150,7 @@ export async function DELETE(
 
         // Check if tag exists
         const existingTag = await db.productTag.findUnique({
-            where: { id: params.id },
+            where: { id },
         });
 
         if (!existingTag) {
@@ -162,7 +162,7 @@ export async function DELETE(
 
         // Delete tag
         await db.productTag.delete({
-            where: { id: params.id },
+            where: { id },
         });
 
         return NextResponse.json({

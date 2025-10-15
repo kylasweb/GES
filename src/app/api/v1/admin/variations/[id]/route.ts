@@ -138,7 +138,7 @@ export async function PUT(
         }
 
         const variation = await db.productVariation.update({
-            where: { id: params.id },
+            where: { id },
             data: updateData,
             include: {
                 product: {

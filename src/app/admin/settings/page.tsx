@@ -19,7 +19,10 @@ import {
     Globe,
     Database,
     Key,
-    User
+    User,
+    Upload,
+    X,
+    Search
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store/auth';
 import { AdminSidebar } from '@/components/admin/sidebar';
@@ -31,6 +34,11 @@ interface SettingsData {
         contactEmail: string;
         supportPhone: string;
         businessAddress: string;
+        logo: string;
+        favicon: string;
+        seoTitle: string;
+        seoDescription: string;
+        seoKeywords: string;
     };
     payment: {
         stripeEnabled: boolean;
@@ -65,7 +73,12 @@ export default function SettingsPage() {
             siteDescription: 'Your trusted partner for solar energy solutions',
             contactEmail: 'support@ges.com',
             supportPhone: '+91-1234567890',
-            businessAddress: '123 Solar Street, Green City, India'
+            businessAddress: '123 Solar Street, Green City, India',
+            logo: '',
+            favicon: '',
+            seoTitle: 'Green Energy Solutions - Solar Energy Solutions',
+            seoDescription: 'Leading provider of solar panels, batteries, and renewable energy solutions. Quality products and expert installation services.',
+            seoKeywords: 'solar panels, solar energy, renewable energy, solar batteries, green energy'
         },
         payment: {
             stripeEnabled: false,
@@ -153,6 +166,48 @@ export default function SettingsPage() {
         }));
     };
 
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'favicon') => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Validate file size
+        const maxSize = type === 'logo' ? 2 * 1024 * 1024 : 1 * 1024 * 1024; // 2MB for logo, 1MB for favicon
+        if (file.size > maxSize) {
+            setError(`${type === 'logo' ? 'Logo' : 'Favicon'} file size must be less than ${type === 'logo' ? '2MB' : '1MB'}`);
+            return;
+        }
+
+        // Validate file type
+        const allowedTypes = type === 'logo' ? ['image/jpeg', 'image/png', 'image/svg+xml'] : ['image/x-icon', 'image/png'];
+        if (!allowedTypes.includes(file.type)) {
+            setError(`Invalid file type for ${type}. ${type === 'logo' ? 'PNG, JPG, SVG allowed' : 'ICO, PNG allowed'}`);
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('type', type);
+
+            const response = await fetch('/api/v1/admin/upload', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                updateSetting('general', type, data.data.url);
+                setSuccess(`${type === 'logo' ? 'Logo' : 'Favicon'} uploaded successfully!`);
+            } else {
+                setError(data.error || `Failed to upload ${type}`);
+            }
+        } catch (err) {
+            setError(`Failed to upload ${type}`);
+        }
+    };
+
     if (isLoading) {
         return (
             <div className="flex min-h-screen bg-gray-50">
@@ -201,10 +256,14 @@ export default function SettingsPage() {
                     )}
 
                     <Tabs defaultValue="general" className="space-y-6">
-                        <TabsList className="grid w-full grid-cols-4">
+                        <TabsList className="grid w-full grid-cols-5">
                             <TabsTrigger value="general" className="flex items-center">
                                 <Globe className="w-4 h-4 mr-2" />
                                 General
+                            </TabsTrigger>
+                            <TabsTrigger value="seo" className="flex items-center">
+                                <Search className="w-4 h-4 mr-2" />
+                                SEO
                             </TabsTrigger>
                             <TabsTrigger value="payment" className="flex items-center">
                                 <CreditCard className="w-4 h-4 mr-2" />
@@ -278,6 +337,163 @@ export default function SettingsPage() {
                                                 rows={2}
                                             />
                                         </div>
+                                    </div>
+
+                                    {/* Logo Upload */}
+                                    <div>
+                                        <Label>Site Logo</Label>
+                                        <div className="mt-2">
+                                            {settings.general.logo ? (
+                                                <div className="flex items-center space-x-4">
+                                                    <img
+                                                        src={settings.general.logo}
+                                                        alt="Site Logo"
+                                                        className="w-16 h-16 object-contain border rounded"
+                                                    />
+                                                    <div className="flex-1">
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => document.getElementById('logo-upload')?.click()}
+                                                        >
+                                                            <Upload className="w-4 h-4 mr-2" />
+                                                            Change Logo
+                                                        </Button>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => updateSetting('general', 'logo', '')}
+                                                            className="ml-2"
+                                                        >
+                                                            <X className="w-4 h-4 mr-2" />
+                                                            Remove
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                                        <Upload className="w-8 h-8 mb-3 text-gray-400" />
+                                                        <p className="mb-2 text-sm text-gray-500">
+                                                            <span className="font-semibold">Click to upload logo</span>
+                                                        </p>
+                                                        <p className="text-xs text-gray-500">PNG, JPG, SVG up to 2MB</p>
+                                                    </div>
+                                                    <input
+                                                        id="logo-upload"
+                                                        type="file"
+                                                        className="hidden"
+                                                        accept="image/*"
+                                                        onChange={(e) => handleFileUpload(e, 'logo')}
+                                                    />
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Favicon Upload */}
+                                    <div>
+                                        <Label>Site Favicon</Label>
+                                        <div className="mt-2">
+                                            {settings.general.favicon ? (
+                                                <div className="flex items-center space-x-4">
+                                                    <img
+                                                        src={settings.general.favicon}
+                                                        alt="Site Favicon"
+                                                        className="w-8 h-8 object-contain border rounded"
+                                                    />
+                                                    <div className="flex-1">
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => document.getElementById('favicon-upload')?.click()}
+                                                        >
+                                                            <Upload className="w-4 h-4 mr-2" />
+                                                            Change Favicon
+                                                        </Button>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => updateSetting('general', 'favicon', '')}
+                                                            className="ml-2"
+                                                        >
+                                                            <X className="w-4 h-4 mr-2" />
+                                                            Remove
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="flex items-center justify-center w-full h-24 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100">
+                                                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                                        <Upload className="w-6 h-6 mb-2 text-gray-400" />
+                                                        <p className="mb-1 text-sm text-gray-500">
+                                                            <span className="font-semibold">Click to upload favicon</span>
+                                                        </p>
+                                                        <p className="text-xs text-gray-500">ICO, PNG up to 1MB</p>
+                                                    </div>
+                                                    <input
+                                                        id="favicon-upload"
+                                                        type="file"
+                                                        className="hidden"
+                                                        accept="image/*"
+                                                        onChange={(e) => handleFileUpload(e, 'favicon')}
+                                                    />
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+
+                        {/* SEO Settings */}
+                        <TabsContent value="seo">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center">
+                                        <Search className="w-5 h-5 mr-2" />
+                                        SEO Settings
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="space-y-6">
+                                    <div>
+                                        <Label htmlFor="seoTitle">SEO Title</Label>
+                                        <Input
+                                            id="seoTitle"
+                                            value={settings.general.seoTitle}
+                                            onChange={(e) => updateSetting('general', 'seoTitle', e.target.value)}
+                                            placeholder="Main title for search engines"
+                                        />
+                                        <p className="text-sm text-gray-500 mt-1">
+                                            Recommended: 50-60 characters. Current: {settings.general.seoTitle.length} characters
+                                        </p>
+                                    </div>
+
+                                    <div>
+                                        <Label htmlFor="seoDescription">SEO Description</Label>
+                                        <Textarea
+                                            id="seoDescription"
+                                            value={settings.general.seoDescription}
+                                            onChange={(e) => updateSetting('general', 'seoDescription', e.target.value)}
+                                            rows={3}
+                                            placeholder="Description for search engines"
+                                        />
+                                        <p className="text-sm text-gray-500 mt-1">
+                                            Recommended: 150-160 characters. Current: {settings.general.seoDescription.length} characters
+                                        </p>
+                                    </div>
+
+                                    <div>
+                                        <Label htmlFor="seoKeywords">SEO Keywords</Label>
+                                        <Input
+                                            id="seoKeywords"
+                                            value={settings.general.seoKeywords}
+                                            onChange={(e) => updateSetting('general', 'seoKeywords', e.target.value)}
+                                            placeholder="Comma-separated keywords"
+                                        />
+                                        <p className="text-sm text-gray-500 mt-1">
+                                            Separate keywords with commas. Focus on 5-10 relevant keywords.
+                                        </p>
                                     </div>
                                 </CardContent>
                             </Card>
