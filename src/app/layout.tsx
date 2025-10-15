@@ -16,20 +16,20 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Green Energy Solutions",
-  description: "Modern Next.js scaffold optimized for AI-powered development with Z.ai. Built with TypeScript, Tailwind CSS, and shadcn/ui.",
-  keywords: ["Z.ai", "Next.js", "TypeScript", "Tailwind CSS", "shadcn/ui", "AI development", "React"],
-  authors: [{ name: "Z.ai Team" }],
+  description: "Your trusted partner for solar energy solutions. Quality solar panels, batteries, and renewable energy products.",
+  keywords: ["solar panels", "solar energy", "renewable energy", "solar batteries", "green energy"],
+  authors: [{ name: "Green Energy Solutions Team" }],
   openGraph: {
     title: "Green Energy Solutions",
-    description: "AI-powered development with modern React stack",
-    url: "https://chat.z.ai",
-    siteName: "Z.ai",
+    description: "Leading provider of solar panels, batteries, and renewable energy solutions",
+    url: "https://ges.com",
+    siteName: "Green Energy Solutions",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: "Green Energy Solutions",
-    description: "AI-powered development with modern React stack",
+    description: "Leading provider of solar panels, batteries, and renewable energy solutions",
   },
 };
 
