@@ -162,7 +162,7 @@ export default function Home() {
                       Power Your Future
                     </span>
                     <br />
-                    <span className="text-gray-900">with Green Energy</span>
+                    <span className="text-gray-900">with Green Energy Solutions</span>
                   </h1>
 
                   <p className="text-xl md:text-2xl text-gray-600 leading-relaxed max-w-2xl mx-auto lg:mx-0">

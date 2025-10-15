@@ -69,7 +69,7 @@ export function Header({ variant = 'default' }: HeaderProps) {
               <Sparkles className="h-4 w-4 text-yellow-500 absolute -top-1 -right-1 animate-pulse" />
             </div>
             <span className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-              Green Energy
+              Green Energy Solutions
             </span>
           </Link>
 
