@@ -114,13 +114,19 @@ export default function AdminAttributesPage() {
 
     const handleCreate = async () => {
         try {
+            // Generate slug from name
+            const slug = formData.name
+                .toLowerCase()
+                .replace(/\s+/g, '-')
+                .replace(/[^a-z0-9-]/g, '');
+
             const response = await fetch('/api/v1/admin/attributes', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`,
                 },
-                body: JSON.stringify(formData),
+                body: JSON.stringify({ ...formData, slug }),
             });
 
             if (!response.ok) {
@@ -142,13 +148,19 @@ export default function AdminAttributesPage() {
         if (!selectedAttribute) return;
 
         try {
+            // Generate slug from name
+            const slug = formData.name
+                .toLowerCase()
+                .replace(/\s+/g, '-')
+                .replace(/[^a-z0-9-]/g, '');
+
             const response = await fetch(`/api/v1/admin/attributes/${selectedAttribute.id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`,
                 },
-                body: JSON.stringify(formData),
+                body: JSON.stringify({ ...formData, slug }),
             });
 
             if (!response.ok) {

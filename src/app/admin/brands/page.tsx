@@ -104,13 +104,19 @@ export default function AdminBrandsPage() {
 
     const handleCreate = async () => {
         try {
+            // Generate slug from name
+            const slug = formData.name
+                .toLowerCase()
+                .replace(/\s+/g, '-')
+                .replace(/[^a-z0-9-]/g, '');
+
             const response = await fetch('/api/v1/admin/brands', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`,
                 },
-                body: JSON.stringify(formData),
+                body: JSON.stringify({ ...formData, slug }),
             });
 
             if (!response.ok) {
@@ -132,13 +138,19 @@ export default function AdminBrandsPage() {
         if (!selectedBrand) return;
 
         try {
+            // Generate slug from name
+            const slug = formData.name
+                .toLowerCase()
+                .replace(/\s+/g, '-')
+                .replace(/[^a-z0-9-]/g, '');
+
             const response = await fetch(`/api/v1/admin/brands/${selectedBrand.id}`, {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`,
                 },
-                body: JSON.stringify(formData),
+                body: JSON.stringify({ ...formData, slug }),
             });
 
             if (!response.ok) {

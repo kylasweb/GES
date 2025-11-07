@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,34 +18,30 @@ import { useRouter } from 'next/navigation';
 interface ProductFormData {
     name: string;
     description: string;
+    shortDesc: string;
     price: number;
     sku: string;
-    category: string;
-    brand: string;
-    stock: number;
-    minStock: number;
-    maxStock: number;
+    categoryId: string;
+    brandId: string;
+    quantity: number;
+    trackQuantity: boolean;
     isActive: boolean;
-    isFeatured: boolean;
+    featured: boolean;
     images: string[];
     specifications: Record<string, string>;
 }
 
-const categories = [
-    'Solar Panels',
-    'Batteries',
-    'Inverters',
-    'Accessories',
-    'Installation Kits'
-];
+interface Category {
+    id: string;
+    name: string;
+    slug: string;
+}
 
-const brands = [
-    'GreenEnergy',
-    'SolarTech',
-    'PowerMax',
-    'EcoPower',
-    'SunLight'
-];
+interface Brand {
+    id: string;
+    name: string;
+    slug: string;
+}
 
 export default function NewProductPage() {
     const { token } = useAuthStore();
@@ -53,25 +49,57 @@ export default function NewProductPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [brands, setBrands] = useState<Brand[]>([]);
 
     const [formData, setFormData] = useState<ProductFormData>({
         name: '',
         description: '',
+        shortDesc: '',
         price: 0,
         sku: '',
-        category: '',
-        brand: '',
-        stock: 0,
-        minStock: 5,
-        maxStock: 100,
+        categoryId: '',
+        brandId: '',
+        quantity: 0,
+        trackQuantity: true,
         isActive: true,
-        isFeatured: false,
+        featured: false,
         images: [],
         specifications: {}
     });
 
     const [newSpecKey, setNewSpecKey] = useState('');
     const [newSpecValue, setNewSpecValue] = useState('');
+
+    // Fetch categories and brands on mount
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [categoriesRes, brandsRes] = await Promise.all([
+                    fetch('/api/v1/categories'),
+                    fetch('/api/v1/admin/brands', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    })
+                ]);
+
+                const categoriesData = await categoriesRes.json();
+                const brandsData = await brandsRes.json();
+
+                if (categoriesData.success) {
+                    setCategories(categoriesData.data);
+                }
+                if (brandsData.success) {
+                    setBrands(brandsData.data);
+                }
+            } catch (err) {
+                console.error('Failed to fetch categories/brands:', err);
+            }
+        };
+
+        if (token) {
+            fetchData();
+        }
+    }, [token]);
 
     const handleInputChange = (field: keyof ProductFormData, value: any) => {
         setFormData(prev => ({
@@ -112,13 +140,27 @@ export default function NewProductPage() {
         setSuccess(null);
 
         try {
+            // Generate slug from name
+            const slug = formData.name
+                .toLowerCase()
+                .replace(/\s+/g, '-')
+                .replace(/[^a-z0-9-]/g, '')
+                + '-' + Date.now();
+
+            const productData = {
+                ...formData,
+                slug,
+                type: 'SIMPLE' as const,
+                brandId: formData.brandId || undefined
+            };
+
             const response = await fetch('/api/v1/products', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(productData)
             });
 
             const data = await response.json();
@@ -219,14 +261,14 @@ export default function NewProductPage() {
                                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                             <div>
                                                 <Label htmlFor="category">Category *</Label>
-                                                <Select value={formData.category} onValueChange={(value) => handleInputChange('category', value)}>
+                                                <Select value={formData.categoryId} onValueChange={(value) => handleInputChange('categoryId', value)}>
                                                     <SelectTrigger>
                                                         <SelectValue placeholder="Select category" />
                                                     </SelectTrigger>
                                                     <SelectContent>
                                                         {categories.map((category) => (
-                                                            <SelectItem key={category} value={category}>
-                                                                {category}
+                                                            <SelectItem key={category.id} value={category.id}>
+                                                                {category.name}
                                                             </SelectItem>
                                                         ))}
                                                     </SelectContent>
@@ -234,14 +276,14 @@ export default function NewProductPage() {
                                             </div>
                                             <div>
                                                 <Label htmlFor="brand">Brand</Label>
-                                                <Select value={formData.brand} onValueChange={(value) => handleInputChange('brand', value)}>
+                                                <Select value={formData.brandId} onValueChange={(value) => handleInputChange('brandId', value)}>
                                                     <SelectTrigger>
                                                         <SelectValue placeholder="Select brand" />
                                                     </SelectTrigger>
                                                     <SelectContent>
                                                         {brands.map((brand) => (
-                                                            <SelectItem key={brand} value={brand}>
-                                                                {brand}
+                                                            <SelectItem key={brand.id} value={brand.id}>
+                                                                {brand.name}
                                                             </SelectItem>
                                                         ))}
                                                     </SelectContent>
@@ -270,38 +312,24 @@ export default function NewProductPage() {
                                         <CardTitle>Inventory</CardTitle>
                                     </CardHeader>
                                     <CardContent>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
-                                                <Label htmlFor="stock">Current Stock</Label>
+                                                <Label htmlFor="quantity">Current Stock</Label>
                                                 <Input
-                                                    id="stock"
+                                                    id="quantity"
                                                     type="number"
-                                                    value={formData.stock}
-                                                    onChange={(e) => handleInputChange('stock', parseInt(e.target.value) || 0)}
+                                                    value={formData.quantity}
+                                                    onChange={(e) => handleInputChange('quantity', parseInt(e.target.value) || 0)}
                                                     placeholder="0"
                                                     min="0"
                                                 />
                                             </div>
-                                            <div>
-                                                <Label htmlFor="minStock">Minimum Stock</Label>
-                                                <Input
-                                                    id="minStock"
-                                                    type="number"
-                                                    value={formData.minStock}
-                                                    onChange={(e) => handleInputChange('minStock', parseInt(e.target.value) || 0)}
-                                                    placeholder="5"
-                                                    min="0"
-                                                />
-                                            </div>
-                                            <div>
-                                                <Label htmlFor="maxStock">Maximum Stock</Label>
-                                                <Input
-                                                    id="maxStock"
-                                                    type="number"
-                                                    value={formData.maxStock}
-                                                    onChange={(e) => handleInputChange('maxStock', parseInt(e.target.value) || 0)}
-                                                    placeholder="100"
-                                                    min="0"
+                                            <div className="flex items-center justify-between">
+                                                <Label htmlFor="trackQuantity">Track Quantity</Label>
+                                                <Switch
+                                                    id="trackQuantity"
+                                                    checked={formData.trackQuantity}
+                                                    onCheckedChange={(checked) => handleInputChange('trackQuantity', checked)}
                                                 />
                                             </div>
                                         </div>
@@ -371,11 +399,11 @@ export default function NewProductPage() {
                                             />
                                         </div>
                                         <div className="flex items-center justify-between">
-                                            <Label htmlFor="isFeatured">Featured Product</Label>
+                                            <Label htmlFor="featured">Featured Product</Label>
                                             <Switch
-                                                id="isFeatured"
-                                                checked={formData.isFeatured}
-                                                onCheckedChange={(checked) => handleInputChange('isFeatured', checked)}
+                                                id="featured"
+                                                checked={formData.featured}
+                                                onCheckedChange={(checked) => handleInputChange('featured', checked)}
                                             />
                                         </div>
                                     </CardContent>
