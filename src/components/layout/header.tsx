@@ -19,6 +19,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useCart } from '@/hooks/use-cart';
 import { useWishlist, useWishlistCount } from '@/hooks/use-wishlist';
 import { useUIStore } from '@/lib/store/ui';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 interface HeaderProps {
   variant?: 'default' | 'transparent';
@@ -91,6 +92,9 @@ export function Header({ variant = 'default' }: HeaderProps) {
 
           {/* Action Icons */}
           <div className="flex items-center space-x-2">
+            {/* Theme Toggle */}
+            <ThemeToggle />
+
             {/* Search */}
             <div className="relative">
               {isSearchOpen ? (
