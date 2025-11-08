@@ -8,18 +8,24 @@ datasource db {
 }
 
 model User {
-  id        String          @id @default(cuid())
-  email     String          @unique
-  name      String?
-  password  String
-  phone     String?
-  role      UserRole        @default(CUSTOMER)
-  isActive  Boolean         @default(true)
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
-  addresses Address[]
-  orders    Order[]
-  reviews   ProductReview[]
+  id                 String              @id @default(cuid())
+  email              String              @unique
+  name               String?
+  password           String
+  phone              String?
+  role               UserRole            @default(CUSTOMER)
+  isActive           Boolean             @default(true)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  addresses          Address[]
+  orders             Order[]
+  reviews            ProductReview[]
+  returns            Return[]
+  warranties         Warranty[]
+  quotes             Quote[]
+  giftCards          GiftCard[]
+  orderNotes         OrderNote[]
+  productComparisons ProductComparison[]
 
   @@map("users")
 }
@@ -153,6 +159,8 @@ model Product {
   productTags    ProductTag[]
   category       Category           @relation(fields: [categoryId], references: [id])
   brand          Brand?             @relation(fields: [brandId], references: [id])
+  warranties     Warranty[]
+  stockAlerts    StockAlert[]
 
   @@map("products")
 }
@@ -234,6 +242,9 @@ model Order {
   items           OrderItem[]
   user            User?         @relation(fields: [userId], references: [id])
   transactions    Transaction[]
+  returns         Return[]
+  warranties      Warranty[]
+  orderNotes      OrderNote[]
 
   @@map("orders")
 }
@@ -599,6 +610,71 @@ enum ProductType {
   CLASSIFIED
 }
 
+enum ReturnReason {
+  DEFECTIVE
+  WRONG_ITEM
+  NOT_AS_DESCRIBED
+  CHANGED_MIND
+  ARRIVED_LATE
+  DAMAGED
+  OTHER
+}
+
+enum ReturnStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  IN_TRANSIT
+  RECEIVED
+  COMPLETED
+  CANCELLED
+}
+
+enum RefundMethod {
+  ORIGINAL_PAYMENT
+  STORE_CREDIT
+  BANK_TRANSFER
+  GIFT_CARD
+}
+
+enum WarrantyStatus {
+  ACTIVE
+  EXPIRED
+  CLAIMED
+  VOID
+}
+
+enum ClaimStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  IN_REPAIR
+  COMPLETED
+}
+
+enum AlertStatus {
+  PENDING
+  NOTIFIED
+  CANCELLED
+}
+
+enum QuoteStatus {
+  PENDING
+  QUOTED
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  CONVERTED
+}
+
+enum GiftCardStatus {
+  ACTIVE
+  USED
+  EXPIRED
+  CANCELLED
+}
+
 enum CouponType {
   PERCENTAGE
   FIXED
@@ -891,6 +967,186 @@ model AdminPresence {
   @@index([isOnline])
   @@index([department])
   @@map("admin_presence")
+}
+
+model Return {
+  id           String       @id @default(cuid())
+  orderId      String
+  userId       String
+  returnNumber String       @unique
+  reason       ReturnReason
+  description  String?
+  items        Json // Array of {orderItemId, quantity, reason}
+  status       ReturnStatus @default(PENDING)
+  refundAmount Decimal      @db.Decimal(10, 2)
+  refundMethod RefundMethod @default(ORIGINAL_PAYMENT)
+  images       Json? // Array of image URLs showing product condition
+  adminNotes   String?
+  trackingCode String?
+  returnLabel  String? // URL to return shipping label
+  requestedAt  DateTime     @default(now())
+  approvedAt   DateTime?
+  completedAt  DateTime?
+  rejectedAt   DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  order        Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([orderId])
+  @@index([status])
+  @@map("returns")
+}
+
+model Warranty {
+  id             String          @id @default(cuid())
+  orderId        String
+  productId      String
+  userId         String
+  warrantyNumber String          @unique
+  purchaseDate   DateTime
+  warrantyPeriod Int // Warranty period in months
+  expiryDate     DateTime
+  status         WarrantyStatus  @default(ACTIVE)
+  documents      Json? // Array of warranty document URLs
+  registeredAt   DateTime        @default(now())
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  claims         WarrantyClaim[]
+  order          Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product        Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([productId])
+  @@index([status])
+  @@map("warranties")
+}
+
+model WarrantyClaim {
+  id          String      @id @default(cuid())
+  warrantyId  String
+  claimNumber String      @unique
+  issue       String
+  description String
+  images      Json? // Array of issue image URLs
+  status      ClaimStatus @default(SUBMITTED)
+  resolution  String?
+  adminNotes  String?
+  submittedAt DateTime    @default(now())
+  resolvedAt  DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  warranty    Warranty    @relation(fields: [warrantyId], references: [id], onDelete: Cascade)
+
+  @@index([warrantyId])
+  @@index([status])
+  @@map("warranty_claims")
+}
+
+model StockAlert {
+  id         String      @id @default(cuid())
+  productId  String
+  email      String
+  status     AlertStatus @default(PENDING)
+  notifiedAt DateTime?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([status])
+  @@map("stock_alerts")
+}
+
+model Quote {
+  id                 String      @id @default(cuid())
+  quoteNumber        String      @unique
+  userId             String?
+  email              String
+  name               String
+  phone              String?
+  company            String?
+  items              Json // Array of {productId, quantity, notes}
+  message            String?
+  status             QuoteStatus @default(PENDING)
+  quotedAmount       Decimal?    @db.Decimal(10, 2)
+  validUntil         DateTime?
+  adminNotes         String?
+  convertedToOrderId String?     @unique
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  user               User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([status])
+  @@map("quotes")
+}
+
+model GiftCard {
+  id             String                @id @default(cuid())
+  code           String                @unique
+  initialValue   Decimal               @db.Decimal(10, 2)
+  balance        Decimal               @db.Decimal(10, 2)
+  currency       String                @default("INR")
+  purchasedBy    String?
+  recipientEmail String?
+  recipientName  String?
+  message        String?
+  status         GiftCardStatus        @default(ACTIVE)
+  expiresAt      DateTime?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  purchaser      User?                 @relation(fields: [purchasedBy], references: [id], onDelete: SetNull)
+  transactions   GiftCardTransaction[]
+
+  @@index([code])
+  @@index([status])
+  @@map("gift_cards")
+}
+
+model GiftCardTransaction {
+  id         String   @id @default(cuid())
+  giftCardId String
+  orderId    String?
+  amount     Decimal  @db.Decimal(10, 2)
+  balance    Decimal  @db.Decimal(10, 2)
+  type       String // PURCHASE, REDEEM, REFUND
+  createdAt  DateTime @default(now())
+  giftCard   GiftCard @relation(fields: [giftCardId], references: [id], onDelete: Cascade)
+
+  @@index([giftCardId])
+  @@map("gift_card_transactions")
+}
+
+model OrderNote {
+  id         String   @id @default(cuid())
+  orderId    String
+  userId     String
+  note       String
+  isInternal Boolean  @default(false) // True = admin only, False = customer visible
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@map("order_notes")
+}
+
+model ProductComparison {
+  id         String   @id @default(cuid())
+  userId     String?
+  sessionId  String
+  productIds Json // Array of product IDs being compared
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([sessionId])
+  @@map("product_comparisons")
 }
 
 enum ChatStatus {

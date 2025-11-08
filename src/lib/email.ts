@@ -235,3 +235,290 @@ export async function sendOfflineMessageNotification(chatData: {
         return { success: false, error };
     }
 }
+
+/**
+ * Send stock alert notification
+ */
+export async function sendStockAlertNotification(email: string, productName: string, productUrl: string) {
+    const html = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <style>
+              ${getEmailStyles()}
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h2>🎉 Product Back in Stock!</h2>
+              </div>
+              <div class="content">
+                <h3>${productName}</h3>
+                <p>Great news! The product you wanted is now back in stock.</p>
+                <p><strong>Don't wait too long - stock is limited!</strong></p>
+                <a href="${productUrl}" class="button">View Product →</a>
+              </div>
+              <div class="footer">
+                <p>Green Energy Solutions</p>
+                <p>You received this because you signed up for stock alerts.</p>
+              </div>
+            </div>
+          </body>
+        </html>
+    `;
+
+    return sendEmail({
+        to: email,
+        subject: `${productName} is back in stock! 🎉`,
+        html,
+    });
+}
+
+/**
+ * Send order status update notification
+ */
+export async function sendOrderStatusNotification(
+    email: string,
+    orderNumber: string,
+    status: string,
+    customerName: string,
+    trackingCode?: string
+) {
+    const statusMessages: Record<string, { title: string; message: string }> = {
+        PROCESSING: {
+            title: 'Order Confirmed',
+            message: 'Your order has been confirmed and is being prepared for shipment.',
+        },
+        SHIPPED: {
+            title: 'Order Shipped',
+            message: 'Great news! Your order has been shipped and is on its way to you.',
+        },
+        DELIVERED: {
+            title: 'Order Delivered',
+            message: 'Your order has been successfully delivered. We hope you enjoy your purchase!',
+        },
+        CANCELLED: {
+            title: 'Order Cancelled',
+            message: 'Your order has been cancelled as requested.',
+        },
+        REFUNDED: {
+            title: 'Order Refunded',
+            message: 'Your refund has been processed successfully.',
+        },
+    };
+
+    const statusInfo = statusMessages[status] || {
+        title: 'Order Update',
+        message: 'Your order status has been updated.'
+    };
+
+    const html = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <style>
+              ${getEmailStyles()}
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h2>${statusInfo.title}</h2>
+                <p>Order #${orderNumber}</p>
+              </div>
+              <div class="content">
+                <p>Hi ${customerName},</p>
+                <p>${statusInfo.message}</p>
+                <div class="message-box">
+                  <p><strong>Order Number:</strong> ${orderNumber}</p>
+                  <p><strong>Status:</strong> ${status}</p>
+                  ${trackingCode ? `<p><strong>Tracking Code:</strong> ${trackingCode}</p>` : ''}
+                </div>
+                <a href="${process.env.NEXT_PUBLIC_APP_URL}/dashboard" class="button">
+                  View Order Details →
+                </a>
+              </div>
+              <div class="footer">
+                <p>Green Energy Solutions</p>
+              </div>
+            </div>
+          </body>
+        </html>
+    `;
+
+    return sendEmail({
+        to: email,
+        subject: `${statusInfo.title} - Order #${orderNumber}`,
+        html,
+    });
+}
+
+/**
+ * Send warranty claim update notification
+ */
+export async function sendWarrantyClaimNotification(
+    email: string,
+    claimNumber: string,
+    status: string,
+    customerName: string,
+    productName: string,
+    resolution?: string
+) {
+    const html = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <style>
+              ${getEmailStyles()}
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h2>Warranty Claim Update</h2>
+                <p>Claim #${claimNumber}</p>
+              </div>
+              <div class="content">
+                <p>Hi ${customerName},</p>
+                <p>We wanted to update you on the status of your warranty claim.</p>
+                <div class="message-box">
+                  <p><strong>Claim Number:</strong> ${claimNumber}</p>
+                  <p><strong>Product:</strong> ${productName}</p>
+                  <p><strong>Status:</strong> ${status}</p>
+                  ${resolution ? `<p><strong>Resolution:</strong> ${resolution}</p>` : ''}
+                </div>
+                <a href="${process.env.NEXT_PUBLIC_APP_URL}/account/warranties" class="button">
+                  View Claim Details →
+                </a>
+              </div>
+              <div class="footer">
+                <p>Green Energy Solutions</p>
+              </div>
+            </div>
+          </body>
+        </html>
+    `;
+
+    return sendEmail({
+        to: email,
+        subject: `Warranty Claim Update - ${claimNumber}`,
+        html,
+    });
+}
+
+/**
+ * Send quote response notification
+ */
+export async function sendQuoteResponseNotification(
+    email: string,
+    quoteNumber: string,
+    customerName: string,
+    quotedAmount: number,
+    validUntil: string
+) {
+    const html = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <style>
+              ${getEmailStyles()}
+              .amount { 
+                font-size: 32px; 
+                color: #3b82f6; 
+                font-weight: bold; 
+                text-align: center; 
+                margin: 20px 0; 
+              }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h2>Your Custom Quote is Ready</h2>
+                <p>Quote #${quoteNumber}</p>
+              </div>
+              <div class="content">
+                <p>Hi ${customerName},</p>
+                <p>Thank you for your quote request. We're pleased to provide you with the following quote:</p>
+                <div class="amount">₹${quotedAmount.toLocaleString()}</div>
+                <div class="message-box">
+                  <p><strong>Quote Number:</strong> ${quoteNumber}</p>
+                  <p><strong>Valid Until:</strong> ${new Date(validUntil).toLocaleDateString()}</p>
+                </div>
+                <p>This quote is valid until the date mentioned above.</p>
+                <a href="${process.env.NEXT_PUBLIC_APP_URL}/quote" class="button">
+                  View Quote Details →
+                </a>
+              </div>
+              <div class="footer">
+                <p>Green Energy Solutions</p>
+              </div>
+            </div>
+          </body>
+        </html>
+    `;
+
+    return sendEmail({
+        to: email,
+        subject: `Your Quote is Ready - ${quoteNumber}`,
+        html,
+    });
+}
+
+/**
+ * Send return approved notification
+ */
+export async function sendReturnApprovedNotification(
+    email: string,
+    returnNumber: string,
+    orderNumber: string,
+    customerName: string,
+    refundAmount: number
+) {
+    const html = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="utf-8">
+            <style>
+              ${getEmailStyles()}
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <h2>Return Approved</h2>
+                <p>Return #${returnNumber}</p>
+              </div>
+              <div class="content">
+                <p>Hi ${customerName},</p>
+                <p>Your return request has been approved!</p>
+                <div class="message-box">
+                  <p><strong>Return Number:</strong> ${returnNumber}</p>
+                  <p><strong>Order Number:</strong> ${orderNumber}</p>
+                  <p><strong>Refund Amount:</strong> ₹${refundAmount.toFixed(2)}</p>
+                </div>
+                <p>Please ship the items back to us. Once we receive and inspect the items, your refund will be processed.</p>
+                <a href="${process.env.NEXT_PUBLIC_APP_URL}/account/returns" class="button">
+                  View Return Details →
+                </a>
+              </div>
+              <div class="footer">
+                <p>Green Energy Solutions</p>
+              </div>
+            </div>
+          </body>
+        </html>
+    `;
+
+    return sendEmail({
+        to: email,
+        subject: `Return Approved - ${returnNumber}`,
+        html,
+    });
+}
