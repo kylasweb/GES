@@ -63,6 +63,11 @@ export function useAuth(): AuthContextType {
     const data = await response.json();
     console.log('[Auth] Login successful:', data);
 
+    // Store token in localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('token', data.token);
+    }
+
     setState({
       user: data.user,
       token: data.token,
@@ -92,6 +97,12 @@ export function useAuth(): AuthContextType {
     }
 
     const responseData = await response.json();
+
+    // Store token in localStorage
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('token', responseData.token);
+    }
+
     setState({
       user: responseData.user,
       token: responseData.token,
@@ -149,11 +160,29 @@ export function useAuth(): AuthContextType {
 
   const refreshUser = async () => {
     try {
-      const response = await fetch('/api/v1/auth/me');
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+
+      if (!token) {
+        setState({
+          user: null,
+          token: null,
+          isLoading: false,
+          isAuthenticated: false,
+        });
+        return;
+      }
+
+      const response = await fetch('/api/v1/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
 
       if (!response.ok) {
         if (response.status === 401) {
-          // Token is invalid or not present (expected on initial load)
+          // Token is invalid, clear it
+          localStorage.removeItem('token');
+          useAuthStore.getState().logout();
           setState({
             user: null,
             token: null,
@@ -167,14 +196,14 @@ export function useAuth(): AuthContextType {
       const data = await response.json();
       setState({
         user: data.user,
-        token: data.token,
+        token: token,
         isLoading: false,
         isAuthenticated: true,
       });
 
       // Also update the Zustand store
       useAuthStore.getState().setUser(data.user);
-      useAuthStore.getState().setToken(data.token);
+      useAuthStore.getState().setToken(token);
     } catch (error) {
       // Silently handle errors on initial auth check
       setState({

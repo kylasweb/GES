@@ -1,6 +1,7 @@
 'use client';
 
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { AuthUser } from '@/lib/auth';
 
 interface AuthStore {
@@ -13,12 +14,35 @@ interface AuthStore {
     logout: () => void;
 }
 
-export const useAuthStore = create<AuthStore>((set) => ({
-    user: null,
-    token: null,
-    isLoading: true,
-    setUser: (user) => set({ user, isLoading: false }),
-    setToken: (token) => set({ token }),
-    setLoading: (isLoading) => set({ isLoading }),
-    logout: () => set({ user: null, token: null, isLoading: false }),
-}));
+export const useAuthStore = create<AuthStore>()(
+    persist(
+        (set) => ({
+            user: null,
+            token: null,
+            isLoading: true,
+            setUser: (user) => set({ user, isLoading: false }),
+            setToken: (token) => {
+                set({ token });
+                // Also store in localStorage for API calls
+                if (typeof window !== 'undefined') {
+                    if (token) {
+                        localStorage.setItem('token', token);
+                    } else {
+                        localStorage.removeItem('token');
+                    }
+                }
+            },
+            setLoading: (isLoading) => set({ isLoading }),
+            logout: () => {
+                set({ user: null, token: null, isLoading: false });
+                if (typeof window !== 'undefined') {
+                    localStorage.removeItem('token');
+                }
+            },
+        }),
+        {
+            name: 'auth-storage',
+            storage: createJSONStorage(() => localStorage),
+        }
+    )
+);
