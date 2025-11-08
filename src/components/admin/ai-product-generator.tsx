@@ -8,8 +8,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
-import { Wand2, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import { Wand2, Loader2, CheckCircle, AlertCircle, Image as ImageIcon, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
 
 declare global {
     interface Window {
@@ -57,13 +58,66 @@ export function AIProductGenerator({
     const [selectedBrand, setSelectedBrand] = useState('');
     const [additionalInfo, setAdditionalInfo] = useState('');
     const [generatedProduct, setGeneratedProduct] = useState<any>(null);
-    const [step, setStep] = useState<'input' | 'generating' | 'review'>('input');
+    const [step, setStep] = useState<'input' | 'generating' | 'generating-images' | 'review'>('input');
+    const [generatedImages, setGeneratedImages] = useState<string[]>([]);
+    const [imageGenerationEnabled, setImageGenerationEnabled] = useState(true);
 
     const initPuter = () => {
         if (typeof window !== 'undefined' && !window.puter) {
             const script = document.createElement('script');
             script.src = 'https://js.puter.com/v2/';
             document.head.appendChild(script);
+        }
+    };
+
+    const generateProductImages = async (productData: any) => {
+        setStep('generating-images');
+
+        try {
+            const images: string[] = [];
+            const imageCount = 3; // Generate 3 images
+
+            // Create image prompts based on product
+            const basePrompt = `Professional product photography of ${productData.name}, ${productData.shortDescription || productData.shortDesc}. High quality, well-lit, white background, commercial photography style`;
+
+            const prompts = [
+                `${basePrompt}, front view, centered`,
+                `${basePrompt}, angled view, 45 degrees`,
+                `${basePrompt}, detail shot, close-up`
+            ];
+
+            for (let i = 0; i < imageCount; i++) {
+                try {
+                    const imageUrl = await window.puter.ai.txt2img(prompts[i]);
+                    if (imageUrl) {
+                        images.push(imageUrl);
+                    }
+                } catch (error) {
+                    console.error(`Error generating image ${i + 1}:`, error);
+                }
+            }
+
+            setGeneratedImages(images);
+
+            if (images.length > 0) {
+                toast({
+                    title: 'Images Generated',
+                    description: `Generated ${images.length} product images`,
+                });
+            } else {
+                toast({
+                    title: 'Image Generation Failed',
+                    description: 'Could not generate images. You can add them manually later.',
+                    variant: 'destructive',
+                });
+            }
+        } catch (error) {
+            console.error('Image generation error:', error);
+            toast({
+                title: 'Image Generation Failed',
+                description: 'Could not generate images. You can add them manually later.',
+                variant: 'destructive',
+            });
         }
     };
 
@@ -165,6 +219,11 @@ Make it professional, accurate, and tailored to the ${industry} industry.`;
                 title: 'Success',
                 description: 'Product details generated successfully!',
             });
+
+            // Check if image generation is enabled
+            if (imageGenerationEnabled) {
+                await generateProductImages(productData);
+            }
         } catch (error) {
             console.error('AI Generation error:', error);
             toast({
@@ -179,7 +238,12 @@ Make it professional, accurate, and tailored to the ${industry} industry.`;
     };
 
     const handleConfirm = () => {
-        onProductGenerated(generatedProduct);
+        // Include generated images in the product data
+        const productWithImages = {
+            ...generatedProduct,
+            images: generatedImages
+        };
+        onProductGenerated(productWithImages);
         handleReset();
         onClose();
     };
@@ -191,6 +255,7 @@ Make it professional, accurate, and tailored to the ${industry} industry.`;
         setSelectedBrand('');
         setAdditionalInfo('');
         setGeneratedProduct(null);
+        setGeneratedImages([]);
         setStep('input');
     };
 
@@ -279,6 +344,21 @@ Make it professional, accurate, and tailored to the ${industry} industry.`;
                                 rows={3}
                             />
                         </div>
+
+                        <div className="flex items-center space-x-2 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                            <input
+                                type="checkbox"
+                                id="generateImages"
+                                checked={imageGenerationEnabled}
+                                onChange={(e) => setImageGenerationEnabled(e.target.checked)}
+                                className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
+                            />
+                            <Label htmlFor="generateImages" className="flex items-center gap-2 cursor-pointer">
+                                <Sparkles className="w-4 h-4 text-purple-600" />
+                                <span>Generate product images with AI (3 images)</span>
+                                <Badge variant="secondary" className="ml-2">New</Badge>
+                            </Label>
+                        </div>
                     </div>
                 )}
 
@@ -290,12 +370,57 @@ Make it professional, accurate, and tailored to the ${industry} industry.`;
                     </div>
                 )}
 
+                {step === 'generating-images' && (
+                    <div className="py-12 text-center space-y-4">
+                        <div className="relative">
+                            <Loader2 className="w-16 h-16 animate-spin mx-auto text-purple-600" />
+                            <ImageIcon className="w-8 h-8 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-purple-400" />
+                        </div>
+                        <h3 className="text-xl font-semibold">Generating Product Images...</h3>
+                        <p className="text-gray-600">Creating professional product photography with AI</p>
+                        <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
+                            <Sparkles className="w-4 h-4" />
+                            <span>This may take a moment</span>
+                        </div>
+                    </div>
+                )}
+
                 {step === 'review' && generatedProduct && (
                     <div className="space-y-4 py-4">
                         <div className="flex items-center space-x-2 text-green-600 mb-4">
                             <CheckCircle className="w-5 h-5" />
                             <span className="font-medium">Product details generated successfully!</span>
                         </div>
+
+                        {/* Generated Images */}
+                        {generatedImages.length > 0 && (
+                            <Card className="bg-purple-50 border-purple-200">
+                                <CardContent className="pt-6">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <ImageIcon className="w-5 h-5 text-purple-600" />
+                                        <Label className="text-sm text-purple-900 font-semibold">
+                                            Generated Images ({generatedImages.length})
+                                        </Label>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-3">
+                                        {generatedImages.map((image, idx) => (
+                                            <div key={idx} className="relative group">
+                                                <img
+                                                    src={image}
+                                                    alt={`Generated ${idx + 1}`}
+                                                    className="w-full h-32 object-cover rounded-lg border-2 border-purple-300"
+                                                />
+                                                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all rounded-lg flex items-center justify-center">
+                                                    <Badge className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        Image {idx + 1}
+                                                    </Badge>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
 
                         <Card>
                             <CardContent className="pt-6 space-y-4">

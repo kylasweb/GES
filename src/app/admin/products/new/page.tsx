@@ -141,14 +141,18 @@ export default function NewProductPage() {
                     tags: aiProduct.tags || prev.tags,
                     seoTitle: aiProduct.seoTitle || prev.seoTitle,
                     seoDesc: aiProduct.seoDesc || aiProduct.seoDescription || prev.seoDesc,
-                    features: aiProduct.features || prev.features
+                    features: aiProduct.features || prev.features,
+                    images: aiProduct.images || prev.images // Add AI-generated images
                 }));
                 setAiGenerated(true);
                 sessionStorage.removeItem('aiGeneratedProduct');
 
+                const imageCount = aiProduct.images?.length || 0;
                 toast({
                     title: 'AI Product Loaded',
-                    description: 'Product details have been auto-filled. Review and add images to complete.',
+                    description: imageCount > 0
+                        ? `Product details and ${imageCount} images have been auto-filled.`
+                        : 'Product details have been auto-filled. Add images to complete.',
                 });
             } catch (err) {
                 console.error('Failed to parse AI product data:', err);
