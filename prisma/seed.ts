@@ -600,8 +600,10 @@ async function main() {
   ];
 
   for (const dept of departments) {
-    await prisma.chatDepartment.create({
-      data: dept,
+    await prisma.chatDepartment.upsert({
+      where: { slug: dept.slug },
+      update: {},
+      create: dept,
     });
   }
 

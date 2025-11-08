@@ -16,6 +16,14 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import {
+    BarChart3,
+    TrendingUp,
+    Users,
+    MessageSquare,
+    Star,
+    Clock,
+} from 'lucide-react';
 
 export default function AdminChatPage() {
     const [chats, setChats] = useState<any[]>([]);
@@ -29,10 +37,22 @@ export default function AdminChatPage() {
         category: '',
     });
     const [loading, setLoading] = useState(false);
+    const [analytics, setAnalytics] = useState<any>(null);
+    const [departments, setDepartments] = useState<any[]>([]);
+    const [newDepartment, setNewDepartment] = useState({
+        name: '',
+        slug: '',
+        description: '',
+        email: '',
+        isActive: true,
+        sortOrder: 0,
+    });
 
     useEffect(() => {
         fetchChats();
         fetchKnowledgeBase();
+        fetchAnalytics();
+        fetchDepartments();
     }, []);
 
     const fetchChats = async (status?: string) => {
@@ -70,6 +90,40 @@ export default function AdminChatPage() {
             }
         } catch (error) {
             console.error('Failed to fetch knowledge base:', error);
+        }
+    };
+
+    const fetchAnalytics = async (days = 7) => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`/api/v1/admin/chat/analytics?days=${days}`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            const data = await res.json();
+            if (data.success) {
+                setAnalytics(data.data);
+            }
+        } catch (error) {
+            console.error('Failed to fetch analytics:', error);
+        }
+    };
+
+    const fetchDepartments = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('/api/v1/admin/chat/departments', {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            const data = await res.json();
+            if (data.success) {
+                setDepartments(data.data.departments);
+            }
+        } catch (error) {
+            console.error('Failed to fetch departments:', error);
         }
     };
 
@@ -201,6 +255,64 @@ export default function AdminChatPage() {
         }
     };
 
+    const createDepartment = async () => {
+        if (!newDepartment.name || !newDepartment.slug) {
+            toast.error('Name and slug are required');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch('/api/v1/admin/chat/departments', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify(newDepartment),
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                toast.success('Department created');
+                fetchDepartments();
+                setNewDepartment({
+                    name: '',
+                    slug: '',
+                    description: '',
+                    email: '',
+                    isActive: true,
+                    sortOrder: 0,
+                });
+            }
+        } catch (error) {
+            toast.error('Failed to create department');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const deleteDepartment = async (id: string) => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`/api/v1/admin/chat/departments?id=${id}`, {
+                method: 'DELETE',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                toast.success('Department deleted');
+                fetchDepartments();
+            }
+        } catch (error) {
+            toast.error('Failed to delete department');
+        }
+    };
+
     const getStatusBadge = (status: string) => {
         const colors: any = {
             ACTIVE: 'bg-green-500',
@@ -219,6 +331,8 @@ export default function AdminChatPage() {
             <Tabs defaultValue="chats" className="space-y-4">
                 <TabsList>
                     <TabsTrigger value="chats">Active Chats</TabsTrigger>
+                    <TabsTrigger value="analytics">Analytics</TabsTrigger>
+                    <TabsTrigger value="departments">Departments</TabsTrigger>
                     <TabsTrigger value="knowledge">Knowledge Base</TabsTrigger>
                 </TabsList>
 
@@ -304,8 +418,8 @@ export default function AdminChatPage() {
                                                 >
                                                     <div
                                                         className={`max-w-xs p-3 rounded-lg ${msg.senderType === 'ADMIN'
-                                                                ? 'bg-primary text-white'
-                                                                : 'bg-gray-100'
+                                                            ? 'bg-primary text-white'
+                                                            : 'bg-gray-100'
                                                             }`}
                                                     >
                                                         <p className="text-sm">{msg.message}</p>
@@ -438,6 +552,296 @@ export default function AdminChatPage() {
                                             <span>👍 {article.helpful}</span>
                                             <span>👎 {article.notHelpful}</span>
                                         </div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                        </div>
+                    </div>
+                </TabsContent>
+
+                {/* Analytics Tab */}
+                <TabsContent value="analytics">
+                    <div className="space-y-6">
+                        {analytics && (
+                            <>
+                                {/* Summary Cards */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                    <Card>
+                                        <CardHeader className="pb-2">
+                                            <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                                                <MessageSquare className="w-4 h-4" />
+                                                Total Chats
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="text-2xl font-bold">{analytics.summary.totalChats}</div>
+                                            <p className="text-xs text-gray-500 mt-1">
+                                                {analytics.summary.activeChats} active
+                                            </p>
+                                        </CardContent>
+                                    </Card>
+
+                                    <Card>
+                                        <CardHeader className="pb-2">
+                                            <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                                                <TrendingUp className="w-4 h-4" />
+                                                Resolution Rate
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="text-2xl font-bold">{analytics.summary.resolutionRate}%</div>
+                                            <p className="text-xs text-gray-500 mt-1">
+                                                {analytics.summary.resolvedChats} resolved
+                                            </p>
+                                        </CardContent>
+                                    </Card>
+
+                                    <Card>
+                                        <CardHeader className="pb-2">
+                                            <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                                                <Star className="w-4 h-4" />
+                                                Avg Rating
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="text-2xl font-bold">{analytics.summary.avgRating}/5</div>
+                                            <div className="flex gap-1 mt-1">
+                                                {[...Array(5)].map((_, i) => (
+                                                    <Star
+                                                        key={i}
+                                                        className={`w-3 h-3 ${i < Math.round(analytics.summary.avgRating)
+                                                                ? 'fill-yellow-400 text-yellow-400'
+                                                                : 'text-gray-300'
+                                                            }`}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+
+                                    <Card>
+                                        <CardHeader className="pb-2">
+                                            <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                                                <Clock className="w-4 h-4" />
+                                                Avg Response Time
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="text-2xl font-bold">
+                                                {Math.round(analytics.summary.avgResponseTime / 60)}m
+                                            </div>
+                                            <p className="text-xs text-gray-500 mt-1">
+                                                {analytics.summary.avgResponseTime}s
+                                            </p>
+                                        </CardContent>
+                                    </Card>
+                                </div>
+
+                                {/* Department Stats */}
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Department Statistics</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                            {Object.entries(analytics.departmentStats).map(([dept, stats]: [string, any]) => (
+                                                <div key={dept} className="border rounded p-3">
+                                                    <p className="text-sm font-medium capitalize">{dept}</p>
+                                                    <p className="text-2xl font-bold mt-1">{stats.count}</p>
+                                                    <p className="text-xs text-gray-500">
+                                                        {stats.resolved} resolved
+                                                    </p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
+                                {/* Rating Distribution */}
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Rating Distribution</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="space-y-2">
+                                            {[5, 4, 3, 2, 1].map(rating => (
+                                                <div key={rating} className="flex items-center gap-3">
+                                                    <span className="text-sm font-medium w-12">{rating} stars</span>
+                                                    <div className="flex-1 bg-gray-200 rounded-full h-4">
+                                                        <div
+                                                            className="bg-primary h-4 rounded-full"
+                                                            style={{
+                                                                width: `${((analytics.ratingDistribution[rating] || 0) /
+                                                                        analytics.summary.totalChats) *
+                                                                    100
+                                                                    }%`,
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <span className="text-sm text-gray-600 w-12">
+                                                        {analytics.ratingDistribution[rating] || 0}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+
+                                {/* Top Rated Chats */}
+                                {analytics.topRatedChats.length > 0 && (
+                                    <Card>
+                                        <CardHeader>
+                                            <CardTitle>Top Rated Conversations</CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="space-y-3">
+                                                {analytics.topRatedChats.map((chat: any) => (
+                                                    <div key={chat.sessionId} className="border rounded p-3">
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="font-medium">{chat.visitorName}</span>
+                                                            <div className="flex gap-1">
+                                                                {[...Array(5)].map((_, i) => (
+                                                                    <Star
+                                                                        key={i}
+                                                                        className={`w-3 h-3 ${i < chat.rating
+                                                                                ? 'fill-yellow-400 text-yellow-400'
+                                                                                : 'text-gray-300'
+                                                                            }`}
+                                                                    />
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                        {chat.ratingComment && (
+                                                            <p className="text-sm text-gray-600 mt-2">
+                                                                "{chat.ratingComment}"
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                )}
+                            </>
+                        )}
+                    </div>
+                </TabsContent>
+
+                {/* Departments Tab */}
+                <TabsContent value="departments">
+                    <div className="space-y-6">
+                        {/* Create Department Form */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Create New Department</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <Label htmlFor="dept-name">Name</Label>
+                                        <Input
+                                            id="dept-name"
+                                            placeholder="Technical Support"
+                                            value={newDepartment.name}
+                                            onChange={(e) =>
+                                                setNewDepartment({ ...newDepartment, name: e.target.value })
+                                            }
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="dept-slug">Slug</Label>
+                                        <Input
+                                            id="dept-slug"
+                                            placeholder="technical"
+                                            value={newDepartment.slug}
+                                            onChange={(e) =>
+                                                setNewDepartment({ ...newDepartment, slug: e.target.value })
+                                            }
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="dept-email">Email</Label>
+                                        <Input
+                                            id="dept-email"
+                                            type="email"
+                                            placeholder="tech@company.com"
+                                            value={newDepartment.email}
+                                            onChange={(e) =>
+                                                setNewDepartment({ ...newDepartment, email: e.target.value })
+                                            }
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="dept-sort">Sort Order</Label>
+                                        <Input
+                                            id="dept-sort"
+                                            type="number"
+                                            placeholder="0"
+                                            value={newDepartment.sortOrder}
+                                            onChange={(e) =>
+                                                setNewDepartment({
+                                                    ...newDepartment,
+                                                    sortOrder: parseInt(e.target.value) || 0,
+                                                })
+                                            }
+                                        />
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <Label htmlFor="dept-desc">Description</Label>
+                                        <Textarea
+                                            id="dept-desc"
+                                            placeholder="Technical support for installation and troubleshooting"
+                                            value={newDepartment.description}
+                                            onChange={(e) =>
+                                                setNewDepartment({
+                                                    ...newDepartment,
+                                                    description: e.target.value,
+                                                })
+                                            }
+                                        />
+                                    </div>
+                                </div>
+                                <Button onClick={createDepartment} disabled={loading} className="mt-4">
+                                    Create Department
+                                </Button>
+                            </CardContent>
+                        </Card>
+
+                        {/* Departments List */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {departments.map((dept) => (
+                                <Card key={dept.id}>
+                                    <CardHeader>
+                                        <div className="flex items-center justify-between">
+                                            <CardTitle className="text-lg">{dept.name}</CardTitle>
+                                            <Badge variant={dept.isActive ? 'default' : 'secondary'}>
+                                                {dept.isActive ? 'Active' : 'Inactive'}
+                                            </Badge>
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <p className="text-sm text-gray-600 mb-2">{dept.description}</p>
+                                        <div className="space-y-1 text-sm">
+                                            <p>
+                                                <span className="font-medium">Slug:</span> {dept.slug}
+                                            </p>
+                                            {dept.email && (
+                                                <p>
+                                                    <span className="font-medium">Email:</span> {dept.email}
+                                                </p>
+                                            )}
+                                            <p>
+                                                <span className="font-medium">Sort Order:</span> {dept.sortOrder}
+                                            </p>
+                                        </div>
+                                        <Button
+                                            variant="destructive"
+                                            size="sm"
+                                            className="mt-3"
+                                            onClick={() => deleteDepartment(dept.id)}
+                                        >
+                                            Delete
+                                        </Button>
                                     </CardContent>
                                 </Card>
                             ))}
