@@ -28,6 +28,8 @@ import { useAuthStore } from '@/lib/store/auth';
 import Link from 'next/link';
 import { AdminSidebar } from '@/components/admin/sidebar';
 import { AITools } from '@/components/admin/ai-tools';
+import { AIProductGenerator } from '@/components/admin/ai-product-generator';
+import { useRouter } from 'next/navigation';
 
 interface Product {
     id: string;
@@ -45,14 +47,28 @@ interface Product {
     createdAt: string;
 }
 
+interface Category {
+    id: string;
+    name: string;
+}
+
+interface Brand {
+    id: string;
+    name: string;
+}
+
 export default function ProductsManagementPage() {
     const { token } = useAuthStore();
+    const router = useRouter();
     const [isLoading, setIsLoading] = useState(true);
     const [products, setProducts] = useState<Product[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [brands, setBrands] = useState<Brand[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [isAIToolsOpen, setIsAIToolsOpen] = useState(false);
+    const [isAIGeneratorOpen, setIsAIGeneratorOpen] = useState(false);
     const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
     const [isBulkMode, setIsBulkMode] = useState(false);
     const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
@@ -61,6 +77,8 @@ export default function ProductsManagementPage() {
 
     useEffect(() => {
         fetchProducts();
+        fetchCategories();
+        fetchBrands();
     }, []);
 
     const fetchProducts = async () => {
@@ -81,6 +99,38 @@ export default function ProductsManagementPage() {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const fetchCategories = async () => {
+        try {
+            const response = await fetch('/api/v1/categories');
+            const data = await response.json();
+            if (data.success) {
+                setCategories(data.data);
+            }
+        } catch (err) {
+            console.error('Failed to fetch categories');
+        }
+    };
+
+    const fetchBrands = async () => {
+        try {
+            const response = await fetch('/api/v1/brands', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+            if (data.success) {
+                setBrands(data.data);
+            }
+        } catch (err) {
+            console.error('Failed to fetch brands');
+        }
+    };
+
+    const handleAIProductGenerated = (product: any) => {
+        // Store the AI-generated product in session storage to pass to the new product page
+        sessionStorage.setItem('aiGeneratedProduct', JSON.stringify(product));
+        router.push('/admin/products/new');
     };
 
     const filteredProducts = products.filter(product =>
@@ -361,6 +411,14 @@ export default function ProductsManagementPage() {
                         <div className="flex items-center space-x-3">
                             <Button
                                 variant="outline"
+                                onClick={() => setIsAIGeneratorOpen(true)}
+                                className="flex items-center bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
+                            >
+                                <Sparkles className="w-4 h-4 mr-2" />
+                                Generate with AI
+                            </Button>
+                            <Button
+                                variant="outline"
                                 onClick={handleDownloadTemplate}
                                 className="flex items-center"
                             >
@@ -624,6 +682,15 @@ export default function ProductsManagementPage() {
                     )}
                 </DialogContent>
             </Dialog>
+
+            {/* AI Product Generator */}
+            <AIProductGenerator
+                isOpen={isAIGeneratorOpen}
+                onClose={() => setIsAIGeneratorOpen(false)}
+                onProductGenerated={handleAIProductGenerated}
+                categories={categories}
+                brands={brands}
+            />
 
             {/* Bulk Upload Dialog */}
             <Dialog open={isBulkUploadOpen} onOpenChange={setIsBulkUploadOpen}>

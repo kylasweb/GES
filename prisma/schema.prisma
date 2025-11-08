@@ -118,39 +118,41 @@ model ProductAttributeValue {
 }
 
 model Product {
-  id            String             @id @default(cuid())
-  name          String
-  slug          String             @unique
-  description   String
-  shortDesc     String?
-  sku           String             @unique
-  price         Decimal            @db.Decimal(10, 2)
-  comparePrice  Decimal?           @db.Decimal(10, 2)
-  costPrice     Decimal?           @db.Decimal(10, 2)
-  trackQuantity Boolean            @default(true)
-  quantity      Int                @default(0)
-  weight        Decimal?           @db.Decimal(8, 3)
-  dimensions    Json?
-  images        Json
-  videos        Json?
-  tags          Json?
-  type          ProductType        @default(SIMPLE)
-  isActive      Boolean            @default(true)
-  featured      Boolean            @default(false)
-  seoTitle      String?
-  seoDesc       String?
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
-  categoryId    String
-  brandId       String?
-  orderItems    OrderItem[]
-  inventory     ProductInventory?
-  reviews       ProductReview[]
-  variations    ProductVariation[]
-  attributes    ProductAttribute[]
-  productTags   ProductTag[]
-  category      Category           @relation(fields: [categoryId], references: [id])
-  brand         Brand?             @relation(fields: [brandId], references: [id])
+  id             String             @id @default(cuid())
+  name           String
+  slug           String             @unique
+  description    String
+  shortDesc      String?
+  sku            String             @unique
+  price          Decimal            @db.Decimal(10, 2)
+  comparePrice   Decimal?           @db.Decimal(10, 2)
+  costPrice      Decimal?           @db.Decimal(10, 2)
+  trackQuantity  Boolean            @default(true)
+  quantity       Int                @default(0)
+  weight         Decimal?           @db.Decimal(8, 3)
+  dimensions     Json?
+  images         Json
+  videos         Json?
+  tags           Json?
+  customFields   Json? // Custom product fields (flexible key-value pairs)
+  specifications Json? // Product specifications/technical details
+  type           ProductType        @default(SIMPLE)
+  isActive       Boolean            @default(true)
+  featured       Boolean            @default(false)
+  seoTitle       String?
+  seoDesc        String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  categoryId     String
+  brandId        String?
+  orderItems     OrderItem[]
+  inventory      ProductInventory?
+  reviews        ProductReview[]
+  variations     ProductVariation[]
+  attributes     ProductAttribute[]
+  productTags    ProductTag[]
+  category       Category           @relation(fields: [categoryId], references: [id])
+  brand          Brand?             @relation(fields: [brandId], references: [id])
 
   @@map("products")
 }
@@ -634,4 +636,37 @@ enum TicketPriority {
   MEDIUM
   HIGH
   URGENT
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+  DOCUMENT
+  OTHER
+}
+
+model Media {
+  id           String    @id @default(cuid())
+  filename     String
+  originalName String
+  mimeType     String
+  size         Int
+  width        Int?
+  height       Int?
+  url          String
+  thumbnailUrl String?
+  alt          String?
+  caption      String?
+  type         MediaType @default(IMAGE)
+  folder       String?
+  tags         String[]
+  uploadedBy   String?
+  usageCount   Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([type])
+  @@index([folder])
+  @@index([createdAt])
+  @@map("media")
 }

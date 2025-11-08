@@ -23,7 +23,8 @@ import {
     Ticket,
     Mail,
     Zap,
-    Truck
+    Truck,
+    Image as ImageIcon
 } from 'lucide-react';
 import { useState } from 'react';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -65,6 +66,11 @@ const navigation = [
         name: 'Shipping',
         href: '/admin/shipping',
         icon: Truck,
+    },
+    {
+        name: 'Media',
+        href: '/admin/media',
+        icon: ImageIcon,
     },
     {
         name: 'Users',
