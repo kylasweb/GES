@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db as prisma } from '@/lib/db';
 import { verifyAuth } from '@/lib/auth';
+import { revalidatePath } from 'next/cache';
 
 // GET appearance settings
 export async function GET(request: NextRequest) {
@@ -102,6 +103,9 @@ export async function PUT(request: NextRequest) {
                 data: updateData
             });
         }
+
+        // Revalidate the public appearance API
+        revalidatePath('/api/v1/appearance');
 
         return NextResponse.json(settings);
     } catch (error) {

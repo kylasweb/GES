@@ -2,13 +2,15 @@
 
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { Header } from './header';
+import { DynamicHeader } from './DynamicHeader';
+import { DynamicFooter } from './DynamicFooter';
 import { BottomNavigation } from './bottom-navigation';
 import { useUIStore } from '@/lib/store/ui';
 
 interface ResponsiveLayoutProps {
     children: React.ReactNode;
     showHeader?: boolean;
+    showFooter?: boolean;
     showBottomNav?: boolean;
     headerVariant?: 'default' | 'transparent';
 }
@@ -16,6 +18,7 @@ interface ResponsiveLayoutProps {
 export function ResponsiveLayout({
     children,
     showHeader = true,
+    showFooter = true,
     showBottomNav = true,
     headerVariant = 'default'
 }: ResponsiveLayoutProps) {
@@ -48,10 +51,11 @@ export function ResponsiveLayout({
 
     return (
         <div className="min-h-screen flex flex-col">
-            {showHeader && <Header variant={headerVariant} />}
+            {showHeader && <DynamicHeader defaultStyle={headerVariant} />}
             <main className="flex-1">
                 {children}
             </main>
+            {showFooter && <DynamicFooter />}
             <BottomNavigation />
         </div>
     );
