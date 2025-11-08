@@ -118,23 +118,42 @@ export async function POST(request: NextRequest) {
       shortDesc: z.string().optional(),
       sku: z.string().min(1, 'SKU is required'),
       price: z.number().positive('Price must be positive'),
-      comparePrice: z.number().positive().optional(),
-      costPrice: z.number().positive().optional(),
-      trackQuantity: z.boolean().default(true),
-      quantity: z.number().int().min(0).default(0),
-      weight: z.number().positive().optional(),
+      comparePrice: z.number().positive().optional().nullable(),
+      costPrice: z.number().positive().optional().nullable(),
+      trackQuantity: z.boolean().optional().default(true),
+      quantity: z.number().int().min(0).optional().default(0),
+      weight: z.number().positive().optional().nullable(),
       dimensions: z.object({
         length: z.number().positive(),
         width: z.number().positive(),
         height: z.number().positive(),
-      }).optional(),
-      images: z.array(z.string().url()).default([]),
-      tags: z.array(z.string()).default([]),
+      }).optional().nullable(),
+      images: z.array(z.string()).default([]), // Allow non-URL strings for Cloudinary URLs
+      tags: z.union([z.array(z.string()), z.string()]).optional().transform(val => {
+        if (typeof val === 'string') return val.split(',').map(t => t.trim()).filter(Boolean);
+        return val || [];
+      }),
       isActive: z.boolean().default(true),
       featured: z.boolean().default(false),
-      seoTitle: z.string().optional(),
-      seoDesc: z.string().optional(),
+      seoTitle: z.string().optional().nullable(),
+      seoDesc: z.string().optional().nullable(),
       categoryId: z.string().min(1, 'Category is required'),
+      brandId: z.string().optional().nullable(),
+      type: z.string().optional().default('SIMPLE'),
+      specifications: z.record(z.string()).optional().nullable(),
+      customFields: z.record(z.string()).optional().nullable(),
+      // Accept inventory from form but extract values
+      inventory: z.object({
+        quantity: z.number().int().min(0),
+        trackQuantity: z.boolean(),
+      }).optional(),
+    }).transform(data => {
+      // If inventory object provided, use those values
+      if (data.inventory) {
+        data.quantity = data.inventory.quantity;
+        data.trackQuantity = data.inventory.trackQuantity;
+      }
+      return data;
     });
 
     const validatedData = productSchema.parse(body);
@@ -178,7 +197,25 @@ export async function POST(request: NextRequest) {
     // Create product
     const product = await db.product.create({
       data: {
-        ...validatedData,
+        name: validatedData.name,
+        slug: validatedData.slug,
+        description: validatedData.description,
+        shortDesc: validatedData.shortDesc,
+        sku: validatedData.sku,
+        price: validatedData.price,
+        comparePrice: validatedData.comparePrice,
+        costPrice: validatedData.costPrice,
+        weight: validatedData.weight,
+        dimensions: validatedData.dimensions,
+        images: validatedData.images,
+        tags: validatedData.tags,
+        isActive: validatedData.isActive,
+        featured: validatedData.featured,
+        seoTitle: validatedData.seoTitle,
+        seoDesc: validatedData.seoDesc,
+        categoryId: validatedData.categoryId,
+        specifications: validatedData.specifications,
+        customFields: validatedData.customFields,
         inventory: validatedData.trackQuantity ? {
           create: {
             quantity: validatedData.quantity,
