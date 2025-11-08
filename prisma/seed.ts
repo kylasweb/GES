@@ -368,6 +368,24 @@ async function main() {
     });
   }
 
+  // Create default site settings with appearance defaults
+  await prisma.siteSettings.upsert({
+    where: { id: 1 },
+    update: {},
+    create: {
+      headerStyle: 'default',
+      footerStyle: 'default',
+      menuStyle: 'default',
+      maintenanceMode: false,
+      config: {
+        siteName: 'Green Energy Solutions',
+        siteDescription: 'Leading provider of renewable energy solutions',
+        contactEmail: 'info@greenenergysolutions.in',
+        contactPhone: '+91 1234567890',
+      },
+    },
+  });
+
   console.log('Database seeded successfully!');
   console.log('\n=== ADMIN CREDENTIALS FOR TESTING ===');
   console.log('🔑 Super Admin:');

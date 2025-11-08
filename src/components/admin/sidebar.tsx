@@ -104,6 +104,7 @@ const navigation = [
         name: 'System',
         icon: Settings,
         submenu: [
+            { name: 'Appearance', href: '/admin/appearance' },
             { name: 'Feature Flags', href: '/admin/features' },
             { name: 'Templates', href: '/admin/templates' },
             { name: 'Versions', href: '/admin/versions' },
