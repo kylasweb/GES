@@ -97,7 +97,9 @@ export default function NewProductPage() {
         const fetchData = async () => {
             try {
                 const [categoriesRes, brandsRes] = await Promise.all([
-                    fetch('/api/v1/categories'),
+                    fetch('/api/v1/admin/categories', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    }),
                     fetch('/api/v1/admin/brands', {
                         headers: { 'Authorization': `Bearer ${token}` }
                     })

@@ -103,7 +103,9 @@ export default function ProductsManagementPage() {
 
     const fetchCategories = async () => {
         try {
-            const response = await fetch('/api/v1/categories');
+            const response = await fetch('/api/v1/admin/categories', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
             const data = await response.json();
             if (data.success) {
                 setCategories(data.data);
@@ -115,7 +117,7 @@ export default function ProductsManagementPage() {
 
     const fetchBrands = async () => {
         try {
-            const response = await fetch('/api/v1/brands', {
+            const response = await fetch('/api/v1/admin/brands', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();

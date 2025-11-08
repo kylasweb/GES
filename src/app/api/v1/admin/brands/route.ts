@@ -18,11 +18,11 @@ export async function GET(request: NextRequest) {
             },
         });
 
-        return NextResponse.json({ brands });
+        return NextResponse.json({ success: true, data: brands });
     } catch (error) {
         console.error('Get brands error:', error);
         return NextResponse.json(
-            { error: 'Internal server error' },
+            { success: false, error: 'Internal server error' },
             { status: 500 }
         );
     }
