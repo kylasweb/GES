@@ -44,6 +44,7 @@ const navigation = [
         submenu: [
             { name: 'All Products', href: '/admin/products' },
             { name: 'Add New', href: '/admin/products/new' },
+            { name: 'Bulk AI Generate', href: '/admin/bulk-generate' },
             { name: 'Brands', href: '/admin/brands' },
             { name: 'Attributes', href: '/admin/attributes' },
             { name: 'Tags', href: '/admin/tags' },

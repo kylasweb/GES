@@ -386,6 +386,98 @@ async function main() {
     },
   });
 
+  // Create landing page templates
+  const templates = [
+    {
+      name: 'Modern Eco',
+      description: 'Clean and modern template with gradient effects and smooth animations',
+      thumbnailUrl: '/templates/modern-eco.jpg',
+      previewUrl: '/templates/modern-eco/preview',
+      config: {
+        theme: 'modern',
+        colors: {
+          primary: '#10b981',
+          secondary: '#059669',
+          accent: '#f59e0b',
+        },
+        features: ['Hero Section', 'Product Grid', 'Testimonials', 'Newsletter'],
+      },
+      isActive: false,
+    },
+    {
+      name: 'Minimal Green',
+      description: 'Minimalist design focused on content and clarity',
+      thumbnailUrl: '/templates/minimal-green.jpg',
+      previewUrl: '/templates/minimal-green/preview',
+      config: {
+        theme: 'minimal',
+        colors: {
+          primary: '#22c55e',
+          secondary: '#16a34a',
+          accent: '#84cc16',
+        },
+        features: ['Clean Layout', 'Typography Focus', 'Fast Loading'],
+      },
+      isActive: false,
+    },
+    {
+      name: 'Corporate Pro',
+      description: 'Professional template for enterprise and B2B businesses',
+      thumbnailUrl: '/templates/corporate-pro.jpg',
+      previewUrl: '/templates/corporate-pro/preview',
+      config: {
+        theme: 'corporate',
+        colors: {
+          primary: '#0ea5e9',
+          secondary: '#0284c7',
+          accent: '#06b6d4',
+        },
+        features: ['Stats Section', 'Case Studies', 'Team Members', 'Contact Form'],
+      },
+      isActive: false,
+    },
+    {
+      name: 'Flipkart Style',
+      description: 'E-commerce focused template with deals, categories, and product grids',
+      thumbnailUrl: '/templates/flipkart.jpg',
+      previewUrl: '/templates/flipkart',
+      config: {
+        theme: 'ecommerce',
+        colors: {
+          primary: '#f59e0b',
+          secondary: '#d97706',
+          accent: '#dc2626',
+        },
+        features: ['Category Bar', 'Flash Deals', 'Product Grid', 'Trending Section', 'Features Bar'],
+      },
+      isActive: false,
+    },
+    {
+      name: 'Neomorphic Design',
+      description: 'Modern soft UI design with elegant shadows and glassmorphism effects',
+      thumbnailUrl: '/templates/neomorphic.jpg',
+      previewUrl: '/templates/neomorphic',
+      config: {
+        theme: 'neomorphic',
+        colors: {
+          primary: '#10b981',
+          secondary: '#059669',
+          background: '#e0e5ec',
+        },
+        features: ['Soft Shadows', 'Glassmorphism', 'Smooth Animations', 'Premium Feel'],
+      },
+      isActive: false,
+    },
+  ];
+
+  for (const template of templates) {
+    await prisma.landingTemplate.upsert({
+      where: { name: template.name },
+      update: template,
+      create: template,
+    });
+  }
+
   console.log('Database seeded successfully!');
   console.log('\n=== ADMIN CREDENTIALS FOR TESTING ===');
   console.log('🔑 Super Admin:');
