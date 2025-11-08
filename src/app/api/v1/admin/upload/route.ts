@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
+import { put } from '@vercel/blob';
 import { verifyToken } from '@/lib/auth';
 
 // Admin role check middleware
@@ -79,22 +78,14 @@ export async function POST(request: NextRequest) {
         const extension = file.name.split('.').pop();
         const filename = `${type}_${Date.now()}.${extension}`;
 
-        // Create uploads directory if it doesn't exist
-        const uploadsDir = join(process.cwd(), 'public', 'uploads');
-        try {
-            await mkdir(uploadsDir, { recursive: true });
-        } catch (error) {
-            // Directory might already exist
-        }
-
-        // Save file
-        const bytes = await file.arrayBuffer();
-        const buffer = Buffer.from(bytes);
-        const filePath = join(uploadsDir, filename);
-        await writeFile(filePath, buffer);
+        // Upload to Vercel Blob
+        const blob = await put(filename, file, {
+            access: 'public',
+            addRandomSuffix: false,
+        });
 
         // Return file URL
-        const url = `/uploads/${filename}`;
+        const url = blob.url;
 
         return NextResponse.json({
             success: true,

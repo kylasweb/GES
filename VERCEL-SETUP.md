@@ -1,5 +1,19 @@
 # Quick Vercel Setup Checklist
 
+## ⚠️ IMPORTANT: File Upload Fix Required
+
+**File uploads were failing** because Vercel's serverless functions have a read-only filesystem. This has been fixed by implementing **Vercel Blob Storage**.
+
+### What Changed:
+- ✅ Installed `@vercel/blob` package
+- ✅ Updated upload routes to use cloud storage instead of local filesystem
+- ✅ Logo/Favicon uploads now work on Vercel
+- ✅ Media library uploads now work on Vercel
+
+**📖 See `BLOB-STORAGE-SETUP.md` for detailed setup instructions**
+
+---
+
 ## ✅ Minimum Required Environment Variables
 
 Copy these to your Vercel dashboard (Project → Settings → Environment Variables):
@@ -17,22 +31,32 @@ PHONEPE_SALT_INDEX=1
 PHONEPE_ENV=development
 
 NODE_ENV=production
+
+# Vercel Blob Storage (for file uploads)
+# This will be automatically created by Vercel when you connect Blob Storage
+BLOB_READ_WRITE_TOKEN=vercel_blob_rw_xxxxxxxxxxxxx
 ```
 
 ## Steps:
 
-1. ✅ Copy all variables above
-2. ✅ Go to Vercel → Your Project → Settings → Environment Variables
-3. ✅ Add each variable (Name and Value)
-4. ✅ Click "Save"
-5. ✅ Vercel will auto-redeploy
-6. ✅ Wait for deployment to complete (~2-3 minutes)
-7. ✅ Run database seed: `npm run db:seed`
-8. ✅ Test: Visit `https://ges-five.vercel.app/auth`
-9. ✅ Login with: `admin@greenenergysolutions.in` / `admin123`
+1. ✅ **Enable Vercel Blob Storage** (for file uploads):
+   - Go to Vercel → Your Project → Storage → Create Database
+   - Select **Blob** → Create
+   - Vercel will automatically add `BLOB_READ_WRITE_TOKEN` to environment variables
+   
+2. ✅ Copy all variables above
+3. ✅ Go to Vercel → Your Project → Settings → Environment Variables
+4. ✅ Add each variable (Name and Value)
+5. ✅ Click "Save"
+6. ✅ Vercel will auto-redeploy
+7. ✅ Wait for deployment to complete (~2-3 minutes)
+8. ✅ Run database seed: `npm run db:seed`
+9. ✅ Test: Visit `https://ges-five.vercel.app/auth`
+10. ✅ Login with: `admin@greenenergysolutions.in` / `admin123`
 
 ## Notes:
 
+- **Vercel Blob**: Required for file uploads (logo, favicon, media). Enable in Storage tab before deploying.
 - **PhonePe**: Using placeholder values - will be configured by client admin later
 - **JWT_SECRET**: Already generated for production (different from local)
 - **DATABASE_URL**: Your Neon PostgreSQL database

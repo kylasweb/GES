@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir, unlink } from 'fs/promises';
-import { join } from 'path';
+import { put, del } from '@vercel/blob';
 import { db } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 import sharp from 'sharp';
@@ -138,19 +137,14 @@ export async function POST(request: NextRequest) {
         const timestamp = Date.now();
         const filename = `${timestamp}_${Math.random().toString(36).substring(7)}.${extension}`;
 
-        // Create uploads directory structure
-        const uploadsDir = join(process.cwd(), 'public', 'uploads', 'media', folder);
-        const thumbnailsDir = join(process.cwd(), 'public', 'uploads', 'media', 'thumbnails');
-        await mkdir(uploadsDir, { recursive: true });
-        await mkdir(thumbnailsDir, { recursive: true });
+        // Upload file to Vercel Blob
+        const blobPath = `media/${folder}/${filename}`;
+        const blob = await put(blobPath, file, {
+            access: 'public',
+            addRandomSuffix: false,
+        });
 
-        // Save file
-        const bytes = await file.arrayBuffer();
-        const buffer = Buffer.from(bytes);
-        const filePath = join(uploadsDir, filename);
-        await writeFile(filePath, buffer);
-
-        const url = `/uploads/media/${folder}/${filename}`;
+        const url = blob.url;
         let thumbnailUrl: string | undefined = undefined;
         let width: number | undefined = undefined;
         let height: number | undefined = undefined;
@@ -158,19 +152,27 @@ export async function POST(request: NextRequest) {
         // Process image: get dimensions and create thumbnail
         if (file.type.startsWith('image/')) {
             try {
+                const bytes = await file.arrayBuffer();
+                const buffer = Buffer.from(bytes);
                 const metadata = await sharp(buffer).metadata();
                 width = metadata.width;
                 height = metadata.height;
 
                 // Create thumbnail (300x300)
                 const thumbnailFilename = `thumb_${filename}`;
-                const thumbnailPath = join(thumbnailsDir, thumbnailFilename);
-
-                await sharp(buffer)
+                const thumbnailBuffer = await sharp(buffer)
                     .resize(300, 300, { fit: 'inside' })
-                    .toFile(thumbnailPath);
+                    .toBuffer();
 
-                thumbnailUrl = `/uploads/media/thumbnails/${thumbnailFilename}`;
+                // Upload thumbnail to Vercel Blob
+                const thumbnailBlobPath = `media/thumbnails/${thumbnailFilename}`;
+                const thumbnailBlob = await put(thumbnailBlobPath, thumbnailBuffer, {
+                    access: 'public',
+                    addRandomSuffix: false,
+                    contentType: file.type,
+                });
+
+                thumbnailUrl = thumbnailBlob.url;
             } catch (error) {
                 console.error('Image processing error:', error);
             }
@@ -245,18 +247,18 @@ export async function DELETE(request: NextRequest) {
             where: { id: { in: ids } },
         });
 
-        // Delete files from disk
+        // Delete files from Vercel Blob
         for (const media of mediaRecords) {
             try {
-                const filePath = join(process.cwd(), 'public', media.url);
-                await unlink(filePath);
+                // Delete main file
+                await del(media.url);
 
+                // Delete thumbnail if exists
                 if (media.thumbnailUrl) {
-                    const thumbPath = join(process.cwd(), 'public', media.thumbnailUrl);
-                    await unlink(thumbPath).catch(() => { });
+                    await del(media.thumbnailUrl).catch(() => { });
                 }
             } catch (error) {
-                console.error('File deletion error:', error);
+                console.error('Blob deletion error:', error);
             }
         }
 

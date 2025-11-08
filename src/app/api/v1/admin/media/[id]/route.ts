@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, unlink } from 'fs/promises';
-import { join } from 'path';
+import { del } from '@vercel/blob';
 import { db } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
-import sharp from 'sharp';
 
 // Admin role check middleware
 function checkAdminRole(user: any, requiredRoles: string[] = ['SUPER_ADMIN']) {
@@ -139,17 +137,15 @@ export async function DELETE(
             );
         }
 
-        // Delete files from disk
+        // Delete files from Vercel Blob
         try {
-            const filePath = join(process.cwd(), 'public', media.url);
-            await unlink(filePath);
+            await del(media.url);
 
             if (media.thumbnailUrl) {
-                const thumbPath = join(process.cwd(), 'public', media.thumbnailUrl);
-                await unlink(thumbPath).catch(() => { });
+                await del(media.thumbnailUrl).catch(() => { });
             }
         } catch (error) {
-            console.error('File deletion error:', error);
+            console.error('Blob deletion error:', error);
         }
 
         // Delete from database
