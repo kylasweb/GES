@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db as prisma } from '@/lib/db';
+import { verifyAuth } from '@/lib/auth';
 
 // GET /api/v1/admin/shipping-methods - List all shipping methods
 export async function GET(request: NextRequest) {
     try {
+        // Verify authentication
+        const user = await verifyAuth(request);
+        if (!user || (user.role !== 'SUPER_ADMIN' && user.role !== 'ADMIN')) {
+            return NextResponse.json(
+                { error: 'Unauthorized' },
+                { status: 401 }
+            );
+        }
+
         const searchParams = request.nextUrl.searchParams;
         const isActive = searchParams.get('isActive');
 
@@ -30,6 +40,15 @@ export async function GET(request: NextRequest) {
 // POST /api/v1/admin/shipping-methods - Create new shipping method
 export async function POST(request: NextRequest) {
     try {
+        // Verify authentication
+        const user = await verifyAuth(request);
+        if (!user || (user.role !== 'SUPER_ADMIN' && user.role !== 'ADMIN')) {
+            return NextResponse.json(
+                { error: 'Unauthorized' },
+                { status: 401 }
+            );
+        }
+
         const body = await request.json();
         const {
             name,

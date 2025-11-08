@@ -360,11 +360,13 @@ export default function AdminVariationsPage() {
         });
     };
 
-    const filteredVariations = variations.filter(variation =>
-        variation.product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        variation.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        variation.attributeValues.some(av => av.name.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+    const filteredVariations = variations.filter(variation => {
+        const matchesProduct = !selectedProduct || selectedProduct === 'all' || variation.productId === selectedProduct;
+        const matchesSearch = variation.product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            variation.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            variation.attributeValues.some(av => av.name.toLowerCase().includes(searchTerm.toLowerCase()));
+        return matchesProduct && matchesSearch;
+    });
 
     const selectedProductAttributes = attributes.filter(attr =>
         products.find(p => p.id === formData.productId)?.id === formData.productId
@@ -607,7 +609,7 @@ export default function AdminVariationsPage() {
                                                 <SelectValue placeholder="Filter by product" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="">All Products</SelectItem>
+                                                <SelectItem value="all">All Products</SelectItem>
                                                 {products.map((product) => (
                                                     <SelectItem key={product.id} value={product.id}>
                                                         {product.name} ({product.sku})

@@ -93,9 +93,11 @@ export default function ShippingMethodsPage() {
             setLoading(true);
             const response = await fetch('/api/v1/admin/shipping-methods');
             const data = await response.json();
-            setMethods(data || []);
+            // Ensure we always set an array
+            setMethods(Array.isArray(data) ? data : []);
         } catch (error) {
             console.error('Error fetching shipping methods:', error);
+            setMethods([]); // Set empty array on error
             toast({
                 title: 'Error',
                 description: 'Failed to fetch shipping methods',

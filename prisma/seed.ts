@@ -369,30 +369,41 @@ async function main() {
   }
 
   // Create default site settings with appearance defaults
-  await prisma.siteSettings.upsert({
-    where: { id: 1 },
-    update: {},
-    create: {
-      headerStyle: 'default',
-      footerStyle: 'default',
-      menuStyle: 'default',
-      maintenanceMode: false,
-      config: {
+  const existingSettings = await prisma.siteSettings.findFirst();
+
+  if (!existingSettings) {
+    await prisma.siteSettings.create({
+      data: {
+        headerStyle: 'default',
+        footerStyle: 'default',
+        menuStyle: 'default',
+        maintenanceMode: false,
         siteName: 'Green Energy Solutions',
         siteDescription: 'Leading provider of renewable energy solutions',
         contactEmail: 'info@greenenergysolutions.in',
         contactPhone: '+91 1234567890',
+        config: {
+          theme: 'light',
+          currency: 'INR',
+          timezone: 'Asia/Kolkata'
+        },
       },
-    },
-  });
+    });
+    console.log('Created default site settings');
+  } else {
+    console.log('Site settings already exist, skipping');
+  }
 
   // Create landing page templates
   const templates = [
     {
       name: 'Modern Eco',
+      slug: 'modern-eco',
       description: 'Clean and modern template with gradient effects and smooth animations',
-      thumbnailUrl: '/templates/modern-eco.jpg',
-      previewUrl: '/templates/modern-eco/preview',
+      thumbnail: '/templates/modern-eco.jpg',
+      features: ['Hero Section', 'Product Grid', 'Testimonials', 'Newsletter'],
+      colorScheme: 'light',
+      tags: ['modern', 'clean', 'professional'],
       config: {
         theme: 'modern',
         colors: {
@@ -400,15 +411,17 @@ async function main() {
           secondary: '#059669',
           accent: '#f59e0b',
         },
-        features: ['Hero Section', 'Product Grid', 'Testimonials', 'Newsletter'],
       },
       isActive: false,
     },
     {
       name: 'Minimal Green',
+      slug: 'minimal-green',
       description: 'Minimalist design focused on content and clarity',
-      thumbnailUrl: '/templates/minimal-green.jpg',
-      previewUrl: '/templates/minimal-green/preview',
+      thumbnail: '/templates/minimal-green.jpg',
+      features: ['Clean Layout', 'Typography Focus', 'Fast Loading'],
+      colorScheme: 'light',
+      tags: ['minimal', 'clean', 'elegant'],
       config: {
         theme: 'minimal',
         colors: {
@@ -416,15 +429,17 @@ async function main() {
           secondary: '#16a34a',
           accent: '#84cc16',
         },
-        features: ['Clean Layout', 'Typography Focus', 'Fast Loading'],
       },
       isActive: false,
     },
     {
       name: 'Corporate Pro',
+      slug: 'corporate-pro',
       description: 'Professional template for enterprise and B2B businesses',
-      thumbnailUrl: '/templates/corporate-pro.jpg',
-      previewUrl: '/templates/corporate-pro/preview',
+      thumbnail: '/templates/corporate-pro.jpg',
+      features: ['Stats Section', 'Case Studies', 'Team Members', 'Contact Form'],
+      colorScheme: 'light',
+      tags: ['professional', 'corporate', 'categories'],
       config: {
         theme: 'corporate',
         colors: {
@@ -432,15 +447,17 @@ async function main() {
           secondary: '#0284c7',
           accent: '#06b6d4',
         },
-        features: ['Stats Section', 'Case Studies', 'Team Members', 'Contact Form'],
       },
       isActive: false,
     },
     {
       name: 'Flipkart Style',
+      slug: 'flipkart-style',
       description: 'E-commerce focused template with deals, categories, and product grids',
-      thumbnailUrl: '/templates/flipkart.jpg',
-      previewUrl: '/templates/flipkart',
+      thumbnail: '/templates/flipkart.jpg',
+      features: ['Category Bar', 'Flash Deals', 'Product Grid', 'Trending Section', 'Features Bar'],
+      colorScheme: 'light',
+      tags: ['e-commerce', 'marketplace', 'categories'],
       config: {
         theme: 'ecommerce',
         colors: {
@@ -448,15 +465,17 @@ async function main() {
           secondary: '#d97706',
           accent: '#dc2626',
         },
-        features: ['Category Bar', 'Flash Deals', 'Product Grid', 'Trending Section', 'Features Bar'],
       },
       isActive: false,
     },
     {
       name: 'Neomorphic Design',
+      slug: 'neomorphic-design',
       description: 'Modern soft UI design with elegant shadows and glassmorphism effects',
-      thumbnailUrl: '/templates/neomorphic.jpg',
-      previewUrl: '/templates/neomorphic',
+      thumbnail: '/templates/neomorphic.jpg',
+      features: ['Soft Shadows', 'Glassmorphism', 'Smooth Animations', 'Premium Feel'],
+      colorScheme: 'light',
+      tags: ['elegant', 'premium', 'glassmorphism'],
       config: {
         theme: 'neomorphic',
         colors: {
@@ -464,7 +483,6 @@ async function main() {
           secondary: '#059669',
           background: '#e0e5ec',
         },
-        features: ['Soft Shadows', 'Glassmorphism', 'Smooth Animations', 'Premium Feel'],
       },
       isActive: false,
     },
@@ -472,10 +490,11 @@ async function main() {
 
   for (const template of templates) {
     await prisma.landingTemplate.upsert({
-      where: { name: template.name },
-      update: template,
+      where: { slug: template.slug },
+      update: {},
       create: template,
     });
+    console.log(`Created/updated template: ${template.name}`);
   }
 
   console.log('Database seeded successfully!');

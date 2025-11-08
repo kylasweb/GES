@@ -85,9 +85,11 @@ interface Deal {
 
             const response = await fetch(`/api/v1/admin/deals?${params.toString()}`);
             const data = await response.json();
-            setDeals(data.deals || []);
+            // Ensure we always set an array
+            setDeals(Array.isArray(data.deals) ? data.deals : []);
         } catch (error) {
             console.error('Error fetching deals:', error);
+            setDeals([]); // Set empty array on error
             toast({
                 title: 'Error',
                 description: 'Failed to fetch flash deals',

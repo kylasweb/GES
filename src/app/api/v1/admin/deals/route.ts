@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db as prisma } from '@/lib/db';
+import { verifyAuth } from '@/lib/auth';
 
 // GET /api/v1/admin/deals - List all flash deals with pagination
 export async function GET(request: NextRequest) {
     try {
+        // Verify authentication
+        const user = await verifyAuth(request);
+        if (!user || (user.role !== 'SUPER_ADMIN' && user.role !== 'ADMIN')) {
+            return NextResponse.json(
+                { error: 'Unauthorized' },
+                { status: 401 }
+            );
+        }
+
         const searchParams = request.nextUrl.searchParams;
         const page = parseInt(searchParams.get('page') || '1');
         const limit = parseInt(searchParams.get('limit') || '10');
@@ -77,6 +87,15 @@ export async function GET(request: NextRequest) {
 // POST /api/v1/admin/deals - Create new flash deal
 export async function POST(request: NextRequest) {
     try {
+        // Verify authentication
+        const user = await verifyAuth(request);
+        if (!user || (user.role !== 'SUPER_ADMIN' && user.role !== 'ADMIN')) {
+            return NextResponse.json(
+                { error: 'Unauthorized' },
+                { status: 401 }
+            );
+        }
+
         const body = await request.json();
         const { productId, title, description, discount, startDate, endDate, isActive } = body;
 
