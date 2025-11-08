@@ -53,9 +53,12 @@ interface Brand {
     name: string;
     slug: string;
     description?: string;
-    image?: string;
+    logo?: string;
+    website?: string;
     isActive: boolean;
-    productCount: number;
+    _count?: {
+        products: number;
+    };
     createdAt: string;
     updatedAt: string;
 }
@@ -71,7 +74,8 @@ export default function AdminBrandsPage() {
     const [formData, setFormData] = useState({
         name: '',
         description: '',
-        image: '',
+        logo: '',
+        website: '',
         isActive: true,
     });
 
@@ -89,7 +93,7 @@ export default function AdminBrandsPage() {
             }
 
             const data = await response.json();
-            setBrands(data.brands);
+            setBrands(data.success ? data.data : data.brands || []);
         } catch (error) {
             console.error('Error fetching brands:', error);
             toast.error('Failed to load brands');
@@ -126,7 +130,7 @@ export default function AdminBrandsPage() {
 
             toast.success('Brand created successfully');
             setIsCreateDialogOpen(false);
-            setFormData({ name: '', description: '', image: '', isActive: true });
+            setFormData({ name: '', description: '', logo: '', website: '', isActive: true });
             fetchBrands();
         } catch (error) {
             console.error('Error creating brand:', error);
@@ -161,7 +165,7 @@ export default function AdminBrandsPage() {
             toast.success('Brand updated successfully');
             setIsEditDialogOpen(false);
             setSelectedBrand(null);
-            setFormData({ name: '', description: '', image: '', isActive: true });
+            setFormData({ name: '', description: '', logo: '', website: '', isActive: true });
             fetchBrands();
         } catch (error) {
             console.error('Error updating brand:', error);
@@ -196,7 +200,8 @@ export default function AdminBrandsPage() {
         setFormData({
             name: brand.name,
             description: brand.description || '',
-            image: brand.image || '',
+            logo: brand.logo || '',
+            website: brand.website || '',
             isActive: brand.isActive,
         });
         setIsEditDialogOpen(true);
@@ -260,15 +265,27 @@ export default function AdminBrandsPage() {
                                             />
                                         </div>
                                         <div className="grid grid-cols-4 items-center gap-4">
-                                            <Label htmlFor="image" className="text-right">
-                                                Image URL
+                                            <Label htmlFor="logo" className="text-right">
+                                                Logo URL
                                             </Label>
                                             <Input
-                                                id="image"
-                                                value={formData.image}
-                                                onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                                                id="logo"
+                                                value={formData.logo}
+                                                onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
                                                 className="col-span-3"
-                                                placeholder="https://example.com/image.jpg"
+                                                placeholder="https://example.com/logo.jpg"
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-4 items-center gap-4">
+                                            <Label htmlFor="website" className="text-right">
+                                                Website
+                                            </Label>
+                                            <Input
+                                                id="website"
+                                                value={formData.website}
+                                                onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                                                className="col-span-3"
+                                                placeholder="https://example.com"
                                             />
                                         </div>
                                     </div>
@@ -342,7 +359,7 @@ export default function AdminBrandsPage() {
                                                     <TableCell>
                                                         <Badge variant="secondary">
                                                             <Package className="w-3 h-3 mr-1" />
-                                                            {brand.productCount}
+                                                            {brand._count?.products || 0}
                                                         </Badge>
                                                     </TableCell>
                                                     <TableCell>
@@ -373,9 +390,9 @@ export default function AdminBrandsPage() {
                                                                         <AlertDialogTitle>Delete Brand</AlertDialogTitle>
                                                                         <AlertDialogDescription>
                                                                             Are you sure you want to delete "{brand.name}"? This action cannot be undone.
-                                                                            {brand.productCount > 0 && (
+                                                                            {(brand._count?.products || 0) > 0 && (
                                                                                 <span className="block mt-2 text-red-600">
-                                                                                    Warning: This brand has {brand.productCount} associated products.
+                                                                                    Warning: This brand has {brand._count?.products} associated products.
                                                                                 </span>
                                                                             )}
                                                                         </AlertDialogDescription>
@@ -439,15 +456,27 @@ export default function AdminBrandsPage() {
                             />
                         </div>
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="edit-image" className="text-right">
-                                Image URL
+                            <Label htmlFor="edit-logo" className="text-right">
+                                Logo URL
                             </Label>
                             <Input
-                                id="edit-image"
-                                value={formData.image}
-                                onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                                id="edit-logo"
+                                value={formData.logo}
+                                onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
                                 className="col-span-3"
-                                placeholder="https://example.com/image.jpg"
+                                placeholder="https://example.com/logo.jpg"
+                            />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="edit-website" className="text-right">
+                                Website
+                            </Label>
+                            <Input
+                                id="edit-website"
+                                value={formData.website}
+                                onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                                className="col-span-3"
+                                placeholder="https://example.com"
                             />
                         </div>
                     </div>
