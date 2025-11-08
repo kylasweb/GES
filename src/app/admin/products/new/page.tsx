@@ -318,7 +318,7 @@ export default function NewProductPage() {
 
             const data = await response.json();
 
-            if (data.success) {
+            if (data.success || response.ok) {
                 setSuccess('Product created successfully!');
                 toast({
                     title: 'Success',
@@ -328,7 +328,19 @@ export default function NewProductPage() {
                     router.push('/admin/products');
                 }, 2000);
             } else {
-                setError(data.error || 'Failed to create product');
+                // Show detailed validation errors
+                let errorMessage = data.error || 'Failed to create product';
+                if (data.details && Array.isArray(data.details)) {
+                    errorMessage = 'Validation errors:\n' + data.details.map((d: any) =>
+                        `• ${d.path?.join('.') || 'Field'}: ${d.message}`
+                    ).join('\n');
+                }
+                setError(errorMessage);
+                toast({
+                    title: 'Validation Failed',
+                    description: errorMessage,
+                    variant: 'destructive',
+                });
             }
         } catch (err) {
             setError('Failed to create product');
@@ -379,6 +391,15 @@ export default function NewProductPage() {
                     )}
 
                     <form onSubmit={handleSubmit} className="space-y-6">
+                        {/* Required Fields Notice */}
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <p className="text-sm text-blue-800">
+                                <span className="font-semibold">Required fields are marked with an asterisk (*)</span>
+                                <br />
+                                You must fill: Product Name, SKU, Description, Category, and Offer Price
+                            </p>
+                        </div>
+
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                             {/* Main Form */}
                             <div className="lg:col-span-2 space-y-6">
@@ -393,23 +414,29 @@ export default function NewProductPage() {
                                     <CardContent className="space-y-4">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
-                                                <Label htmlFor="name">Product Name *</Label>
+                                                <Label htmlFor="name" className="text-sm font-medium">
+                                                    Product Name <span className="text-red-500">*</span>
+                                                </Label>
                                                 <Input
                                                     id="name"
                                                     value={formData.name}
                                                     onChange={(e) => handleInputChange('name', e.target.value)}
                                                     placeholder="Enter product name"
                                                     required
+                                                    className="border-gray-300 focus:border-blue-500"
                                                 />
                                             </div>
                                             <div>
-                                                <Label htmlFor="sku">SKU *</Label>
+                                                <Label htmlFor="sku" className="text-sm font-medium">
+                                                    SKU <span className="text-red-500">*</span>
+                                                </Label>
                                                 <Input
                                                     id="sku"
                                                     value={formData.sku}
                                                     onChange={(e) => handleInputChange('sku', e.target.value)}
-                                                    placeholder="Enter SKU"
+                                                    placeholder="Enter SKU (e.g., PROD-001)"
                                                     required
+                                                    className="border-gray-300 focus:border-blue-500"
                                                 />
                                             </div>
                                         </div>
@@ -426,21 +453,28 @@ export default function NewProductPage() {
                                         </div>
 
                                         <div>
-                                            <Label htmlFor="description">Long Description</Label>
+                                            <Label htmlFor="description" className="text-sm font-medium">
+                                                Description <span className="text-red-500">*</span>
+                                            </Label>
                                             <Textarea
                                                 id="description"
                                                 value={formData.description}
                                                 onChange={(e) => handleInputChange('description', e.target.value)}
-                                                placeholder="Detailed product description"
+                                                placeholder="Detailed product description (required)"
                                                 rows={6}
+                                                required
+                                                className="resize-none border-gray-300 focus:border-blue-500"
                                             />
+                                            <p className="text-xs text-gray-500 mt-1">Provide detailed information about the product</p>
                                         </div>
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
-                                                <Label htmlFor="category">Category *</Label>
-                                                <Select value={formData.categoryId} onValueChange={(value) => handleInputChange('categoryId', value)}>
-                                                    <SelectTrigger>
+                                                <Label htmlFor="category" className="text-sm font-medium">
+                                                    Category <span className="text-red-500">*</span>
+                                                </Label>
+                                                <Select value={formData.categoryId} onValueChange={(value) => handleInputChange('categoryId', value)} required>
+                                                    <SelectTrigger className="border-gray-300 focus:border-blue-500">
                                                         <SelectValue placeholder="Select category" />
                                                     </SelectTrigger>
                                                     <SelectContent>
@@ -451,12 +485,13 @@ export default function NewProductPage() {
                                                         ))}
                                                     </SelectContent>
                                                 </Select>
+                                                <p className="text-xs text-gray-500 mt-1">Choose product category</p>
                                             </div>
                                             <div>
-                                                <Label htmlFor="brand">Brand</Label>
+                                                <Label htmlFor="brand" className="text-sm font-medium">Brand (Optional)</Label>
                                                 <Select value={formData.brandId} onValueChange={(value) => handleInputChange('brandId', value)}>
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Select brand" />
+                                                    <SelectTrigger className="border-gray-300">
+                                                        <SelectValue placeholder="Select brand (optional)" />
                                                     </SelectTrigger>
                                                     <SelectContent>
                                                         {brands.map((brand) => (
@@ -471,29 +506,31 @@ export default function NewProductPage() {
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
-                                                <Label htmlFor="price">Price (₹) *</Label>
-                                                <Input
-                                                    id="price"
-                                                    type="number"
-                                                    value={formData.price}
-                                                    onChange={(e) => handleInputChange('price', parseFloat(e.target.value) || 0)}
-                                                    placeholder="0.00"
-                                                    min="0"
-                                                    step="0.01"
-                                                    required
-                                                />
-                                            </div>
-                                            <div>
-                                                <Label htmlFor="comparePrice">Compare at Price (₹)</Label>
+                                                <Label htmlFor="comparePrice" className="text-sm font-medium">MRP (₹) (Optional)</Label>
                                                 <Input
                                                     id="comparePrice"
-                                                    type="number"
+                                                    type="text"
                                                     value={formData.comparePrice || ''}
                                                     onChange={(e) => handleInputChange('comparePrice', parseFloat(e.target.value) || undefined)}
                                                     placeholder="0.00"
-                                                    min="0"
-                                                    step="0.01"
+                                                    className="border-gray-300"
                                                 />
+                                                <p className="text-xs text-gray-500 mt-1">Maximum Retail Price</p>
+                                            </div>
+                                            <div>
+                                                <Label htmlFor="price" className="text-sm font-medium">
+                                                    Offer Price (₹) <span className="text-red-500">*</span>
+                                                </Label>
+                                                <Input
+                                                    id="price"
+                                                    type="text"
+                                                    value={formData.price}
+                                                    onChange={(e) => handleInputChange('price', parseFloat(e.target.value) || 0)}
+                                                    placeholder="0.00"
+                                                    required
+                                                    className="border-gray-300 focus:border-blue-500"
+                                                />
+                                                <p className="text-xs text-gray-500 mt-1">Actual selling price (discounted price)</p>
                                             </div>
                                         </div>
                                     </CardContent>
@@ -550,11 +587,10 @@ export default function NewProductPage() {
                                                 <Label htmlFor="quantity">Current Stock</Label>
                                                 <Input
                                                     id="quantity"
-                                                    type="number"
+                                                    type="text"
                                                     value={formData.quantity}
                                                     onChange={(e) => handleInputChange('quantity', parseInt(e.target.value) || 0)}
                                                     placeholder="0"
-                                                    min="0"
                                                 />
                                             </div>
                                             <div className="flex items-center justify-between">
