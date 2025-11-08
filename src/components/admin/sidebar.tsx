@@ -19,7 +19,11 @@ import {
     ChevronDown,
     ChevronRight,
     Leaf,
-    Home
+    Home,
+    Ticket,
+    Mail,
+    Zap,
+    Truck
 } from 'lucide-react';
 import { useState } from 'react';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -48,6 +52,21 @@ const navigation = [
         icon: ShoppingCart,
     },
     {
+        name: 'Coupons',
+        href: '/admin/coupons',
+        icon: Ticket,
+    },
+    {
+        name: 'Flash Deals',
+        href: '/admin/deals',
+        icon: Zap,
+    },
+    {
+        name: 'Shipping',
+        href: '/admin/shipping',
+        icon: Truck,
+    },
+    {
         name: 'Users',
         href: '/admin/users',
         icon: Users,
@@ -61,6 +80,11 @@ const navigation = [
         name: 'Content',
         href: '/admin/content',
         icon: FileText,
+    },
+    {
+        name: 'Newsletter',
+        href: '/admin/newsletter',
+        icon: Mail,
     },
     {
         name: 'Analytics',
