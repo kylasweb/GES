@@ -670,3 +670,77 @@ model Media {
   @@index([createdAt])
   @@map("media")
 }
+
+model LandingTemplate {
+  id           String        @id @default(cuid())
+  name         String
+  slug         String        @unique
+  description  String?
+  thumbnail    String?
+  isActive     Boolean       @default(false)
+  config       Json?
+  features     String[]
+  colorScheme  String        @default("light")
+  tags         String[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  siteSettings SiteSettings?
+
+  @@map("landing_templates")
+}
+
+model SiteSettings {
+  id               String           @id @default(cuid())
+  siteName         String           @default("Green Energy Solutions")
+  siteDescription  String?
+  contactEmail     String?
+  contactPhone     String?
+  activeTemplateId String?          @unique
+  activeTemplate   LandingTemplate? @relation(fields: [activeTemplateId], references: [id])
+  maintenanceMode  Boolean          @default(false)
+  config           Json?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@map("site_settings")
+}
+
+model FeatureFlag {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  description String?
+  enabled     Boolean  @default(false)
+  rollout     Int      @default(100) // Percentage rollout (0-100)
+  config      Json?
+  category    String? // e.g., "ai", "templates", "payments", "admin"
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+  @@index([enabled])
+  @@map("feature_flags")
+}
+
+model GitVersion {
+  id            String   @id @default(cuid())
+  version       String   @unique // e.g., "v1.2.3"
+  commitHash    String   @unique
+  commitMessage String?
+  branch        String   @default("main")
+  author        String?
+  deployedBy    String?
+  deployedAt    DateTime @default(now())
+  isActive      Boolean  @default(false)
+  changelog     String[]
+  environment   String   @default("production") // production, staging, development
+  buildNumber   Int      @default(autoincrement())
+  rollbackable  Boolean  @default(true)
+  metadata      Json?
+
+  @@index([deployedAt])
+  @@index([isActive])
+  @@index([environment])
+  @@map("git_versions")
+}

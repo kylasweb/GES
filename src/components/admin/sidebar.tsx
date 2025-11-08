@@ -24,7 +24,10 @@ import {
     Mail,
     Zap,
     Truck,
-    Image as ImageIcon
+    Image as ImageIcon,
+    Flag,
+    GitBranch,
+    Layout
 } from 'lucide-react';
 import { useState } from 'react';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -98,9 +101,14 @@ const navigation = [
         icon: BarChart3,
     },
     {
-        name: 'Settings',
-        href: '/admin/settings',
+        name: 'System',
         icon: Settings,
+        submenu: [
+            { name: 'Feature Flags', href: '/admin/features' },
+            { name: 'Templates', href: '/admin/templates' },
+            { name: 'Versions', href: '/admin/versions' },
+            { name: 'Settings', href: '/admin/settings' },
+        ]
     },
 ];
 
