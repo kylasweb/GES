@@ -2,15 +2,16 @@
 
 ## ⚠️ IMPORTANT: File Upload Fix Required
 
-**File uploads were failing** because Vercel's serverless functions have a read-only filesystem. This has been fixed by implementing **Vercel Blob Storage**.
+**File uploads were failing** because Vercel's serverless functions have a read-only filesystem. This has been fixed by implementing **Cloudinary**.
 
 ### What Changed:
-- ✅ Installed `@vercel/blob` package
-- ✅ Updated upload routes to use cloud storage instead of local filesystem
+- ✅ Installed `cloudinary` package
+- ✅ Updated upload routes to use Cloudinary cloud storage
 - ✅ Logo/Favicon uploads now work on Vercel
 - ✅ Media library uploads now work on Vercel
+- ✅ Automatic image optimization and CDN delivery
 
-**📖 See `BLOB-STORAGE-SETUP.md` for detailed setup instructions**
+**📖 See `CLOUDINARY-SETUP.md` for detailed setup instructions**
 
 ---
 
@@ -32,21 +33,21 @@ PHONEPE_ENV=development
 
 NODE_ENV=production
 
-# Vercel Blob Storage (for file uploads)
-# This will be automatically created by Vercel when you connect Blob Storage
-BLOB_READ_WRITE_TOKEN=vercel_blob_rw_xxxxxxxxxxxxx
+# Cloudinary (for file uploads - logo, favicon, media)
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=tiVK1iy8JpkJolsBwx-kAXXSOHU
 ```
 
 ## Steps:
 
-1. ✅ **Enable Vercel Blob Storage** (for file uploads):
-   - Go to Vercel → Your Project → Storage → Create Database
-   - Select **Blob** → Create
-   - Vercel will automatically add `BLOB_READ_WRITE_TOKEN` to environment variables
+1. ✅ **Get Cloudinary Credentials**:
+   - Go to https://console.cloudinary.com/settings/c-xxxxx/api-keys
+   - Copy: **Cloud Name**, **API Key**, and **API Secret** (already have: tiVK1iy8JpkJolsBwx-kAXXSOHU)
    
 2. ✅ Copy all variables above
 3. ✅ Go to Vercel → Your Project → Settings → Environment Variables
-4. ✅ Add each variable (Name and Value)
+4. ✅ Add each variable (Name and Value) - **especially the 3 Cloudinary variables**
 5. ✅ Click "Save"
 6. ✅ Vercel will auto-redeploy
 7. ✅ Wait for deployment to complete (~2-3 minutes)
@@ -56,11 +57,18 @@ BLOB_READ_WRITE_TOKEN=vercel_blob_rw_xxxxxxxxxxxxx
 
 ## Notes:
 
-- **Vercel Blob**: Required for file uploads (logo, favicon, media). Enable in Storage tab before deploying.
+- **Cloudinary**: Required for file uploads (logo, favicon, media). Get credentials from Cloudinary dashboard.
 - **PhonePe**: Using placeholder values - will be configured by client admin later
 - **JWT_SECRET**: Already generated for production (different from local)
 - **DATABASE_URL**: Your Neon PostgreSQL database
 - **NEXT_PUBLIC_APP_URL**: Update if you use a custom domain
+
+## Cloudinary Benefits:
+
+- ✅ **Free Tier**: 25GB storage, 25GB bandwidth/month
+- ✅ **Automatic Image Optimization**: Resizing, format conversion, compression
+- ✅ **CDN Delivery**: Fast worldwide image delivery
+- ✅ **No Setup Needed**: Just add 3 environment variables
 
 ## Test After Deployment:
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { put } from '@vercel/blob';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 import { verifyToken } from '@/lib/auth';
 
 // Admin role check middleware
@@ -78,14 +78,15 @@ export async function POST(request: NextRequest) {
         const extension = file.name.split('.').pop();
         const filename = `${type}_${Date.now()}.${extension}`;
 
-        // Upload to Vercel Blob
-        const blob = await put(filename, file, {
-            access: 'public',
-            addRandomSuffix: false,
-        });
+        // Convert file to buffer
+        const bytes = await file.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+
+        // Upload to Cloudinary
+        const result = await uploadToCloudinary(buffer, `ges/${type}s`, filename);
 
         // Return file URL
-        const url = blob.url;
+        const url = result.url;
 
         return NextResponse.json({
             success: true,
@@ -93,7 +94,8 @@ export async function POST(request: NextRequest) {
                 url,
                 filename,
                 size: file.size,
-                type: file.type
+                type: file.type,
+                publicId: result.publicId,
             }
         });
     } catch (error) {

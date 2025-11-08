@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { put, del } from '@vercel/blob';
+import { uploadToCloudinary, deleteFromCloudinary, getPublicIdFromUrl } from '@/lib/cloudinary';
 import { db } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 import sharp from 'sharp';
@@ -137,26 +137,24 @@ export async function POST(request: NextRequest) {
         const timestamp = Date.now();
         const filename = `${timestamp}_${Math.random().toString(36).substring(7)}.${extension}`;
 
-        // Upload file to Vercel Blob
-        const blobPath = `media/${folder}/${filename}`;
-        const blob = await put(blobPath, file, {
-            access: 'public',
-            addRandomSuffix: false,
-        });
+        // Convert file to buffer
+        const bytes = await file.arrayBuffer();
+        const buffer = Buffer.from(bytes);
 
-        const url = blob.url;
+        // Upload file to Cloudinary
+        const uploadResult = await uploadToCloudinary(buffer, `ges/media/${folder}`, filename);
+
+        const url = uploadResult.url;
         let thumbnailUrl: string | undefined = undefined;
-        let width: number | undefined = undefined;
-        let height: number | undefined = undefined;
+        let width: number | undefined = uploadResult.width;
+        let height: number | undefined = uploadResult.height;
 
-        // Process image: get dimensions and create thumbnail
+        // Process image: create thumbnail
         if (file.type.startsWith('image/')) {
             try {
-                const bytes = await file.arrayBuffer();
-                const buffer = Buffer.from(bytes);
                 const metadata = await sharp(buffer).metadata();
-                width = metadata.width;
-                height = metadata.height;
+                width = metadata.width || width;
+                height = metadata.height || height;
 
                 // Create thumbnail (300x300)
                 const thumbnailFilename = `thumb_${filename}`;
@@ -164,15 +162,14 @@ export async function POST(request: NextRequest) {
                     .resize(300, 300, { fit: 'inside' })
                     .toBuffer();
 
-                // Upload thumbnail to Vercel Blob
-                const thumbnailBlobPath = `media/thumbnails/${thumbnailFilename}`;
-                const thumbnailBlob = await put(thumbnailBlobPath, thumbnailBuffer, {
-                    access: 'public',
-                    addRandomSuffix: false,
-                    contentType: file.type,
-                });
+                // Upload thumbnail to Cloudinary
+                const thumbnailResult = await uploadToCloudinary(
+                    thumbnailBuffer,
+                    `ges/media/thumbnails`,
+                    thumbnailFilename
+                );
 
-                thumbnailUrl = thumbnailBlob.url;
+                thumbnailUrl = thumbnailResult.url;
             } catch (error) {
                 console.error('Image processing error:', error);
             }
@@ -247,18 +244,20 @@ export async function DELETE(request: NextRequest) {
             where: { id: { in: ids } },
         });
 
-        // Delete files from Vercel Blob
+        // Delete files from Cloudinary
         for (const media of mediaRecords) {
             try {
                 // Delete main file
-                await del(media.url);
+                const publicId = getPublicIdFromUrl(media.url);
+                await deleteFromCloudinary(publicId);
 
                 // Delete thumbnail if exists
                 if (media.thumbnailUrl) {
-                    await del(media.thumbnailUrl).catch(() => { });
+                    const thumbPublicId = getPublicIdFromUrl(media.thumbnailUrl);
+                    await deleteFromCloudinary(thumbPublicId).catch(() => { });
                 }
             } catch (error) {
-                console.error('Blob deletion error:', error);
+                console.error('Cloudinary deletion error:', error);
             }
         }
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { del } from '@vercel/blob';
+import { deleteFromCloudinary, getPublicIdFromUrl } from '@/lib/cloudinary';
 import { db } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 
@@ -137,15 +137,17 @@ export async function DELETE(
             );
         }
 
-        // Delete files from Vercel Blob
+        // Delete files from Cloudinary
         try {
-            await del(media.url);
+            const publicId = getPublicIdFromUrl(media.url);
+            await deleteFromCloudinary(publicId);
 
             if (media.thumbnailUrl) {
-                await del(media.thumbnailUrl).catch(() => { });
+                const thumbPublicId = getPublicIdFromUrl(media.thumbnailUrl);
+                await deleteFromCloudinary(thumbPublicId).catch(() => { });
             }
         } catch (error) {
-            console.error('Blob deletion error:', error);
+            console.error('Cloudinary deletion error:', error);
         }
 
         // Delete from database
