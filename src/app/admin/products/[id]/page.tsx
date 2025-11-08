@@ -81,7 +81,7 @@ export default function ProductDetailPage() {
 
     const fetchProduct = async () => {
         try {
-            const response = await fetch(`/api/v1/products/${params.id}`, {
+            const response = await fetch(`/api/v1/admin/products/${params.id}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
@@ -323,8 +323,8 @@ export default function ProductDetailPage() {
                                                             key={index}
                                                             onClick={() => setMainImage(index)}
                                                             className={`h-20 bg-gray-100 rounded-lg overflow-hidden border-2 transition-colors ${mainImage === index
-                                                                    ? 'border-green-600'
-                                                                    : 'border-transparent hover:border-gray-300'
+                                                                ? 'border-green-600'
+                                                                : 'border-transparent hover:border-gray-300'
                                                                 }`}
                                                         >
                                                             <Image
