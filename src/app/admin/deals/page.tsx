@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { AdminSidebar } from '@/components/admin/sidebar';
 import {
     Dialog,
     DialogContent,
@@ -231,301 +232,306 @@ interface Deal {
     };
 
     return (
-        <div className="container mx-auto p-6 space-y-6">
-            <div className="flex justify-between items-center">
-                <div>
-                    <h1 className="text-3xl font-bold">Flash Deals</h1>
-                    <p className="text-muted-foreground">Manage time-limited discount offers</p>
-                </div>
-                <Button onClick={() => setDialogOpen(true)}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Create Flash Deal
-                </Button>
-            </div>
-
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Deals</CardTitle>
-                        <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats.total}</div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Active</CardTitle>
-                        <Clock className="h-4 w-4 text-green-600" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats.active}</div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Upcoming</CardTitle>
-                        <Clock className="h-4 w-4 text-blue-600" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats.upcoming}</div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Expired</CardTitle>
-                        <Clock className="h-4 w-4 text-gray-600" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats.expired}</div>
-                    </CardContent>
-                </Card>
-            </div>
-
-            {/* Filters */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Filters</CardTitle>
-                    <CardDescription>Filter flash deals by status</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                        <SelectTrigger className="w-[200px]">
-                            <SelectValue placeholder="Filter by status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Deals</SelectItem>
-                            <SelectItem value="active">Active</SelectItem>
-                            <SelectItem value="upcoming">Upcoming</SelectItem>
-                            <SelectItem value="expired">Expired</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </CardContent>
-            </Card>
-
-            {/* Deals Table */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Flash Deals</CardTitle>
-                    <CardDescription>
-                        {deals.length} deal{deals.length !== 1 ? 's' : ''} found
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {loading ? (
-                        <div className="text-center py-8">Loading...</div>
-                    ) : deals.length === 0 ? (
-                        <div className="text-center py-8 text-muted-foreground">
-                            No flash deals found
+        <div className="flex min-h-screen bg-gray-50">
+            <AdminSidebar />
+            <div className="flex-1">
+                <div className="container mx-auto p-6 space-y-6">
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <h1 className="text-3xl font-bold">Flash Deals</h1>
+                            <p className="text-muted-foreground">Manage time-limited discount offers</p>
                         </div>
-                    ) : (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Product/Deal</TableHead>
-                                    <TableHead>Discount</TableHead>
-                                    <TableHead>Original Price</TableHead>
-                                    <TableHead>Deal Price</TableHead>
-                                    <TableHead>Start Date</TableHead>
-                                    <TableHead>End Date</TableHead>
-                                    <TableHead>Description</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {deals.map((deal) => (
-                                    <TableRow key={deal.id}>
-                                        <TableCell className="font-medium">
-                                            <div>
-                                                <div>{deal.product.name}</div>
-                                                <div className="text-xs text-muted-foreground">{deal.title}</div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge variant="secondary">{deal.discount}% OFF</Badge>
-                                        </TableCell>
-                                        <TableCell>₹{deal.product.price.toFixed(2)}</TableCell>
-                                        <TableCell className="font-bold text-green-600">
-                                            ₹{calculateDiscountedPrice(deal.product.price, deal.discount).toFixed(2)}
-                                        </TableCell>
-                                        <TableCell>
-                                            {new Date(deal.startDate).toLocaleString()}
-                                        </TableCell>
-                                        <TableCell>
-                                            {new Date(deal.endDate).toLocaleString()}
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="text-xs text-muted-foreground">
-                                                {deal.description || '-'}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>{getStatusBadge(getDealStatus(deal))}</TableCell>
-                                        <TableCell className="text-right space-x-2">
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() => handleEdit(deal)}
-                                            >
-                                                <Pencil className="h-4 w-4" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() => handleDelete(deal.id)}
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    )}
-                </CardContent>
-            </Card>
+                        <Button onClick={() => setDialogOpen(true)}>
+                            <Plus className="mr-2 h-4 w-4" />
+                            Create Flash Deal
+                        </Button>
+                    </div>
 
-            {/* Create/Edit Dialog */}
-            <Dialog open={dialogOpen} onOpenChange={(open) => {
-                setDialogOpen(open);
-                if (!open) resetForm();
-            }}>
-                <DialogContent className="max-w-2xl">
-                    <DialogHeader>
-                        <DialogTitle>
-                            {editingDeal ? 'Edit Flash Deal' : 'Create Flash Deal'}
-                        </DialogTitle>
-                        <DialogDescription>
-                            {editingDeal
-                                ? 'Update the flash deal details'
-                                : 'Create a new time-limited discount offer'}
-                        </DialogDescription>
-                    </DialogHeader>
+                    {/* Stats Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Total Deals</CardTitle>
+                                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{stats.total}</div>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Active</CardTitle>
+                                <Clock className="h-4 w-4 text-green-600" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{stats.active}</div>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Upcoming</CardTitle>
+                                <Clock className="h-4 w-4 text-blue-600" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{stats.upcoming}</div>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Expired</CardTitle>
+                                <Clock className="h-4 w-4 text-gray-600" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">{stats.expired}</div>
+                            </CardContent>
+                        </Card>
+                    </div>
 
-                    <form onSubmit={handleSubmit}>
-                        <div className="grid gap-4 py-4">
-                            <div className="grid gap-2">
-                                <Label htmlFor="productId">Product *</Label>
-                                <Select
-                                    value={formData.productId}
-                                    onValueChange={(value) =>
-                                        setFormData({ ...formData, productId: value })
-                                    }
-                                    required
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select a product" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {products.map((product) => (
-                                            <SelectItem key={product.id} value={product.id}>
-                                                {product.name} - ₹{product.price}
-                                            </SelectItem>
+                    {/* Filters */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Filters</CardTitle>
+                            <CardDescription>Filter flash deals by status</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Select value={statusFilter} onValueChange={setStatusFilter}>
+                                <SelectTrigger className="w-[200px]">
+                                    <SelectValue placeholder="Filter by status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Deals</SelectItem>
+                                    <SelectItem value="active">Active</SelectItem>
+                                    <SelectItem value="upcoming">Upcoming</SelectItem>
+                                    <SelectItem value="expired">Expired</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </CardContent>
+                    </Card>
+
+                    {/* Deals Table */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Flash Deals</CardTitle>
+                            <CardDescription>
+                                {deals.length} deal{deals.length !== 1 ? 's' : ''} found
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            {loading ? (
+                                <div className="text-center py-8">Loading...</div>
+                            ) : deals.length === 0 ? (
+                                <div className="text-center py-8 text-muted-foreground">
+                                    No flash deals found
+                                </div>
+                            ) : (
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Product/Deal</TableHead>
+                                            <TableHead>Discount</TableHead>
+                                            <TableHead>Original Price</TableHead>
+                                            <TableHead>Deal Price</TableHead>
+                                            <TableHead>Start Date</TableHead>
+                                            <TableHead>End Date</TableHead>
+                                            <TableHead>Description</TableHead>
+                                            <TableHead>Status</TableHead>
+                                            <TableHead className="text-right">Actions</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {deals.map((deal) => (
+                                            <TableRow key={deal.id}>
+                                                <TableCell className="font-medium">
+                                                    <div>
+                                                        <div>{deal.product.name}</div>
+                                                        <div className="text-xs text-muted-foreground">{deal.title}</div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge variant="secondary">{deal.discount}% OFF</Badge>
+                                                </TableCell>
+                                                <TableCell>₹{deal.product.price.toFixed(2)}</TableCell>
+                                                <TableCell className="font-bold text-green-600">
+                                                    ₹{calculateDiscountedPrice(deal.product.price, deal.discount).toFixed(2)}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {new Date(deal.startDate).toLocaleString()}
+                                                </TableCell>
+                                                <TableCell>
+                                                    {new Date(deal.endDate).toLocaleString()}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="text-xs text-muted-foreground">
+                                                        {deal.description || '-'}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>{getStatusBadge(getDealStatus(deal))}</TableCell>
+                                                <TableCell className="text-right space-x-2">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => handleEdit(deal)}
+                                                    >
+                                                        <Pencil className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => handleDelete(deal.id)}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
                                         ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                                    </TableBody>
+                                </Table>
+                            )}
+                        </CardContent>
+                    </Card>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="title">Deal Title *</Label>
-                                <Input
-                                    id="title"
-                                    value={formData.title}
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, title: e.target.value })
-                                    }
-                                    placeholder="e.g., Weekend Special"
-                                    required
-                                />
-                            </div>
+                    {/* Create/Edit Dialog */}
+                    <Dialog open={dialogOpen} onOpenChange={(open) => {
+                        setDialogOpen(open);
+                        if (!open) resetForm();
+                    }}>
+                        <DialogContent className="max-w-2xl">
+                            <DialogHeader>
+                                <DialogTitle>
+                                    {editingDeal ? 'Edit Flash Deal' : 'Create Flash Deal'}
+                                </DialogTitle>
+                                <DialogDescription>
+                                    {editingDeal
+                                        ? 'Update the flash deal details'
+                                        : 'Create a new time-limited discount offer'}
+                                </DialogDescription>
+                            </DialogHeader>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="description">Description</Label>
-                                <Textarea
-                                    id="description"
-                                    value={formData.description}
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, description: e.target.value })
-                                    }
-                                    placeholder="Describe the deal"
-                                    rows={3}
-                                />
-                            </div>
+                            <form onSubmit={handleSubmit}>
+                                <div className="grid gap-4 py-4">
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="productId">Product *</Label>
+                                        <Select
+                                            value={formData.productId}
+                                            onValueChange={(value) =>
+                                                setFormData({ ...formData, productId: value })
+                                            }
+                                            required
+                                        >
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select a product" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {products.map((product) => (
+                                                    <SelectItem key={product.id} value={product.id}>
+                                                        {product.name} - ₹{product.price}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
 
-                            <div className="grid gap-2">
-                                <Label htmlFor="discount">Discount Percentage (%) *</Label>
-                                <Input
-                                    id="discount"
-                                    type="number"
-                                    min="1"
-                                    max="99"
-                                    value={formData.discount}
-                                    onChange={(e) =>
-                                        setFormData({
-                                            ...formData,
-                                            discount: parseInt(e.target.value) || 0,
-                                        })
-                                    }
-                                    required
-                                />
-                            </div>
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="title">Deal Title *</Label>
+                                        <Input
+                                            id="title"
+                                            value={formData.title}
+                                            onChange={(e) =>
+                                                setFormData({ ...formData, title: e.target.value })
+                                            }
+                                            placeholder="e.g., Weekend Special"
+                                            required
+                                        />
+                                    </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="grid gap-2">
-                                    <Label htmlFor="startDate">Start Date & Time *</Label>
-                                    <Input
-                                        id="startDate"
-                                        type="datetime-local"
-                                        value={formData.startDate}
-                                        onChange={(e) =>
-                                            setFormData({ ...formData, startDate: e.target.value })
-                                        }
-                                        required
-                                    />
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="description">Description</Label>
+                                        <Textarea
+                                            id="description"
+                                            value={formData.description}
+                                            onChange={(e) =>
+                                                setFormData({ ...formData, description: e.target.value })
+                                            }
+                                            placeholder="Describe the deal"
+                                            rows={3}
+                                        />
+                                    </div>
+
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="discount">Discount Percentage (%) *</Label>
+                                        <Input
+                                            id="discount"
+                                            type="number"
+                                            min="1"
+                                            max="99"
+                                            value={formData.discount}
+                                            onChange={(e) =>
+                                                setFormData({
+                                                    ...formData,
+                                                    discount: parseInt(e.target.value) || 0,
+                                                })
+                                            }
+                                            required
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="startDate">Start Date & Time *</Label>
+                                            <Input
+                                                id="startDate"
+                                                type="datetime-local"
+                                                value={formData.startDate}
+                                                onChange={(e) =>
+                                                    setFormData({ ...formData, startDate: e.target.value })
+                                                }
+                                                required
+                                            />
+                                        </div>
+
+                                        <div className="grid gap-2">
+                                            <Label htmlFor="endDate">End Date & Time *</Label>
+                                            <Input
+                                                id="endDate"
+                                                type="datetime-local"
+                                                value={formData.endDate}
+                                                onChange={(e) =>
+                                                    setFormData({ ...formData, endDate: e.target.value })
+                                                }
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center space-x-2">
+                                        <Switch
+                                            id="isActive"
+                                            checked={formData.isActive}
+                                            onCheckedChange={(checked) =>
+                                                setFormData({ ...formData, isActive: checked })
+                                            }
+                                        />
+                                        <Label htmlFor="isActive">Active</Label>
+                                    </div>
                                 </div>
 
-                                <div className="grid gap-2">
-                                    <Label htmlFor="endDate">End Date & Time *</Label>
-                                    <Input
-                                        id="endDate"
-                                        type="datetime-local"
-                                        value={formData.endDate}
-                                        onChange={(e) =>
-                                            setFormData({ ...formData, endDate: e.target.value })
-                                        }
-                                        required
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="flex items-center space-x-2">
-                                <Switch
-                                    id="isActive"
-                                    checked={formData.isActive}
-                                    onCheckedChange={(checked) =>
-                                        setFormData({ ...formData, isActive: checked })
-                                    }
-                                />
-                                <Label htmlFor="isActive">Active</Label>
-                            </div>
-                        </div>
-
-                        <DialogFooter>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => setDialogOpen(false)}
-                            >
-                                Cancel
-                            </Button>
-                            <Button type="submit">
-                                {editingDeal ? 'Update Deal' : 'Create Deal'}
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
+                                <DialogFooter>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        onClick={() => setDialogOpen(false)}
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button type="submit">
+                                        {editingDeal ? 'Update Deal' : 'Create Deal'}
+                                    </Button>
+                                </DialogFooter>
+                            </form>
+                        </DialogContent>
+                    </Dialog>
+                </div>
+            </div>
         </div>
     );
 }

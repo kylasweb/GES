@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { AdminSidebar } from '@/components/admin/sidebar';
 import {
     Loader2,
     Layout,
@@ -185,8 +186,11 @@ export default function AppearancePage() {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center h-64">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className="flex min-h-screen bg-gray-50">
+                <AdminSidebar />
+                <div className="flex-1 flex items-center justify-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
             </div>
         );
     }
@@ -276,98 +280,103 @@ export default function AppearancePage() {
     };
 
     return (
-        <div className="p-6 space-y-6">
-            {/* Header */}
-            <div>
-                <div className="flex items-center gap-2 mb-2">
-                    <Settings className="h-6 w-6 text-primary" />
-                    <h1 className="text-3xl font-bold">Appearance Settings</h1>
+        <div className="flex min-h-screen bg-gray-50">
+            <AdminSidebar />
+            <div className="flex-1">
+                <div className="p-6 space-y-6">
+                    {/* Header */}
+                    <div>
+                        <div className="flex items-center gap-2 mb-2">
+                            <Settings className="h-6 w-6 text-primary" />
+                            <h1 className="text-3xl font-bold">Appearance Settings</h1>
+                        </div>
+                        <p className="text-muted-foreground">
+                            Customize the look and feel of your website header, footer, and navigation menu
+                        </p>
+                    </div>
+
+                    {/* Tabs */}
+                    <Tabs defaultValue="header" className="space-y-6">
+                        <TabsList className="grid w-full grid-cols-3">
+                            <TabsTrigger value="header" className="gap-2">
+                                <Layout className="h-4 w-4" />
+                                Header Styles
+                            </TabsTrigger>
+                            <TabsTrigger value="footer" className="gap-2">
+                                <Columns className="h-4 w-4" />
+                                Footer Styles
+                            </TabsTrigger>
+                            <TabsTrigger value="menu" className="gap-2">
+                                <Menu className="h-4 w-4" />
+                                Menu Styles
+                            </TabsTrigger>
+                        </TabsList>
+
+                        {/* Header Styles */}
+                        <TabsContent value="header" className="space-y-4">
+                            <div>
+                                <h2 className="text-xl font-semibold mb-1">Header Styles</h2>
+                                <p className="text-sm text-muted-foreground">
+                                    Choose a header style that best represents your brand
+                                </p>
+                            </div>
+                            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                {headerStyles.map((style) => (
+                                    <StyleCard
+                                        key={style.value}
+                                        style={style}
+                                        currentValue={settings?.headerStyle || 'default'}
+                                        onSelect={(value) => updateStyle('header', value)}
+                                        type="header"
+                                    />
+                                ))}
+                            </div>
+                        </TabsContent>
+
+                        {/* Footer Styles */}
+                        <TabsContent value="footer" className="space-y-4">
+                            <div>
+                                <h2 className="text-xl font-semibold mb-1">Footer Styles</h2>
+                                <p className="text-sm text-muted-foreground">
+                                    Select a footer layout that provides the right information
+                                </p>
+                            </div>
+                            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                {footerStyles.map((style) => (
+                                    <StyleCard
+                                        key={style.value}
+                                        style={style}
+                                        currentValue={settings?.footerStyle || 'default'}
+                                        onSelect={(value) => updateStyle('footer', value)}
+                                        type="footer"
+                                    />
+                                ))}
+                            </div>
+                        </TabsContent>
+
+                        {/* Menu Styles */}
+                        <TabsContent value="menu" className="space-y-4">
+                            <div>
+                                <h2 className="text-xl font-semibold mb-1">Menu Styles</h2>
+                                <p className="text-sm text-muted-foreground">
+                                    Pick a navigation menu style for optimal user experience
+                                </p>
+                            </div>
+                            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                {menuStyles.map((style) => (
+                                    <StyleCard
+                                        key={style.value}
+                                        style={style}
+                                        currentValue={settings?.menuStyle || 'default'}
+                                        onSelect={(value) => updateStyle('menu', value)}
+                                        type="menu"
+                                    />
+                                ))}
+                            </div>
+                        </TabsContent>
+                    </Tabs>
                 </div>
-                <p className="text-muted-foreground">
-                    Customize the look and feel of your website header, footer, and navigation menu
-                </p>
             </div>
-
-            {/* Tabs */}
-            <Tabs defaultValue="header" className="space-y-6">
-                <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="header" className="gap-2">
-                        <Layout className="h-4 w-4" />
-                        Header Styles
-                    </TabsTrigger>
-                    <TabsTrigger value="footer" className="gap-2">
-                        <Columns className="h-4 w-4" />
-                        Footer Styles
-                    </TabsTrigger>
-                    <TabsTrigger value="menu" className="gap-2">
-                        <Menu className="h-4 w-4" />
-                        Menu Styles
-                    </TabsTrigger>
-                </TabsList>
-
-                {/* Header Styles */}
-                <TabsContent value="header" className="space-y-4">
-                    <div>
-                        <h2 className="text-xl font-semibold mb-1">Header Styles</h2>
-                        <p className="text-sm text-muted-foreground">
-                            Choose a header style that best represents your brand
-                        </p>
-                    </div>
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        {headerStyles.map((style) => (
-                            <StyleCard
-                                key={style.value}
-                                style={style}
-                                currentValue={settings?.headerStyle || 'default'}
-                                onSelect={(value) => updateStyle('header', value)}
-                                type="header"
-                            />
-                        ))}
-                    </div>
-                </TabsContent>
-
-                {/* Footer Styles */}
-                <TabsContent value="footer" className="space-y-4">
-                    <div>
-                        <h2 className="text-xl font-semibold mb-1">Footer Styles</h2>
-                        <p className="text-sm text-muted-foreground">
-                            Select a footer layout that provides the right information
-                        </p>
-                    </div>
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        {footerStyles.map((style) => (
-                            <StyleCard
-                                key={style.value}
-                                style={style}
-                                currentValue={settings?.footerStyle || 'default'}
-                                onSelect={(value) => updateStyle('footer', value)}
-                                type="footer"
-                            />
-                        ))}
-                    </div>
-                </TabsContent>
-
-                {/* Menu Styles */}
-                <TabsContent value="menu" className="space-y-4">
-                    <div>
-                        <h2 className="text-xl font-semibold mb-1">Menu Styles</h2>
-                        <p className="text-sm text-muted-foreground">
-                            Pick a navigation menu style for optimal user experience
-                        </p>
-                    </div>
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        {menuStyles.map((style) => (
-                            <StyleCard
-                                key={style.value}
-                                style={style}
-                                currentValue={settings?.menuStyle || 'default'}
-                                onSelect={(value) => updateStyle('menu', value)}
-                                type="menu"
-                            />
-                        ))}
-                    </div>
-                </TabsContent>
-            </Tabs>
         </div>
     );
 }
