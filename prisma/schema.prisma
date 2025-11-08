@@ -755,3 +755,168 @@ model GitVersion {
   @@index([environment])
   @@map("git_versions")
 }
+
+model Chat {
+  id                      String            @id @default(cuid())
+  visitorName             String?
+  visitorEmail            String?
+  visitorPhone            String?
+  sessionId               String            @unique
+  status                  ChatStatus        @default(ACTIVE)
+  department              String?           @default("general") // general, sales, support, technical
+  assignedTo              String? // Admin user ID
+  startedAt               DateTime          @default(now())
+  endedAt                 DateTime?
+  lastMessageAt           DateTime          @default(now())
+  firstResponseAt         DateTime? // When admin first replied
+  resolvedAt              DateTime? // When marked as resolved
+  responseTime            Int? // Seconds until first response
+  resolutionTime          Int? // Seconds until resolved
+  rating                  Int? // 1-5 stars
+  ratingComment           String?
+  isOfflineMessage        Boolean           @default(false)
+  offlineNotificationSent Boolean           @default(false)
+  emailNotificationSent   Boolean           @default(false)
+  metadata                Json? // Browser info, page URL, etc.
+  messages                ChatMessage[]
+  participants            ChatParticipant[]
+  analytics               ChatAnalytics?
+
+  @@index([status])
+  @@index([department])
+  @@index([assignedTo])
+  @@index([lastMessageAt])
+  @@index([isOfflineMessage])
+  @@map("chats")
+}
+
+model ChatMessage {
+  id          String      @id @default(cuid())
+  chatId      String
+  senderId    String? // User ID or null for visitor
+  senderType  SenderType
+  message     String      @db.Text
+  messageType MessageType @default(TEXT)
+  fileUrl     String? // Cloudinary URL for images/files
+  fileName    String? // Original filename
+  fileSize    Int? // File size in bytes
+  metadata    Json? // Attachments, knowledge base ref, etc.
+  isRead      Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  chat        Chat        @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@index([chatId])
+  @@index([createdAt])
+  @@map("chat_messages")
+}
+
+model ChatParticipant {
+  id       String          @id @default(cuid())
+  chatId   String
+  userId   String? // Admin user ID
+  role     ParticipantRole
+  joinedAt DateTime        @default(now())
+  leftAt   DateTime?
+  isActive Boolean         @default(true)
+  chat     Chat            @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@unique([chatId, userId])
+  @@index([chatId])
+  @@index([userId])
+  @@map("chat_participants")
+}
+
+model ChatKnowledgeBase {
+  id         String   @id @default(cuid())
+  title      String
+  content    String   @db.Text
+  keywords   String[] // For auto-suggestion matching
+  category   String?
+  isActive   Boolean  @default(true)
+  sortOrder  Int      @default(0)
+  views      Int      @default(0)
+  helpful    Int      @default(0)
+  notHelpful Int      @default(0)
+  createdBy  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([category])
+  @@map("chat_knowledge_base")
+}
+
+model ChatAnalytics {
+  id                   String   @id @default(cuid())
+  chatId               String   @unique
+  chat                 Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  totalMessages        Int      @default(0)
+  visitorMessages      Int      @default(0)
+  adminMessages        Int      @default(0)
+  avgResponseTime      Int? // Average admin response time in seconds
+  longestResponseTime  Int? // Longest time between visitor message and admin reply
+  shortestResponseTime Int? // Shortest time between visitor message and admin reply
+  sessionDuration      Int? // Total chat duration in seconds
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([chatId])
+  @@map("chat_analytics")
+}
+
+model ChatDepartment {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  email       String? // Department email for notifications
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("chat_departments")
+}
+
+model AdminPresence {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  isOnline   Boolean  @default(false)
+  lastSeenAt DateTime @default(now())
+  socketId   String?
+  department String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([isOnline])
+  @@index([department])
+  @@map("admin_presence")
+}
+
+enum ChatStatus {
+  ACTIVE
+  WAITING
+  ASSIGNED
+  RESOLVED
+  CLOSED
+}
+
+enum SenderType {
+  VISITOR
+  ADMIN
+  SYSTEM
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  FILE
+  KNOWLEDGE_BASE
+  SYSTEM
+}
+
+enum ParticipantRole {
+  VISITOR
+  ADMIN
+  OBSERVER
+}

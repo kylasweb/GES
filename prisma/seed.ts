@@ -498,6 +498,115 @@ async function main() {
   }
 
   console.log('Database seeded successfully!');
+
+  // Seed knowledge base articles for chat
+  console.log('Seeding knowledge base articles...');
+
+  const knowledgeArticles = [
+    {
+      title: 'How to choose the right solar panel?',
+      content: 'When choosing a solar panel, consider: 1) Efficiency rating (higher is better), 2) Warranty period (typically 25 years), 3) Power output (measured in watts), 4) Brand reputation, 5) Your roof space and energy needs. We recommend monocrystalline panels for residential use.',
+      keywords: ['solar panel', 'choose', 'select', 'buy', 'monocrystalline', 'efficiency'],
+      category: 'Solar Panels',
+      isActive: true,
+      sortOrder: 1,
+    },
+    {
+      title: 'Solar panel installation process',
+      content: 'Our installation process: 1) Site assessment and design, 2) Permits and approvals, 3) Roof preparation, 4) Panel mounting, 5) Electrical connections, 6) System testing, 7) Grid connection. Typical installation takes 1-3 days.',
+      keywords: ['installation', 'install', 'setup', 'process', 'how long'],
+      category: 'Installation',
+      isActive: true,
+      sortOrder: 2,
+    },
+    {
+      title: 'Solar battery storage options',
+      content: 'We offer lithium-ion batteries with capacities from 5kWh to 20kWh. Benefits include: backup power during outages, reduced electricity bills, energy independence. Battery systems typically last 10-15 years.',
+      keywords: ['battery', 'storage', 'backup', 'power', 'lithium'],
+      category: 'Batteries',
+      isActive: true,
+      sortOrder: 3,
+    },
+    {
+      title: 'Warranty and maintenance',
+      content: 'All our solar panels come with 25-year performance warranty and 10-year product warranty. Maintenance includes: annual inspection, cleaning (twice a year), inverter check. We offer AMC packages for hassle-free maintenance.',
+      keywords: ['warranty', 'maintenance', 'cleaning', 'service', 'amc'],
+      category: 'Support',
+      isActive: true,
+      sortOrder: 4,
+    },
+    {
+      title: 'Government subsidies and incentives',
+      content: 'Current government subsidies: 40% for systems up to 3kW, 20% for 3-10kW. Additional state subsidies may apply. We assist with all subsidy paperwork. ROI typically achieved in 5-7 years.',
+      keywords: ['subsidy', 'incentive', 'government', 'discount', 'roi'],
+      category: 'Finance',
+      isActive: true,
+      sortOrder: 5,
+    },
+    {
+      title: 'Return and refund policy',
+      content: 'We offer 30-day money-back guarantee if you are not satisfied. Products can be returned in original condition. Installation charges are non-refundable. Full refund processed within 7-10 business days.',
+      keywords: ['return', 'refund', 'money back', 'cancel'],
+      category: 'Policy',
+      isActive: true,
+      sortOrder: 6,
+    },
+  ];
+
+  for (const article of knowledgeArticles) {
+    await prisma.chatKnowledgeBase.create({
+      data: article,
+    });
+  }
+
+  console.log('Knowledge base articles seeded!');
+
+  // Seed chat departments
+  console.log('Seeding chat departments...');
+
+  const departments = [
+    {
+      name: 'General Support',
+      slug: 'general',
+      description: 'General inquiries and support',
+      email: 'support@greenenergysolutions.in',
+      isActive: true,
+      sortOrder: 1,
+    },
+    {
+      name: 'Sales',
+      slug: 'sales',
+      description: 'Product inquiries and quotations',
+      email: 'sales@greenenergysolutions.in',
+      isActive: true,
+      sortOrder: 2,
+    },
+    {
+      name: 'Technical Support',
+      slug: 'technical',
+      description: 'Installation and technical assistance',
+      email: 'tech@greenenergysolutions.in',
+      isActive: true,
+      sortOrder: 3,
+    },
+    {
+      name: 'Billing & Finance',
+      slug: 'finance',
+      description: 'Payment and billing inquiries',
+      email: 'finance@greenenergysolutions.in',
+      isActive: true,
+      sortOrder: 4,
+    },
+  ];
+
+  for (const dept of departments) {
+    await prisma.chatDepartment.create({
+      data: dept,
+    });
+  }
+
+  console.log('Chat departments seeded!');
+
   console.log('\n=== ADMIN CREDENTIALS FOR TESTING ===');
   console.log('🔑 Super Admin:');
   console.log('   Email: admin@greenenergysolutions.in');

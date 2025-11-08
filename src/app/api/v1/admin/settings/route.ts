@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db as prisma } from '@/lib/db';
-import { verifyAuth } from '@/lib/auth';
+import { verifyToken } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
     try {
         // Verify authentication
-        const user = await verifyAuth(request);
+        const token = request.headers.get('authorization')?.replace('Bearer ', '');
+        if (!token) {
+            return NextResponse.json(
+                { error: 'Authentication required' },
+                { status: 401 }
+            );
+        }
+
+        const user = await verifyToken(token);
         if (!user || (user.role !== 'SUPER_ADMIN' && user.role !== 'ADMIN')) {
             return NextResponse.json(
                 { error: 'Unauthorized' },
@@ -40,7 +48,15 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
     try {
         // Verify authentication
-        const user = await verifyAuth(request);
+        const token = request.headers.get('authorization')?.replace('Bearer ', '');
+        if (!token) {
+            return NextResponse.json(
+                { error: 'Authentication required' },
+                { status: 401 }
+            );
+        }
+
+        const user = await verifyToken(token);
         if (!user || (user.role !== 'SUPER_ADMIN' && user.role !== 'ADMIN')) {
             return NextResponse.json(
                 { error: 'Unauthorized' },

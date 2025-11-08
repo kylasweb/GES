@@ -4,14 +4,14 @@ import { db } from '@/lib/db';
 import { verifyAuth, requireAdmin } from '@/lib/auth';
 
 const productQuerySchema = z.object({
-  page: z.string().optional().transform(val => val ? parseInt(val) : 1),
-  limit: z.string().optional().transform(val => val ? parseInt(val) : 20),
+  page: z.string().optional().default('1').transform(val => parseInt(val) || 1),
+  limit: z.string().optional().default('20').transform(val => parseInt(val) || 20),
   category: z.string().optional(),
   featured: z.string().optional().transform(val => val === 'true'),
   search: z.string().optional(),
   sortBy: z.string().optional().default('createdAt'),
-  sortOrder: z.string().optional().transform(val => val === 'desc' ? 'desc' : 'asc'),
-});
+  sortOrder: z.string().optional().default('asc').transform(val => val === 'desc' ? 'desc' : 'asc'),
+}).passthrough(); // Allow additional properties
 
 export async function GET(request: NextRequest) {
   try {

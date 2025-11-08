@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { DebugBar } from "@/components/debug/debug-bar";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/components/providers/auth-provider";
+import { ChatWidget } from "@/components/chat/chat-widget";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -48,6 +49,7 @@ export default function RootLayout({
         <AuthProvider>
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
             {children}
+            <ChatWidget />
             <Toaster />
             <DebugBar />
           </ThemeProvider>
