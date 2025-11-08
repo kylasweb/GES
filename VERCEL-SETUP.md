@@ -34,16 +34,17 @@ PHONEPE_ENV=development
 NODE_ENV=production
 
 # Cloudinary (for file uploads - logo, favicon, media)
-CLOUDINARY_CLOUD_NAME=your_cloud_name
-CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_CLOUD_NAME=dfvwt7puv
+CLOUDINARY_API_KEY=776653259463791
 CLOUDINARY_API_SECRET=tiVK1iy8JpkJolsBwx-kAXXSOHU
 ```
 
 ## Steps:
 
-1. ✅ **Get Cloudinary Credentials**:
-   - Go to https://console.cloudinary.com/settings/c-xxxxx/api-keys
-   - Copy: **Cloud Name**, **API Key**, and **API Secret** (already have: tiVK1iy8JpkJolsBwx-kAXXSOHU)
+1. ✅ **Cloudinary Credentials** - Already configured:
+   - Cloud Name: `dfvwt7puv`
+   - API Key: `776653259463791`
+   - API Secret: `tiVK1iy8JpkJolsBwx-kAXXSOHU`
    
 2. ✅ Copy all variables above
 3. ✅ Go to Vercel → Your Project → Settings → Environment Variables
