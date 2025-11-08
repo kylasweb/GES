@@ -52,7 +52,7 @@ export default function FlipkartTemplate() {
 
                 if (productsRes.ok) {
                     const data = await productsRes.json();
-                    setProducts(data.products || []);
+                    setProducts(data.data?.products || data.products || []);
                 }
 
                 if (dealsRes.ok) {

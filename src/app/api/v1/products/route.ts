@@ -76,12 +76,15 @@ export async function GET(request: NextRequest) {
     ]);
 
     return NextResponse.json({
-      products,
-      pagination: {
-        page: query.page,
-        limit: query.limit,
-        total,
-        pages: Math.ceil(total / query.limit),
+      success: true,
+      data: {
+        products,
+        pagination: {
+          page: query.page,
+          limit: query.limit,
+          total,
+          pages: Math.ceil(total / query.limit),
+        },
       },
     });
   } catch (error) {
@@ -89,13 +92,13 @@ export async function GET(request: NextRequest) {
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { error: 'Invalid query parameters', details: error.issues },
+        { success: false, error: 'Invalid query parameters', details: error.issues },
         { status: 400 }
       );
     }
 
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { success: false, error: 'Internal server error' },
       { status: 500 }
     );
   }

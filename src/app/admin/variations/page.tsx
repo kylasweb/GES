@@ -172,7 +172,7 @@ export default function AdminVariationsPage() {
             }
 
             const data = await response.json();
-            setProducts(data.products || []);
+            setProducts(data.data?.products || data.products || []);
         } catch (error) {
             console.error('Error fetching products:', error);
         }

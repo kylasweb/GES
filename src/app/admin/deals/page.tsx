@@ -104,7 +104,7 @@ interface Deal {
         try {
             const response = await fetch('/api/v1/products?limit=100');
             const data = await response.json();
-            setProducts(data.products || []);
+            setProducts(data.data?.products || data.products || []);
         } catch (error) {
             console.error('Error fetching products:', error);
         }

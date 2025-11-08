@@ -1,11 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db as prisma } from '@/lib/db';
-import { verifyAuth } from '@/lib/auth';
+import { verifyToken } from '@/lib/auth';
 
 // GET all feature flags
 export async function GET(request: NextRequest) {
     try {
-        const user = await verifyAuth(request);
+        const token = request.headers.get('authorization')?.replace('Bearer ', '');
+        if (!token) {
+            return NextResponse.json(
+                { success: false, error: 'Authentication required' },
+                { status: 401 }
+            );
+        }
+
+        const user = await verifyToken(token);
         if (!user || (user.role !== 'SUPER_ADMIN' && user.role !== 'ADMIN')) {
             return NextResponse.json(
                 { success: false, error: 'Unauthorized' },
@@ -36,7 +44,15 @@ export async function GET(request: NextRequest) {
 // POST create new feature flag
 export async function POST(request: NextRequest) {
     try {
-        const user = await verifyAuth(request);
+        const token = request.headers.get('authorization')?.replace('Bearer ', '');
+        if (!token) {
+            return NextResponse.json(
+                { success: false, error: 'Authentication required' },
+                { status: 401 }
+            );
+        }
+
+        const user = await verifyToken(token);
         if (!user || user.role !== 'SUPER_ADMIN') {
             return NextResponse.json(
                 { success: false, error: 'Unauthorized' },

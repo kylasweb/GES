@@ -72,7 +72,7 @@ export default function Home() {
         const productsResponse = await fetch('/api/v1/products?featured=true&limit=8');
         if (productsResponse.ok) {
           const productsData = await productsResponse.json();
-          setProducts(productsData.products || []);
+          setProducts(productsData.data?.products || productsData.products || []);
         }
 
         // Fetch content blocks for landing page

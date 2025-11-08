@@ -39,7 +39,7 @@ export default function NeomorphicTemplate() {
                 const response = await fetch('/api/v1/products?featured=true&limit=12');
                 if (response.ok) {
                     const data = await response.json();
-                    setProducts(data.products || []);
+                    setProducts(data.data?.products || data.products || []);
                 }
             } catch (error) {
                 console.error('Failed to fetch products:', error);
