@@ -701,6 +701,14 @@ model SiteSettings {
   headerStyle      String           @default("default") // default, minimal, centered, transparent, mega
   footerStyle      String           @default("default") // default, minimal, newsletter, social
   menuStyle        String           @default("default") // default, dropdown, mega, sidebar
+  // SMTP Settings for email
+  smtpHost         String?
+  smtpPort         Int?             @default(587)
+  smtpUser         String?
+  smtpPassword     String?
+  smtpFromEmail    String?
+  smtpFromName     String?
+  smtpSecure       Boolean          @default(false) // true for 465, false for other ports
   config           Json?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt

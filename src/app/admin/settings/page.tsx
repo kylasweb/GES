@@ -40,6 +40,15 @@ interface SettingsData {
         seoDescription: string;
         seoKeywords: string;
     };
+    smtp: {
+        smtpHost: string;
+        smtpPort: number;
+        smtpUser: string;
+        smtpPassword: string;
+        smtpFromEmail: string;
+        smtpFromName: string;
+        smtpSecure: boolean;
+    };
     payment: {
         stripeEnabled: boolean;
         paypalEnabled: boolean;
@@ -80,6 +89,15 @@ export default function SettingsPage() {
             seoDescription: 'Leading provider of solar panels, batteries, and renewable energy solutions. Quality products and expert installation services.',
             seoKeywords: 'solar panels, solar energy, renewable energy, solar batteries, green energy'
         },
+        smtp: {
+            smtpHost: '',
+            smtpPort: 587,
+            smtpUser: '',
+            smtpPassword: '',
+            smtpFromEmail: '',
+            smtpFromName: 'Green Energy Solutions',
+            smtpSecure: false
+        },
         payment: {
             stripeEnabled: false,
             paypalEnabled: false,
@@ -104,6 +122,8 @@ export default function SettingsPage() {
     });
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
+    const [testEmailAddress, setTestEmailAddress] = useState('');
+    const [testingEmail, setTestingEmail] = useState(false);
 
     useEffect(() => {
         fetchSettings();
@@ -164,6 +184,41 @@ export default function SettingsPage() {
                 [field]: value
             }
         }));
+    };
+
+    const handleTestEmail = async () => {
+        if (!testEmailAddress) {
+            setError('Please enter an email address to test');
+            return;
+        }
+
+        setTestingEmail(true);
+        setError(null);
+        setSuccess(null);
+
+        try {
+            const response = await fetch('/api/v1/admin/settings/test-email', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ testEmail: testEmailAddress })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                setSuccess(`Test email sent successfully to ${testEmailAddress}!`);
+                setTestEmailAddress('');
+            } else {
+                setError(data.error || 'Failed to send test email');
+            }
+        } catch (err) {
+            setError('Failed to send test email. Please check your SMTP settings.');
+        } finally {
+            setTestingEmail(false);
+        }
     };
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'logo' | 'favicon') => {
@@ -256,26 +311,30 @@ export default function SettingsPage() {
                     )}
 
                     <Tabs defaultValue="general" className="space-y-6">
-                        <TabsList className="grid w-full grid-cols-5">
-                            <TabsTrigger value="general" className="flex items-center">
-                                <Globe className="w-4 h-4 mr-2" />
-                                General
+                        <TabsList className="grid w-full grid-cols-6">
+                            <TabsTrigger value="general" className="flex items-center gap-1 text-xs md:text-sm">
+                                <Globe className="w-4 h-4" />
+                                <span className="hidden sm:inline">General</span>
                             </TabsTrigger>
-                            <TabsTrigger value="seo" className="flex items-center">
-                                <Search className="w-4 h-4 mr-2" />
-                                SEO
+                            <TabsTrigger value="smtp" className="flex items-center gap-1 text-xs md:text-sm">
+                                <Mail className="w-4 h-4" />
+                                <span className="hidden sm:inline">Email/SMTP</span>
                             </TabsTrigger>
-                            <TabsTrigger value="payment" className="flex items-center">
-                                <CreditCard className="w-4 h-4 mr-2" />
-                                Payment
+                            <TabsTrigger value="seo" className="flex items-center gap-1 text-xs md:text-sm">
+                                <Search className="w-4 h-4" />
+                                <span className="hidden sm:inline">SEO</span>
                             </TabsTrigger>
-                            <TabsTrigger value="notifications" className="flex items-center">
-                                <Bell className="w-4 h-4 mr-2" />
-                                Notifications
+                            <TabsTrigger value="payment" className="flex items-center gap-1 text-xs md:text-sm">
+                                <CreditCard className="w-4 h-4" />
+                                <span className="hidden sm:inline">Payment</span>
                             </TabsTrigger>
-                            <TabsTrigger value="security" className="flex items-center">
-                                <Shield className="w-4 h-4 mr-2" />
-                                Security
+                            <TabsTrigger value="notifications" className="flex items-center gap-1 text-xs md:text-sm">
+                                <Bell className="w-4 h-4" />
+                                <span className="hidden sm:inline">Notifications</span>
+                            </TabsTrigger>
+                            <TabsTrigger value="security" className="flex items-center gap-1 text-xs md:text-sm">
+                                <Shield className="w-4 h-4" />
+                                <span className="hidden sm:inline">Security</span>
                             </TabsTrigger>
                         </TabsList>
 
@@ -440,6 +499,138 @@ export default function SettingsPage() {
                                                     />
                                                 </div>
                                             )}
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+
+                        {/* SMTP/Email Settings */}
+                        <TabsContent value="smtp">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="flex items-center">
+                                        <Mail className="w-5 h-5 mr-2" />
+                                        SMTP / Email Configuration
+                                    </CardTitle>
+                                    <p className="text-sm text-gray-600 mt-2">
+                                        Configure your external email service for sending order confirmations, notifications, and other emails.
+                                    </p>
+                                </CardHeader>
+                                <CardContent className="space-y-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <Label htmlFor="smtpHost">SMTP Host *</Label>
+                                            <Input
+                                                id="smtpHost"
+                                                placeholder="smtp.gmail.com"
+                                                value={settings.smtp.smtpHost}
+                                                onChange={(e) => updateSetting('smtp', 'smtpHost', e.target.value)}
+                                            />
+                                            <p className="text-xs text-gray-500 mt-1">e.g., smtp.gmail.com, smtp.office365.com</p>
+                                        </div>
+
+                                        <div>
+                                            <Label htmlFor="smtpPort">SMTP Port *</Label>
+                                            <Input
+                                                id="smtpPort"
+                                                type="number"
+                                                placeholder="587"
+                                                value={settings.smtp.smtpPort}
+                                                onChange={(e) => updateSetting('smtp', 'smtpPort', parseInt(e.target.value))}
+                                            />
+                                            <p className="text-xs text-gray-500 mt-1">Common ports: 587 (TLS), 465 (SSL), 25</p>
+                                        </div>
+
+                                        <div>
+                                            <Label htmlFor="smtpUser">SMTP Username *</Label>
+                                            <Input
+                                                id="smtpUser"
+                                                placeholder="your-email@gmail.com"
+                                                value={settings.smtp.smtpUser}
+                                                onChange={(e) => updateSetting('smtp', 'smtpUser', e.target.value)}
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <Label htmlFor="smtpPassword">SMTP Password *</Label>
+                                            <Input
+                                                id="smtpPassword"
+                                                type="password"
+                                                placeholder="App password or SMTP password"
+                                                value={settings.smtp.smtpPassword}
+                                                onChange={(e) => updateSetting('smtp', 'smtpPassword', e.target.value)}
+                                            />
+                                            <p className="text-xs text-gray-500 mt-1">Use app-specific password for Gmail</p>
+                                        </div>
+
+                                        <div>
+                                            <Label htmlFor="smtpFromEmail">From Email Address *</Label>
+                                            <Input
+                                                id="smtpFromEmail"
+                                                type="email"
+                                                placeholder="noreply@yourdomain.com"
+                                                value={settings.smtp.smtpFromEmail}
+                                                onChange={(e) => updateSetting('smtp', 'smtpFromEmail', e.target.value)}
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <Label htmlFor="smtpFromName">From Name</Label>
+                                            <Input
+                                                id="smtpFromName"
+                                                placeholder="Green Energy Solutions"
+                                                value={settings.smtp.smtpFromName}
+                                                onChange={(e) => updateSetting('smtp', 'smtpFromName', e.target.value)}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center space-x-2 p-4 bg-gray-50 rounded-lg">
+                                        <Switch
+                                            id="smtpSecure"
+                                            checked={settings.smtp.smtpSecure}
+                                            onCheckedChange={(checked) => updateSetting('smtp', 'smtpSecure', checked)}
+                                        />
+                                        <div>
+                                            <Label htmlFor="smtpSecure" className="cursor-pointer">Use SSL/TLS (Port 465)</Label>
+                                            <p className="text-xs text-gray-500">Enable for port 465, disable for port 587</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                                        <h4 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">Common SMTP Providers:</h4>
+                                        <div className="space-y-2 text-sm text-blue-800 dark:text-blue-200">
+                                            <p><strong>Gmail:</strong> smtp.gmail.com (587) - Use app password</p>
+                                            <p><strong>Office 365:</strong> smtp.office365.com (587)</p>
+                                            <p><strong>Outlook:</strong> smtp-mail.outlook.com (587)</p>
+                                            <p><strong>SendGrid:</strong> smtp.sendgrid.net (587)</p>
+                                            <p><strong>Mailgun:</strong> smtp.mailgun.org (587)</p>
+                                        </div>
+                                    </div>
+
+                                    {/* Test Email Section */}
+                                    <div className="border-t pt-6 space-y-4">
+                                        <h4 className="font-semibold text-gray-900 dark:text-gray-100">Test SMTP Configuration</h4>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                                            Make sure to save your settings before testing. Enter an email address to receive a test email.
+                                        </p>
+                                        <div className="flex gap-2">
+                                            <Input
+                                                type="email"
+                                                placeholder="Enter email address for test"
+                                                value={testEmailAddress}
+                                                onChange={(e) => setTestEmailAddress(e.target.value)}
+                                                className="flex-1"
+                                            />
+                                            <Button
+                                                variant="outline"
+                                                onClick={handleTestEmail}
+                                                disabled={testingEmail || !testEmailAddress}
+                                            >
+                                                <Mail className="w-4 h-4 mr-2" />
+                                                {testingEmail ? 'Sending...' : 'Send Test'}
+                                            </Button>
                                         </div>
                                     </div>
                                 </CardContent>

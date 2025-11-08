@@ -53,10 +53,10 @@ export function Header({ variant = 'default' }: HeaderProps) {
 
   const headerClasses = variant === 'transparent'
     ? `sticky top-0 z-50 w-full transition-all duration-300 ${scrollY > 50
-      ? 'bg-white/90 backdrop-blur-xl shadow-lg border-b border-gray-200'
-      : 'bg-transparent border-transparent'
+      ? 'bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl shadow-lg border-b border-gray-200 dark:border-gray-700'
+      : 'bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200/50 dark:border-gray-700/50'
     }`
-    : `sticky top-0 z-50 w-full border-b border-gray-200 bg-white/80 backdrop-blur-xl transition-all duration-300 ${scrollY > 50 ? 'shadow-lg' : ''
+    : `sticky top-0 z-50 w-full border-b border-gray-200 dark:border-gray-700 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl transition-all duration-300 ${scrollY > 50 ? 'shadow-lg' : ''
     }`;
 
   return (
@@ -64,28 +64,31 @@ export function Header({ variant = 'default' }: HeaderProps) {
       <header className={headerClasses}>
         <div className="container flex h-16 items-center justify-between px-4">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2 group">
+          <Link href="/" className="flex items-center space-x-2 group flex-shrink-0">
             <div className="relative">
-              <Leaf className="h-8 w-8 text-green-600 group-hover:rotate-12 transition-transform duration-300" />
-              <Sparkles className="h-4 w-4 text-yellow-500 absolute -top-1 -right-1 animate-pulse" />
+              <Leaf className="h-6 w-6 md:h-8 md:w-8 text-green-600 dark:text-green-500 group-hover:rotate-12 transition-transform duration-300" />
+              <Sparkles className="h-3 w-3 md:h-4 md:w-4 text-yellow-500 absolute -top-1 -right-1 animate-pulse" />
             </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+            <span className="text-base md:text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 dark:from-green-500 dark:to-emerald-500 bg-clip-text text-transparent hidden sm:inline">
               Green Energy Solutions
+            </span>
+            <span className="text-base font-bold bg-gradient-to-r from-green-600 to-emerald-600 dark:from-green-500 dark:to-emerald-500 bg-clip-text text-transparent sm:hidden">
+              GES
             </span>
           </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            <Link href="/products" className="text-gray-600 hover:text-green-600 transition-colors font-medium">
+            <Link href="/products" className="text-gray-700 dark:text-gray-200 hover:text-green-600 dark:hover:text-green-400 transition-colors font-medium">
               Products
             </Link>
-            <Link href="/about" className="text-gray-600 hover:text-green-600 transition-colors font-medium">
+            <Link href="/about" className="text-gray-700 dark:text-gray-200 hover:text-green-600 dark:hover:text-green-400 transition-colors font-medium">
               About
             </Link>
-            <Link href="/contact" className="text-gray-600 hover:text-green-600 transition-colors font-medium">
+            <Link href="/contact" className="text-gray-700 dark:text-gray-200 hover:text-green-600 dark:hover:text-green-400 transition-colors font-medium">
               Contact
             </Link>
-            <Link href="/blog" className="text-gray-600 hover:text-green-600 transition-colors font-medium">
+            <Link href="/blog" className="text-gray-700 dark:text-gray-200 hover:text-green-600 dark:hover:text-green-400 transition-colors font-medium">
               Blog
             </Link>
           </nav>
@@ -210,22 +213,61 @@ export function Header({ variant = 'default' }: HeaderProps) {
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <div className="md:hidden border-t border-gray-200 bg-white">
+          <div className="md:hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg">
             <div className="container px-4 py-4 space-y-4">
               <nav className="flex flex-col space-y-3">
-                <Link href="/products" className="text-gray-600 hover:text-green-600 transition-colors font-medium">
+                <Link
+                  href="/products"
+                  className="text-gray-700 dark:text-gray-200 hover:text-green-600 dark:hover:text-green-500 transition-colors font-medium py-2 px-3 rounded-md hover:bg-green-50 dark:hover:bg-gray-800"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
                   Products
                 </Link>
-                <Link href="/about" className="text-gray-600 hover:text-green-600 transition-colors font-medium">
+                <Link
+                  href="/about"
+                  className="text-gray-700 dark:text-gray-200 hover:text-green-600 dark:hover:text-green-500 transition-colors font-medium py-2 px-3 rounded-md hover:bg-green-50 dark:hover:bg-gray-800"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
                   About
                 </Link>
-                <Link href="/contact" className="text-gray-600 hover:text-green-600 transition-colors font-medium">
+                <Link
+                  href="/contact"
+                  className="text-gray-700 dark:text-gray-200 hover:text-green-600 dark:hover:text-green-500 transition-colors font-medium py-2 px-3 rounded-md hover:bg-green-50 dark:hover:bg-gray-800"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
                   Contact
                 </Link>
-                <Link href="/blog" className="text-gray-600 hover:text-green-600 transition-colors font-medium">
+                <Link
+                  href="/blog"
+                  className="text-gray-700 dark:text-gray-200 hover:text-green-600 dark:hover:text-green-500 transition-colors font-medium py-2 px-3 rounded-md hover:bg-green-50 dark:hover:bg-gray-800"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
                   Blog
                 </Link>
               </nav>
+
+              {/* Mobile Actions */}
+              <div className="flex flex-col space-y-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <Link href="/wishlist" onClick={() => setMobileMenuOpen(false)}>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-gray-700 dark:text-gray-200 hover:bg-red-50 dark:hover:bg-gray-800 hover:text-red-600 dark:hover:text-red-500 hover:border-red-300"
+                  >
+                    <Heart className="h-4 w-4 mr-2" />
+                    Wishlist {wishlistCount > 0 && `(${wishlistCount})`}
+                  </Button>
+                </Link>
+
+                <Link href="/cart" onClick={() => setMobileMenuOpen(false)}>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start text-gray-700 dark:text-gray-200 hover:bg-green-50 dark:hover:bg-gray-800 hover:text-green-600 dark:hover:text-green-500 hover:border-green-300"
+                  >
+                    <ShoppingCart className="h-4 w-4 mr-2" />
+                    Cart {cartCount > 0 && `(${cartCount})`}
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
         )}
