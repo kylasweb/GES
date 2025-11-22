@@ -39,19 +39,26 @@ export function LandingPage() {
   useEffect(() => {
     // Hero section animation
     if (heroRef.current) {
-      animate(heroRef.current.querySelectorAll('.hero-element'), {
-        translateX: [40, 0],
-        opacity: [0, 1],
-        delay: stagger(100),
-        duration: 1200,
-        easing: 'easeOutExpo'
-      });
-      animate(heroRef.current.querySelector('.hero-buttons'), {
-        translateY: [20, 0],
-        opacity: [0, 1],
-        duration: 800,
-        easing: 'easeOutExpo'
-      });
+      const heroElements = heroRef.current.querySelectorAll('.hero-element');
+      if (heroElements && heroElements.length > 0) {
+        animate(Array.from(heroElements), {
+          translateX: [40, 0],
+          opacity: [0, 1],
+          delay: stagger(100),
+          duration: 1200,
+          easing: 'easeOutExpo'
+        });
+      }
+      
+      const heroButtons = heroRef.current.querySelector('.hero-buttons');
+      if (heroButtons) {
+        animate(heroButtons as HTMLElement, {
+          translateY: [20, 0],
+          opacity: [0, 1],
+          duration: 800,
+          easing: 'easeOutExpo'
+        });
+      }
     }
 
     // Features section animation
@@ -59,13 +66,16 @@ export function LandingPage() {
       const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
-            animate(featuresRef.current?.querySelectorAll('.feature-card'), {
-              translateY: [50, 0],
-              opacity: [0, 1],
-              delay: stagger(150),
-              duration: 1000,
-              easing: 'easeOutQuart'
-            });
+            const featureCards = featuresRef.current?.querySelectorAll('.feature-card');
+            if (featureCards && featureCards.length > 0) {
+              animate(Array.from(featureCards), {
+                translateY: [50, 0],
+                opacity: [0, 1],
+                delay: stagger(150),
+                duration: 1000,
+                easing: 'easeOutQuart'
+              });
+            }
             observer.disconnect();
           }
         });
@@ -79,13 +89,16 @@ export function LandingPage() {
       const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
-            animate(statsRef.current?.querySelectorAll('.stat-item'), {
-              scale: [0.8, 1],
-              opacity: [0, 1],
-              delay: stagger(100),
-              duration: 800,
-              easing: 'spring(1, 80, 10, 0)'
-            });
+            const statItems = statsRef.current?.querySelectorAll('.stat-item');
+            if (statItems && statItems.length > 0) {
+              animate(Array.from(statItems), {
+                scale: [0.8, 1],
+                opacity: [0, 1],
+                delay: stagger(100),
+                duration: 800,
+                easing: 'spring(1, 80, 10, 0)'
+              });
+            }
             observer.disconnect();
           }
         });
@@ -99,12 +112,15 @@ export function LandingPage() {
       const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
-            animate(testimonialsRef.current?.querySelector('.testimonial-card'), {
-              translateX: [40, 0],
-              opacity: [0, 1],
-              duration: 1000,
-              easing: 'easeOutQuart'
-            });
+            const testimonialCard = testimonialsRef.current?.querySelector('.testimonial-card');
+            if (testimonialCard) {
+              animate(testimonialCard as HTMLElement, {
+                translateX: [40, 0],
+                opacity: [0, 1],
+                duration: 1000,
+                easing: 'easeOutQuart'
+              });
+            }
             observer.disconnect();
           }
         });
@@ -118,13 +134,16 @@ export function LandingPage() {
       const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
-            animate(productsRef.current?.querySelectorAll('.product-card'), {
-              translateY: [30, 0],
-              opacity: [0, 1],
-              delay: stagger(100),
-              duration: 800,
-              easing: 'easeOutQuart'
-            });
+            const productCards = productsRef.current?.querySelectorAll('.product-card');
+            if (productCards && productCards.length > 0) {
+              animate(Array.from(productCards), {
+                translateY: [30, 0],
+                opacity: [0, 1],
+                delay: stagger(100),
+                duration: 800,
+                easing: 'easeOutQuart'
+              });
+            }
             observer.disconnect();
           }
         });
@@ -138,13 +157,16 @@ export function LandingPage() {
       const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
-            animate(ctaRef.current?.querySelectorAll('.cta-element'), {
-              translateY: [20, 0],
-              opacity: [0, 1],
-              delay: stagger(150),
-              duration: 1000,
-              easing: 'easeOutQuart'
-            });
+            const ctaElements = ctaRef.current?.querySelectorAll('.cta-element');
+            if (ctaElements && ctaElements.length > 0) {
+              animate(Array.from(ctaElements), {
+                translateY: [20, 0],
+                opacity: [0, 1],
+                delay: stagger(150),
+                duration: 1000,
+                easing: 'easeOutQuart'
+              });
+            }
             observer.disconnect();
           }
         });

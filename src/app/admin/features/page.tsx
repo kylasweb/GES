@@ -140,7 +140,7 @@ export default function FeatureFlagsPage() {
         }
     };
 
-    const categories = ['all', ...Array.from(new Set(flags.map(f => f.category).filter(Boolean)))];
+    const categories = ['all', ...Array.from(new Set(flags.map(f => f.category).filter((cat): cat is string => cat !== null)))];
 
     const filteredFlags = flags.filter(flag => {
         const matchesSearch = flag.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -251,7 +251,7 @@ export default function FeatureFlagsPage() {
                                     <TabsList className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-10">
                                         {categories.map(cat => (
                                             <TabsTrigger key={cat} value={cat} className="capitalize">
-                                                {cat}
+                                                {cat === 'all' ? 'All' : cat}
                                             </TabsTrigger>
                                         ))}
                                     </TabsList>

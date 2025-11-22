@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
+import { OrderStatus } from '@prisma/client';
 
 // GET - Dashboard reports
 export async function GET(request: NextRequest) {
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
             db.order.aggregate({
                 where: {
                     createdAt: { gte: startDate },
-                    status: { in: ['PROCESSING', 'SHIPPED', 'DELIVERED', 'COMPLETED'] }
+                    status: { in: [OrderStatus.PROCESSING, OrderStatus.SHIPPED, OrderStatus.DELIVERED] }
                 },
                 _sum: { totalAmount: true }
             }),
@@ -56,7 +57,7 @@ export async function GET(request: NextRequest) {
 
             // Pending orders
             db.order.count({
-                where: { status: 'PENDING' }
+                where: { status: OrderStatus.PENDING }
             }),
 
             // Low stock products (quantity < 10)
@@ -107,7 +108,7 @@ export async function GET(request: NextRequest) {
             data: {
                 summary: {
                     totalOrders,
-                    totalRevenue: totalRevenue._sum.totalAmount || 0,
+                    totalRevenue: totalRevenue._sum?.totalAmount ? Number(totalRevenue._sum.totalAmount) : 0,
                     totalCustomers,
                     pendingOrders,
                     lowStockProducts

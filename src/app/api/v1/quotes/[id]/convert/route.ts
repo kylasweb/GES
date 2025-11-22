@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 import { z } from 'zod';
+import { PaymentMethod } from '@prisma/client';
 
 const convertSchema = z.object({
     shippingAddress: z.string().min(10),
-    paymentMethod: z.string()
+    paymentMethod: z.nativeEnum(PaymentMethod)
 });
 
 // POST - Convert quote to order (admin only)
@@ -76,7 +77,7 @@ export async function POST(
         }, { status: 201 });
     } catch (error) {
         if (error instanceof z.ZodError) {
-            return NextResponse.json({ success: false, error: 'Validation failed', details: error.errors }, { status: 400 });
+            return NextResponse.json({ success: false, error: 'Validation failed', details: error.issues }, { status: 400 });
         }
         console.error('Convert quote error:', error);
         return NextResponse.json({ success: false, error: 'Failed to convert quote' }, { status: 500 });

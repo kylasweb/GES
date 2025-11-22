@@ -17,7 +17,7 @@ export async function GET(
                 },
                 _count: {
                     select: {
-                        products: true,
+                        ProductToProductAttribute: true,
                     },
                 },
             },
@@ -145,7 +145,7 @@ export async function DELETE(
             include: {
                 _count: {
                     select: {
-                        products: true,
+                        ProductToProductAttribute: true,
                     },
                 },
             },
@@ -159,7 +159,7 @@ export async function DELETE(
         }
 
         // Check if attribute has associated products
-        if (existingAttribute._count.products > 0) {
+        if (existingAttribute._count.ProductToProductAttribute > 0) {
             return NextResponse.json(
                 { error: 'Cannot delete attribute with associated products. Please remove associations first.' },
                 { status: 400 }

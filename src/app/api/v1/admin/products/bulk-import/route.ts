@@ -3,6 +3,30 @@ import { parse } from 'csv-parse/sync';
 import { db } from '@/lib/db';
 import { requireAdmin } from '@/lib/auth';
 import { logAuditTrail } from '@/lib/audit-trail';
+import { Category, Brand } from '@prisma/client';
+import { Decimal } from '@prisma/client/runtime/library';
+
+// Define the structure of CSV records
+interface CSVRecord {
+    name: string;
+    sku: string;
+    price: string;
+    categoryName?: string;
+    brandName?: string;
+    description?: string;
+    shortDesc?: string;
+    comparePrice?: string;
+    costPrice?: string;
+    trackQuantity?: string;
+    quantity?: string;
+    weight?: string;
+    images?: string;
+    tags?: string;
+    isActive?: string;
+    featured?: string;
+    seoTitle?: string;
+    seoDesc?: string;
+}
 
 export async function POST(request: NextRequest) {
     try {
@@ -31,11 +55,13 @@ export async function POST(request: NextRequest) {
         const fileBuffer = await file.arrayBuffer();
         const csvString = Buffer.from(fileBuffer).toString('utf-8');
 
-        const records = parse(csvString, {
+        const parsedRecords: any[] = parse(csvString, {
             columns: true,
             skip_empty_lines: true,
             trim: true,
         });
+
+        const records = parsedRecords as CSVRecord[];
 
         let successful = 0;
         let failed = 0;
@@ -51,20 +77,34 @@ export async function POST(request: NextRequest) {
                     continue;
                 }
 
-                // Find category by name
-                let category = null;
+                // Find category by name - required field
+                let category: Category | null = null;
                 if (record.categoryName) {
-                    category = await db.category.findFirst({
+                    const foundCategory = await db.category.findFirst({
                         where: { name: record.categoryName }
                     });
+                    if (foundCategory) {
+                        category = foundCategory;
+                    } else {
+                        errors.push(`Row ${successful + failed + 1}: Category '${record.categoryName}' not found`);
+                        failed++;
+                        continue;
+                    }
+                } else {
+                    errors.push(`Row ${successful + failed + 1}: Category name is required`);
+                    failed++;
+                    continue;
                 }
 
                 // Find brand by name
-                let brand = null;
+                let brand: Brand | null = null;
                 if (record.brandName) {
-                    brand = await db.brand.findFirst({
+                    const foundBrand = await db.brand.findFirst({
                         where: { name: record.brandName }
                     });
+                    if (foundBrand) {
+                        brand = foundBrand;
+                    }
                 }
 
                 // Parse images
@@ -79,6 +119,9 @@ export async function POST(request: NextRequest) {
                     tags = record.tags.split(',').map(tag => tag.trim()).filter(Boolean);
                 }
 
+                // Parse quantity
+                const quantity = record.quantity ? parseInt(record.quantity, 10) : 0;
+
                 // Create product
                 const product = await db.product.create({
                     data: {
@@ -87,11 +130,11 @@ export async function POST(request: NextRequest) {
                         description: record.description || '',
                         shortDesc: record.shortDesc || '',
                         sku: record.sku,
-                        price: parseFloat(record.price) || 0,
-                        comparePrice: record.comparePrice ? parseFloat(record.comparePrice) : null,
-                        costPrice: record.costPrice ? parseFloat(record.costPrice) : null,
+                        price: new Decimal(parseFloat(record.price) || 0),
+                        comparePrice: record.comparePrice ? new Decimal(parseFloat(record.comparePrice)) : null,
+                        costPrice: record.costPrice ? new Decimal(parseFloat(record.costPrice)) : null,
                         trackQuantity: record.trackQuantity === 'true' || record.trackQuantity === '1',
-                        quantity: parseInt(record.quantity) || 0,
+                        quantity: quantity,
                         weight: record.weight ? parseFloat(record.weight) : null,
                         images: images,
                         tags: tags.length > 0 ? tags : undefined,
@@ -99,11 +142,11 @@ export async function POST(request: NextRequest) {
                         featured: record.featured === 'true' || record.featured === '1',
                         seoTitle: record.seoTitle || undefined,
                         seoDesc: record.seoDesc || undefined,
-                        categoryId: category?.id,
-                        brandId: brand?.id,
+                        categoryId: category.id,
+                        brandId: brand?.id || null,
                         inventory: {
                             create: {
-                                quantity: parseInt(record.quantity) || 0,
+                                quantity: quantity,
                                 lowStockThreshold: 10,
                                 reorderPoint: 5,
                             }

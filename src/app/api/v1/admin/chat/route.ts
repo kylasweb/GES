@@ -77,6 +77,13 @@ export async function POST(request: NextRequest) {
 
         const user = await verifyToken(token);
 
+        if (!user) {
+            return NextResponse.json(
+                { success: false, error: 'Unauthorized' },
+                { status: 401 }
+            );
+        }
+
         const body = await request.json();
 
         const schema = z.object({
@@ -104,7 +111,7 @@ export async function POST(request: NextRequest) {
         const message = await db.chatMessage.create({
             data: {
                 chatId: data.chatId,
-                senderId: user.userId,
+                senderId: user!.userId,
                 senderType: 'ADMIN',
                 message: data.message,
                 messageType: data.messageType,
@@ -117,7 +124,7 @@ export async function POST(request: NextRequest) {
             where: { id: data.chatId },
             data: {
                 lastMessageAt: new Date(),
-                assignedTo: user.userId,
+                assignedTo: user!.userId,
                 status: 'ASSIGNED',
             },
         });

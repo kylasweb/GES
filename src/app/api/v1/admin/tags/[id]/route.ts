@@ -14,7 +14,7 @@ export async function GET(
             include: {
                 _count: {
                     select: {
-                        products: true,
+                        ProductToProductTag: true,
                     },
                 },
             },

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 import { z } from 'zod';
+import { Decimal } from '@prisma/client/runtime/library';
 
 const giftCardSchema = z.object({
     amount: z.number().positive().min(100).max(50000),
@@ -18,6 +19,21 @@ const applyGiftCardSchema = z.object({
     code: z.string().min(1),
     orderId: z.string()
 });
+
+// Helper function to convert Decimal to number
+function toNumber(value: Decimal | number): number {
+    if (typeof value === 'number') {
+        return value;
+    }
+    return typeof value === 'object' && 'toNumber' in value
+        ? (value as Decimal).toNumber()
+        : Number(value);
+}
+
+// Helper function to handle nullable dates
+function safeDate(date: Date | null): Date {
+    return date ? new Date(date) : new Date();
+}
 
 // POST - Purchase gift card
 export async function POST(request: NextRequest) {
@@ -60,7 +76,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true, data: giftCard }, { status: 201 });
     } catch (error) {
         if (error instanceof z.ZodError) {
-            return NextResponse.json({ success: false, error: 'Validation failed', details: error.errors }, { status: 400 });
+            return NextResponse.json({ success: false, error: 'Validation failed', details: error.issues }, { status: 400 });
         }
         console.error('Create gift card error:', error);
         return NextResponse.json({ success: false, error: 'Failed to create gift card' }, { status: 500 });
@@ -94,7 +110,7 @@ export async function GET(request: NextRequest) {
         }
 
         // Check if expired
-        if (new Date() > new Date(giftCard.expiresAt)) {
+        if (new Date() > safeDate(giftCard.expiresAt)) {
             if (giftCard.status !== 'EXPIRED') {
                 await db.giftCard.update({
                     where: { code },
@@ -152,11 +168,11 @@ export async function PATCH(request: NextRequest) {
             return NextResponse.json({ success: false, error: 'Gift card is not active' }, { status: 400 });
         }
 
-        if (new Date() > new Date(giftCard.expiresAt)) {
+        if (new Date() > safeDate(giftCard.expiresAt)) {
             return NextResponse.json({ success: false, error: 'Gift card has expired' }, { status: 400 });
         }
 
-        if (giftCard.balance <= 0) {
+        if (toNumber(giftCard.balance) <= 0) {
             return NextResponse.json({ success: false, error: 'Gift card has zero balance' }, { status: 400 });
         }
 
@@ -174,8 +190,8 @@ export async function PATCH(request: NextRequest) {
         }
 
         // Calculate amount to redeem
-        const redeemAmount = Math.min(giftCard.balance, order.totalAmount);
-        const newBalance = giftCard.balance - redeemAmount;
+        const redeemAmount = Math.min(toNumber(giftCard.balance), toNumber(order.totalAmount));
+        const newBalance = toNumber(giftCard.balance) - redeemAmount;
 
         // Create transaction and update gift card
         const [transaction, updatedGiftCard] = await Promise.all([
@@ -198,10 +214,11 @@ export async function PATCH(request: NextRequest) {
         ]);
 
         // Update order amount
+        const updatedOrderAmount = toNumber(order.totalAmount) - redeemAmount;
         await db.order.update({
             where: { id: order.id },
             data: {
-                totalAmount: order.totalAmount - redeemAmount
+                totalAmount: updatedOrderAmount
             }
         });
 
@@ -215,7 +232,7 @@ export async function PATCH(request: NextRequest) {
         });
     } catch (error) {
         if (error instanceof z.ZodError) {
-            return NextResponse.json({ success: false, error: 'Validation failed', details: error.errors }, { status: 400 });
+            return NextResponse.json({ success: false, error: 'Validation failed', details: error.issues }, { status: 400 });
         }
         console.error('Apply gift card error:', error);
         return NextResponse.json({ success: false, error: 'Failed to apply gift card' }, { status: 500 });

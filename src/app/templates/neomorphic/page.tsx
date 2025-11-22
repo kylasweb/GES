@@ -29,11 +29,17 @@ interface Product {
     category: { name: string };
 }
 
-export default function NeomorphicTemplate() {
-    const [products, setProducts] = useState<Product[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+export default function NeomorphicTemplate({ data }: { data?: { products: Product[] } }) {
+    const [products, setProducts] = useState<Product[]>(data?.products || []);
+    const [isLoading, setIsLoading] = useState(!data);
 
     useEffect(() => {
+        if (data) {
+            setProducts(data.products);
+            setIsLoading(false);
+            return;
+        }
+        
         const fetchData = async () => {
             try {
                 const response = await fetch('/api/v1/products?featured=true&limit=12');
@@ -49,7 +55,7 @@ export default function NeomorphicTemplate() {
         };
 
         fetchData();
-    }, []);
+    }, [data]);
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-50 to-gray-100">

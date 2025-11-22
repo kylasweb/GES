@@ -4,6 +4,15 @@ import { db } from '@/lib/db';
 import { requireAdmin } from '@/lib/auth';
 import { logAuditTrail } from '@/lib/audit-trail';
 
+// Define the structure of CSV records
+interface CSVRecord {
+    name: string;
+    description?: string;
+    website?: string;
+    sortOrder?: string;
+    isActive?: string;
+}
+
 export async function POST(request: NextRequest) {
     try {
         // Verify admin authentication
@@ -31,18 +40,18 @@ export async function POST(request: NextRequest) {
         const fileBuffer = await file.arrayBuffer();
         const csvString = Buffer.from(fileBuffer).toString('utf-8');
 
-        const records = parse(csvString, {
+        const parsedRecords = parse(csvString, {
             columns: true,
             skip_empty_lines: true,
             trim: true,
-        });
+        }) as CSVRecord[];
 
         let successful = 0;
         let failed = 0;
         const errors: string[] = [];
 
         // Process each record
-        for (const record of records) {
+        for (const record of parsedRecords) {
             try {
                 // Validate required fields
                 if (!record.name) {
@@ -69,7 +78,7 @@ export async function POST(request: NextRequest) {
                         slug: record.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
                         description: record.description || '',
                         website: record.website || undefined,
-                        sortOrder: parseInt(record.sortOrder) || 0,
+                        sortOrder: record.sortOrder ? parseInt(record.sortOrder, 10) : 0,
                         isActive: record.isActive === 'true' || record.isActive === '1',
                     }
                 });

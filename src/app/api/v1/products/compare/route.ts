@@ -28,7 +28,11 @@ export async function POST(request: NextRequest) {
             include: {
                 category: true,
                 brand: true,
-                attributes: true,
+                ProductToProductAttribute: {
+                    include: {
+                        product_attributes: true
+                    }
+                },
                 reviews: {
                     select: {
                         rating: true,
@@ -39,14 +43,16 @@ export async function POST(request: NextRequest) {
 
         // Calculate average ratings
         const productsWithRatings = products.map(product => {
-            const avgRating = product.reviews.length > 0
-                ? product.reviews.reduce((sum, r) => sum + r.rating, 0) / product.reviews.length
+            // Type assertion to help TypeScript understand the structure
+            const productWithReviews = product as typeof product & { reviews: { rating: number }[] };
+            const avgRating = productWithReviews.reviews.length > 0
+                ? productWithReviews.reviews.reduce((sum, r) => sum + r.rating, 0) / productWithReviews.reviews.length
                 : 0;
 
             return {
                 ...product,
                 averageRating: avgRating,
-                reviewCount: product.reviews.length,
+                reviewCount: productWithReviews.reviews.length,
                 reviews: undefined, // Remove reviews array from response
             };
         });

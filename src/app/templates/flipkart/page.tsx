@@ -37,12 +37,19 @@ interface Deal {
     productId: string;
 }
 
-export default function FlipkartTemplate() {
-    const [products, setProducts] = useState<Product[]>([]);
-    const [deals, setDeals] = useState<Deal[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+export default function FlipkartTemplate({ data }: { data?: { products: Product[], deals: Deal[] } }) {
+    const [products, setProducts] = useState<Product[]>(data?.products || []);
+    const [deals, setDeals] = useState<Deal[]>(data?.deals || []);
+    const [isLoading, setIsLoading] = useState(!data);
 
     useEffect(() => {
+        if (data) {
+            setProducts(data.products);
+            setDeals(data.deals);
+            setIsLoading(false);
+            return;
+        }
+        
         const fetchData = async () => {
             try {
                 const [productsRes, dealsRes] = await Promise.all([
@@ -67,7 +74,7 @@ export default function FlipkartTemplate() {
         };
 
         fetchData();
-    }, []);
+    }, [data]);
 
     const categories = [
         { name: 'Solar Panels', icon: '☀️', color: 'bg-yellow-500', href: '/products/solar-panels' },

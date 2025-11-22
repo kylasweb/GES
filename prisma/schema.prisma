@@ -26,6 +26,7 @@ model User {
   quotes             Quote[]
   returns            Return[]
   warranties         Warranty[]
+  auditTrails        AuditTrail[]
 
   @@map("users")
 }
@@ -773,6 +774,26 @@ model AdminPresence {
   @@index([isOnline])
   @@index([department])
   @@map("admin_presence")
+}
+
+model AuditTrail {
+  id        String   @id @default(cuid())
+  userId    String
+  tableName String
+  recordId  String
+  action    String // INSERT, UPDATE, DELETE
+  oldValues Json?
+  newValues Json?
+  timestamp DateTime @default(now())
+  ipAddress String?
+  userAgent String?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tableName])
+  @@index([timestamp])
+  @@index([action])
+  @@map("audit_trail")
 }
 
 model Return {

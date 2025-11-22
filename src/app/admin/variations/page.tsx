@@ -361,7 +361,7 @@ export default function AdminVariationsPage() {
     };
 
     const filteredVariations = variations.filter(variation => {
-        const matchesProduct = !selectedProduct || selectedProduct === 'all' || variation.productId === selectedProduct;
+        const matchesProduct = !selectedProduct || selectedProduct === 'all' || variation.product.id === selectedProduct;
         const matchesSearch = variation.product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             variation.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             variation.attributeValues.some(av => av.name.toLowerCase().includes(searchTerm.toLowerCase()));
