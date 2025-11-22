@@ -20,7 +20,7 @@ export async function logAuditTrail({
 }: AuditLogParams) {
     try {
         // Get IP address and user agent from headers
-        const headersList = headers();
+        const headersList = await headers();
         const ipAddress = headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || '';
         const userAgent = headersList.get('user-agent') || '';
 

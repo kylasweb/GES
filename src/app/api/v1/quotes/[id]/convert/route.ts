@@ -55,6 +55,10 @@ export async function POST(
             data: {
                 orderNumber,
                 userId: quote.userId!,
+                subtotal: quote.quotedAmount,
+                taxAmount: 0,
+                shippingAmount: 0,
+                discountAmount: 0,
                 totalAmount: quote.quotedAmount,
                 shippingAddress: validated.shippingAddress,
                 paymentMethod: validated.paymentMethod,

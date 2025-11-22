@@ -1,78 +1,142 @@
 import nodemailer from 'nodemailer';
 import { db } from './db';
 
+/**
+ * Get email styles
+ */
+const getEmailStyles = () => {
+  return `
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; 
+            line-height: 1.6; 
+            color: #374151; 
+            margin: 0; 
+            padding: 0; 
+            background-color: #f9fafb;
+        }
+        .container { 
+            max-width: 600px; 
+            margin: 20px auto; 
+            background: white; 
+            border-radius: 8px; 
+            overflow: hidden; 
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header { 
+            background: #10b981; 
+            color: white; 
+            padding: 30px 20px; 
+            text-align: center;
+        }
+        .content { 
+            padding: 30px;
+            background: #f9fafb;
+        }
+        .footer { 
+            background: #f3f4f6; 
+            padding: 20px; 
+            text-align: center; 
+            font-size: 12px; 
+            color: #6b7280;
+        }
+        .button { 
+            display: inline-block; 
+            padding: 12px 24px; 
+            background: #10b981; 
+            color: white; 
+            text-decoration: none; 
+            border-radius: 6px; 
+            margin: 20px 0; 
+            font-weight: 600;
+        }
+        .message-box { 
+            background: white; 
+            padding: 20px; 
+            border-radius: 8px; 
+            border: 1px solid #e5e7eb; 
+            margin: 20px 0;
+        }
+        h1, h2, h3 { 
+            margin-top: 0;
+        }
+        p { 
+            margin-bottom: 15px;
+        }
+    `;
+};
+
 interface EmailOptions {
-    to: string | string[];
-    subject: string;
-    html: string;
-    text?: string;
+  to: string | string[];
+  subject: string;
+  html: string;
+  text?: string;
 }
 
 export async function sendEmail(options: EmailOptions) {
-    try {
-        // Get SMTP settings from database
-        const settings = await db.siteSettings.findFirst();
+  try {
+    // Get SMTP settings from database
+    const settings = await db.siteSettings.findFirst();
 
-        if (!settings?.smtpHost || !settings?.smtpUser || !settings?.smtpPassword) {
-            console.warn('SMTP not configured, skipping email');
-            return { success: false, error: 'SMTP not configured' };
-        }
-
-        // Create transporter
-        const transporter = nodemailer.createTransport({
-            host: settings.smtpHost,
-            port: settings.smtpPort || 587,
-            secure: settings.smtpSecure || false,
-            auth: {
-                user: settings.smtpUser,
-                pass: settings.smtpPassword,
-            },
-        });
-
-        // Send email
-        const info = await transporter.sendMail({
-            from: `"${settings.smtpFromName || 'Green Energy Solutions'}" <${settings.smtpFromEmail || settings.smtpUser}>`,
-            to: Array.isArray(options.to) ? options.to.join(', ') : options.to,
-            subject: options.subject,
-            text: options.text,
-            html: options.html,
-        });
-
-        console.log('Email sent:', info.messageId);
-        return { success: true, messageId: info.messageId };
-
-    } catch (error) {
-        console.error('Failed to send email:', error);
-        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    if (!settings?.smtpHost || !settings?.smtpUser || !settings?.smtpPassword) {
+      console.warn('SMTP not configured, skipping email');
+      return { success: false, error: 'SMTP not configured' };
     }
+
+    // Create transporter
+    const transporter = nodemailer.createTransport({
+      host: settings.smtpHost,
+      port: settings.smtpPort || 587,
+      secure: settings.smtpSecure || false,
+      auth: {
+        user: settings.smtpUser,
+        pass: settings.smtpPassword,
+      },
+    });
+
+    // Send email
+    const info = await transporter.sendMail({
+      from: `"${settings.smtpFromName || 'Green Energy Solutions'}" <${settings.smtpFromEmail || settings.smtpUser}>`,
+      to: Array.isArray(options.to) ? options.to.join(', ') : options.to,
+      subject: options.subject,
+      text: options.text,
+      html: options.html,
+    });
+
+    console.log('Email sent:', info.messageId);
+    return { success: true, messageId: info.messageId };
+
+  } catch (error) {
+    console.error('Failed to send email:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
 }
 
 export async function sendNewChatNotification(chatData: {
-    sessionId: string;
-    visitorName?: string;
-    visitorEmail?: string;
-    visitorPhone?: string;
-    firstMessage: string;
-    department?: string;
+  sessionId: string;
+  visitorName?: string;
+  visitorEmail?: string;
+  visitorPhone?: string;
+  firstMessage: string;
+  department?: string;
 }) {
-    try {
-        // Get admin emails (Super Admins)
-        const admins = await db.user.findMany({
-            where: {
-                role: 'SUPER_ADMIN',
-                isActive: true,
-            },
-            select: { email: true, name: true },
-        });
+  try {
+    // Get admin emails (Super Admins)
+    const admins = await db.user.findMany({
+      where: {
+        role: 'SUPER_ADMIN',
+        isActive: true,
+      },
+      select: { email: true, name: true },
+    });
 
-        if (admins.length === 0) {
-            console.warn('No admin users found for notification');
-            return;
-        }
+    if (admins.length === 0) {
+      console.warn('No admin users found for notification');
+      return;
+    }
 
-        const adminEmails = admins.map(a => a.email);
+    const adminEmails = admins.map(a => a.email);
 
-        const html = `
+    const html = `
       <!DOCTYPE html>
       <html>
         <head>
@@ -135,7 +199,7 @@ export async function sendNewChatNotification(chatData: {
       </html>
     `;
 
-        const text = `
+    const text = `
 New Chat Request
 
 Visitor: ${chatData.visitorName || 'Anonymous'}
@@ -150,41 +214,41 @@ Open chat dashboard: ${process.env.NEXT_PUBLIC_APP_URL}/admin/chat
 Session ID: ${chatData.sessionId}
     `;
 
-        return sendEmail({
-            to: adminEmails,
-            subject: `🔔 New Chat from ${chatData.visitorName || 'Anonymous'}`,
-            html,
-            text,
-        });
+    return sendEmail({
+      to: adminEmails,
+      subject: `🔔 New Chat from ${chatData.visitorName || 'Anonymous'}`,
+      html,
+      text,
+    });
 
-    } catch (error) {
-        console.error('Failed to send new chat notification:', error);
-        return { success: false, error };
-    }
+  } catch (error) {
+    console.error('Failed to send new chat notification:', error);
+    return { success: false, error };
+  }
 }
 
 export async function sendOfflineMessageNotification(chatData: {
-    sessionId: string;
-    visitorName?: string;
-    visitorEmail?: string;
-    messages: string[];
+  sessionId: string;
+  visitorName?: string;
+  visitorEmail?: string;
+  messages: string[];
 }) {
-    try {
-        const admins = await db.user.findMany({
-            where: {
-                role: 'SUPER_ADMIN',
-                isActive: true,
-            },
-            select: { email: true },
-        });
+  try {
+    const admins = await db.user.findMany({
+      where: {
+        role: 'SUPER_ADMIN',
+        isActive: true,
+      },
+      select: { email: true },
+    });
 
-        if (admins.length === 0) return;
+    if (admins.length === 0) return;
 
-        const adminEmails = admins.map(a => a.email);
+    const adminEmails = admins.map(a => a.email);
 
-        const messagesHtml = chatData.messages.map(msg => `<p>• ${msg}</p>`).join('');
+    const messagesHtml = chatData.messages.map(msg => `<p>• ${msg}</p>`).join('');
 
-        const html = `
+    const html = `
       <!DOCTYPE html>
       <html>
         <head>
@@ -224,23 +288,23 @@ export async function sendOfflineMessageNotification(chatData: {
       </html>
     `;
 
-        return sendEmail({
-            to: adminEmails,
-            subject: `💬 Offline Messages from ${chatData.visitorName || 'Visitor'}`,
-            html,
-        });
+    return sendEmail({
+      to: adminEmails,
+      subject: `💬 Offline Messages from ${chatData.visitorName || 'Visitor'}`,
+      html,
+    });
 
-    } catch (error) {
-        console.error('Failed to send offline message notification:', error);
-        return { success: false, error };
-    }
+  } catch (error) {
+    console.error('Failed to send offline message notification:', error);
+    return { success: false, error };
+  }
 }
 
 /**
  * Send stock alert notification
  */
 export async function sendStockAlertNotification(email: string, productName: string, productUrl: string) {
-    const html = `
+  const html = `
         <!DOCTYPE html>
         <html>
           <head>
@@ -269,52 +333,52 @@ export async function sendStockAlertNotification(email: string, productName: str
         </html>
     `;
 
-    return sendEmail({
-        to: email,
-        subject: `${productName} is back in stock! 🎉`,
-        html,
-    });
+  return sendEmail({
+    to: email,
+    subject: `${productName} is back in stock! 🎉`,
+    html,
+  });
 }
 
 /**
  * Send order status update notification
  */
 export async function sendOrderStatusNotification(
-    email: string,
-    orderNumber: string,
-    status: string,
-    customerName: string,
-    trackingCode?: string
+  email: string,
+  orderNumber: string,
+  status: string,
+  customerName: string,
+  trackingCode?: string
 ) {
-    const statusMessages: Record<string, { title: string; message: string }> = {
-        PROCESSING: {
-            title: 'Order Confirmed',
-            message: 'Your order has been confirmed and is being prepared for shipment.',
-        },
-        SHIPPED: {
-            title: 'Order Shipped',
-            message: 'Great news! Your order has been shipped and is on its way to you.',
-        },
-        DELIVERED: {
-            title: 'Order Delivered',
-            message: 'Your order has been successfully delivered. We hope you enjoy your purchase!',
-        },
-        CANCELLED: {
-            title: 'Order Cancelled',
-            message: 'Your order has been cancelled as requested.',
-        },
-        REFUNDED: {
-            title: 'Order Refunded',
-            message: 'Your refund has been processed successfully.',
-        },
-    };
+  const statusMessages: Record<string, { title: string; message: string }> = {
+    PROCESSING: {
+      title: 'Order Confirmed',
+      message: 'Your order has been confirmed and is being prepared for shipment.',
+    },
+    SHIPPED: {
+      title: 'Order Shipped',
+      message: 'Great news! Your order has been shipped and is on its way to you.',
+    },
+    DELIVERED: {
+      title: 'Order Delivered',
+      message: 'Your order has been successfully delivered. We hope you enjoy your purchase!',
+    },
+    CANCELLED: {
+      title: 'Order Cancelled',
+      message: 'Your order has been cancelled as requested.',
+    },
+    REFUNDED: {
+      title: 'Order Refunded',
+      message: 'Your refund has been processed successfully.',
+    },
+  };
 
-    const statusInfo = statusMessages[status] || {
-        title: 'Order Update',
-        message: 'Your order status has been updated.'
-    };
+  const statusInfo = statusMessages[status] || {
+    title: 'Order Update',
+    message: 'Your order status has been updated.'
+  };
 
-    const html = `
+  const html = `
         <!DOCTYPE html>
         <html>
           <head>
@@ -349,25 +413,25 @@ export async function sendOrderStatusNotification(
         </html>
     `;
 
-    return sendEmail({
-        to: email,
-        subject: `${statusInfo.title} - Order #${orderNumber}`,
-        html,
-    });
+  return sendEmail({
+    to: email,
+    subject: `${statusInfo.title} - Order #${orderNumber}`,
+    html,
+  });
 }
 
 /**
  * Send warranty claim update notification
  */
 export async function sendWarrantyClaimNotification(
-    email: string,
-    claimNumber: string,
-    status: string,
-    customerName: string,
-    productName: string,
-    resolution?: string
+  email: string,
+  claimNumber: string,
+  status: string,
+  customerName: string,
+  productName: string,
+  resolution?: string
 ) {
-    const html = `
+  const html = `
         <!DOCTYPE html>
         <html>
           <head>
@@ -403,24 +467,24 @@ export async function sendWarrantyClaimNotification(
         </html>
     `;
 
-    return sendEmail({
-        to: email,
-        subject: `Warranty Claim Update - ${claimNumber}`,
-        html,
-    });
+  return sendEmail({
+    to: email,
+    subject: `Warranty Claim Update - ${claimNumber}`,
+    html,
+  });
 }
 
 /**
  * Send quote response notification
  */
 export async function sendQuoteResponseNotification(
-    email: string,
-    quoteNumber: string,
-    customerName: string,
-    quotedAmount: number,
-    validUntil: string
+  email: string,
+  quoteNumber: string,
+  customerName: string,
+  quotedAmount: number,
+  validUntil: string
 ) {
-    const html = `
+  const html = `
         <!DOCTYPE html>
         <html>
           <head>
@@ -463,24 +527,24 @@ export async function sendQuoteResponseNotification(
         </html>
     `;
 
-    return sendEmail({
-        to: email,
-        subject: `Your Quote is Ready - ${quoteNumber}`,
-        html,
-    });
+  return sendEmail({
+    to: email,
+    subject: `Your Quote is Ready - ${quoteNumber}`,
+    html,
+  });
 }
 
 /**
  * Send return approved notification
  */
 export async function sendReturnApprovedNotification(
-    email: string,
-    returnNumber: string,
-    orderNumber: string,
-    customerName: string,
-    refundAmount: number
+  email: string,
+  returnNumber: string,
+  orderNumber: string,
+  customerName: string,
+  refundAmount: number
 ) {
-    const html = `
+  const html = `
         <!DOCTYPE html>
         <html>
           <head>
@@ -516,9 +580,9 @@ export async function sendReturnApprovedNotification(
         </html>
     `;
 
-    return sendEmail({
-        to: email,
-        subject: `Return Approved - ${returnNumber}`,
-        html,
-    });
+  return sendEmail({
+    to: email,
+    subject: `Return Approved - ${returnNumber}`,
+    html,
+  });
 }

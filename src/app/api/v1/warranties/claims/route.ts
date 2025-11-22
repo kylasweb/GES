@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true, data: claim }, { status: 201 });
     } catch (error) {
         if (error instanceof z.ZodError) {
-            return NextResponse.json({ success: false, error: 'Validation failed', details: error.errors }, { status: 400 });
+            return NextResponse.json({ success: false, error: 'Validation failed', details: error.issues }, { status: 400 });
         }
         console.error('Create claim error:', error);
         return NextResponse.json({ success: false, error: 'Failed to submit claim' }, { status: 500 });
@@ -136,7 +136,7 @@ export async function PATCH(request: NextRequest) {
         return NextResponse.json({ success: true, data: claim });
     } catch (error) {
         if (error instanceof z.ZodError) {
-            return NextResponse.json({ success: false, error: 'Validation failed', details: error.errors }, { status: 400 });
+            return NextResponse.json({ success: false, error: 'Validation failed', details: error.issues }, { status: 400 });
         }
         console.error('Update claim error:', error);
         return NextResponse.json({ success: false, error: 'Failed to update claim' }, { status: 500 });

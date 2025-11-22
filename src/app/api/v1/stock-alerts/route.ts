@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ success: true, data: alert }, { status: 201 });
     } catch (error) {
         if (error instanceof z.ZodError) {
-            return NextResponse.json({ success: false, error: 'Validation failed', details: error.errors }, { status: 400 });
+            return NextResponse.json({ success: false, error: 'Validation failed', details: error.issues }, { status: 400 });
         }
         console.error('Create alert error:', error);
         return NextResponse.json({ success: false, error: 'Failed to create stock alert' }, { status: 500 });
