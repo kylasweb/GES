@@ -18,14 +18,14 @@ model User {
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   addresses          Address[]
-  orders             Order[]
-  reviews            ProductReview[]
-  returns            Return[]
-  warranties         Warranty[]
-  quotes             Quote[]
   giftCards          GiftCard[]
   orderNotes         OrderNote[]
+  orders             Order[]
   productComparisons ProductComparison[]
+  reviews            ProductReview[]
+  quotes             Quote[]
+  returns            Return[]
+  warranties         Warranty[]
 
   @@map("users")
 }
@@ -81,29 +81,29 @@ model Brand {
 }
 
 model ProductTag {
-  id        String    @id @default(cuid())
-  name      String    @unique
-  slug      String    @unique
-  isActive  Boolean   @default(true)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  products  Product[]
+  id                  String                @id @default(cuid())
+  name                String                @unique
+  slug                String                @unique
+  isActive            Boolean               @default(true)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  ProductToProductTag ProductToProductTag[]
 
   @@map("product_tags")
 }
 
 model ProductAttribute {
-  id           String                  @id @default(cuid())
-  name         String
-  slug         String                  @unique
-  type         AttributeType           @default(TEXT)
-  isVisible    Boolean                 @default(true)
-  isFilterable Boolean                 @default(false)
-  sortOrder    Int                     @default(0)
-  createdAt    DateTime                @default(now())
-  updatedAt    DateTime                @updatedAt
-  values       ProductAttributeValue[]
-  products     Product[]
+  id                        String                      @id @default(cuid())
+  name                      String
+  slug                      String                      @unique
+  type                      AttributeType               @default(TEXT)
+  isVisible                 Boolean                     @default(true)
+  isFilterable              Boolean                     @default(false)
+  sortOrder                 Int                         @default(0)
+  createdAt                 DateTime                    @default(now())
+  updatedAt                 DateTime                    @updatedAt
+  ProductToProductAttribute ProductToProductAttribute[]
+  values                    ProductAttributeValue[]
 
   @@map("product_attributes")
 }
@@ -117,50 +117,50 @@ model ProductAttributeValue {
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
   attribute   ProductAttribute   @relation(fields: [attributeId], references: [id], onDelete: Cascade)
-  variations  ProductVariation[]
+  variations  ProductVariation[] @relation("ProductAttributeValueToProductVariation")
 
   @@unique([attributeId, value])
   @@map("product_attribute_values")
 }
 
 model Product {
-  id             String             @id @default(cuid())
-  name           String
-  slug           String             @unique
-  description    String
-  shortDesc      String?
-  sku            String             @unique
-  price          Decimal            @db.Decimal(10, 2)
-  comparePrice   Decimal?           @db.Decimal(10, 2)
-  costPrice      Decimal?           @db.Decimal(10, 2)
-  trackQuantity  Boolean            @default(true)
-  quantity       Int                @default(0)
-  weight         Decimal?           @db.Decimal(8, 3)
-  dimensions     Json?
-  images         Json
-  videos         Json?
-  tags           Json?
-  customFields   Json? // Custom product fields (flexible key-value pairs)
-  specifications Json? // Product specifications/technical details
-  type           ProductType        @default(SIMPLE)
-  isActive       Boolean            @default(true)
-  featured       Boolean            @default(false)
-  seoTitle       String?
-  seoDesc        String?
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
-  categoryId     String
-  brandId        String?
-  orderItems     OrderItem[]
-  inventory      ProductInventory?
-  reviews        ProductReview[]
-  variations     ProductVariation[]
-  attributes     ProductAttribute[]
-  productTags    ProductTag[]
-  category       Category           @relation(fields: [categoryId], references: [id])
-  brand          Brand?             @relation(fields: [brandId], references: [id])
-  warranties     Warranty[]
-  stockAlerts    StockAlert[]
+  id                        String                      @id @default(cuid())
+  name                      String
+  slug                      String                      @unique
+  description               String
+  shortDesc                 String?
+  sku                       String                      @unique
+  price                     Decimal                     @db.Decimal(10, 2)
+  comparePrice              Decimal?                    @db.Decimal(10, 2)
+  costPrice                 Decimal?                    @db.Decimal(10, 2)
+  trackQuantity             Boolean                     @default(true)
+  quantity                  Int                         @default(0)
+  weight                    Decimal?                    @db.Decimal(8, 3)
+  dimensions                Json?
+  images                    Json
+  tags                      Json?
+  type                      ProductType                 @default(SIMPLE)
+  isActive                  Boolean                     @default(true)
+  featured                  Boolean                     @default(false)
+  seoTitle                  String?
+  seoDesc                   String?
+  createdAt                 DateTime                    @default(now())
+  updatedAt                 DateTime                    @updatedAt
+  categoryId                String
+  brandId                   String?
+  videos                    Json?
+  customFields              Json?
+  specifications            Json?
+  ProductToProductAttribute ProductToProductAttribute[]
+  ProductToProductTag       ProductToProductTag[]
+  orderItems                OrderItem[]
+  inventory                 ProductInventory?
+  reviews                   ProductReview[]
+  variations                ProductVariation[]
+  brand                     Brand?                      @relation(fields: [brandId], references: [id])
+  category                  Category                    @relation(fields: [categoryId], references: [id])
+  stockAlerts               StockAlert[]
+  warranties                Warranty[]
 
   @@map("products")
 }
@@ -180,9 +180,9 @@ model ProductVariation {
   sortOrder       Int                     @default(0)
   createdAt       DateTime                @default(now())
   updatedAt       DateTime                @updatedAt
-  product         Product                 @relation(fields: [productId], references: [id], onDelete: Cascade)
-  attributeValues ProductAttributeValue[]
   orderItems      OrderItem[]
+  product         Product                 @relation(fields: [productId], references: [id], onDelete: Cascade)
+  attributeValues ProductAttributeValue[] @relation("ProductAttributeValueToProductVariation")
 
   @@map("product_variations")
 }
@@ -240,11 +240,11 @@ model Order {
   updatedAt       DateTime      @updatedAt
   documents       Document[]
   items           OrderItem[]
-  user            User?         @relation(fields: [userId], references: [id])
-  transactions    Transaction[]
-  returns         Return[]
-  warranties      Warranty[]
   orderNotes      OrderNote[]
+  user            User?         @relation(fields: [userId], references: [id])
+  returns         Return[]
+  transactions    Transaction[]
+  warranties      Warranty[]
 
   @@map("orders")
 }
@@ -259,10 +259,10 @@ model OrderItem {
   unitPrice          Decimal           @db.Decimal(10, 2)
   totalPrice         Decimal           @db.Decimal(10, 2)
   createdAt          DateTime          @default(now())
+  productVariationId String?
   order              Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product            Product           @relation(fields: [productId], references: [id])
   ProductVariation   ProductVariation? @relation(fields: [productVariationId], references: [id])
-  productVariationId String?
 
   @@map("order_items")
 }
@@ -528,6 +528,455 @@ model SupportTicket {
   @@map("support_tickets")
 }
 
+model Media {
+  id           String    @id @default(cuid())
+  filename     String
+  originalName String
+  mimeType     String
+  size         Int
+  width        Int?
+  height       Int?
+  url          String
+  thumbnailUrl String?
+  alt          String?
+  caption      String?
+  type         MediaType @default(IMAGE)
+  folder       String?
+  tags         String[]
+  uploadedBy   String?
+  usageCount   Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([type])
+  @@index([folder])
+  @@index([createdAt])
+  @@map("media")
+}
+
+model LandingTemplate {
+  id           String        @id @default(cuid())
+  name         String
+  slug         String        @unique
+  description  String?
+  thumbnail    String?
+  isActive     Boolean       @default(false)
+  config       Json?
+  features     String[]
+  colorScheme  String        @default("light")
+  tags         String[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  siteSettings SiteSettings?
+
+  @@map("landing_templates")
+}
+
+model SiteSettings {
+  id               String           @id @default(cuid())
+  siteName         String           @default("Green Energy Solutions")
+  siteDescription  String?
+  contactEmail     String?
+  contactPhone     String?
+  activeTemplateId String?          @unique
+  maintenanceMode  Boolean          @default(false)
+  config           Json?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  footerStyle      String           @default("default")
+  headerStyle      String           @default("default")
+  menuStyle        String           @default("default")
+  smtpFromEmail    String?
+  smtpFromName     String?
+  smtpHost         String?
+  smtpPassword     String?
+  smtpPort         Int?             @default(587)
+  smtpSecure       Boolean          @default(false)
+  smtpUser         String?
+  activeTemplate   LandingTemplate? @relation(fields: [activeTemplateId], references: [id])
+
+  @@map("site_settings")
+}
+
+model FeatureFlag {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  name        String
+  description String?
+  enabled     Boolean  @default(false)
+  rollout     Int      @default(100)
+  config      Json?
+  category    String?
+  createdBy   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+  @@index([enabled])
+  @@map("feature_flags")
+}
+
+model GitVersion {
+  id            String   @id @default(cuid())
+  version       String   @unique
+  commitHash    String   @unique
+  commitMessage String?
+  branch        String   @default("main")
+  author        String?
+  deployedBy    String?
+  deployedAt    DateTime @default(now())
+  isActive      Boolean  @default(false)
+  changelog     String[]
+  environment   String   @default("production")
+  buildNumber   Int      @default(autoincrement())
+  rollbackable  Boolean  @default(true)
+  metadata      Json?
+
+  @@index([deployedAt])
+  @@index([isActive])
+  @@index([environment])
+  @@map("git_versions")
+}
+
+model Chat {
+  id                      String            @id @default(cuid())
+  visitorName             String?
+  visitorEmail            String?
+  visitorPhone            String?
+  sessionId               String            @unique
+  status                  ChatStatus        @default(ACTIVE)
+  assignedTo              String?
+  startedAt               DateTime          @default(now())
+  endedAt                 DateTime?
+  lastMessageAt           DateTime          @default(now())
+  metadata                Json?
+  department              String?           @default("general")
+  emailNotificationSent   Boolean           @default(false)
+  firstResponseAt         DateTime?
+  isOfflineMessage        Boolean           @default(false)
+  offlineNotificationSent Boolean           @default(false)
+  rating                  Int?
+  ratingComment           String?
+  resolutionTime          Int?
+  resolvedAt              DateTime?
+  responseTime            Int?
+  analytics               ChatAnalytics?
+  messages                ChatMessage[]
+  participants            ChatParticipant[]
+
+  @@index([status])
+  @@index([department])
+  @@index([assignedTo])
+  @@index([lastMessageAt])
+  @@index([isOfflineMessage])
+  @@map("chats")
+}
+
+model ChatMessage {
+  id          String      @id @default(cuid())
+  chatId      String
+  senderId    String?
+  senderType  SenderType
+  message     String
+  messageType MessageType @default(TEXT)
+  metadata    Json?
+  isRead      Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  fileName    String?
+  fileSize    Int?
+  fileUrl     String?
+  chat        Chat        @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@index([chatId])
+  @@index([createdAt])
+  @@map("chat_messages")
+}
+
+model ChatParticipant {
+  id       String          @id @default(cuid())
+  chatId   String
+  userId   String?
+  role     ParticipantRole
+  joinedAt DateTime        @default(now())
+  leftAt   DateTime?
+  isActive Boolean         @default(true)
+  chat     Chat            @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@unique([chatId, userId])
+  @@index([chatId])
+  @@index([userId])
+  @@map("chat_participants")
+}
+
+model ChatKnowledgeBase {
+  id         String   @id @default(cuid())
+  title      String
+  content    String
+  keywords   String[]
+  category   String?
+  isActive   Boolean  @default(true)
+  sortOrder  Int      @default(0)
+  views      Int      @default(0)
+  helpful    Int      @default(0)
+  notHelpful Int      @default(0)
+  createdBy  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([category])
+  @@map("chat_knowledge_base")
+}
+
+model ChatAnalytics {
+  id                   String   @id @default(cuid())
+  chatId               String   @unique
+  totalMessages        Int      @default(0)
+  visitorMessages      Int      @default(0)
+  adminMessages        Int      @default(0)
+  avgResponseTime      Int?
+  longestResponseTime  Int?
+  shortestResponseTime Int?
+  sessionDuration      Int?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  chat                 Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@index([chatId])
+  @@map("chat_analytics")
+}
+
+model ChatDepartment {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  email       String?
+  isActive    Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("chat_departments")
+}
+
+model AdminPresence {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  isOnline   Boolean  @default(false)
+  lastSeenAt DateTime @default(now())
+  socketId   String?
+  department String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([isOnline])
+  @@index([department])
+  @@map("admin_presence")
+}
+
+model Return {
+  id           String       @id @default(cuid())
+  orderId      String
+  userId       String
+  returnNumber String       @unique
+  reason       ReturnReason
+  description  String?
+  items        Json
+  status       ReturnStatus @default(PENDING)
+  refundAmount Decimal      @db.Decimal(10, 2)
+  refundMethod RefundMethod @default(ORIGINAL_PAYMENT)
+  images       Json?
+  adminNotes   String?
+  trackingCode String?
+  returnLabel  String?
+  requestedAt  DateTime     @default(now())
+  approvedAt   DateTime?
+  completedAt  DateTime?
+  rejectedAt   DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  order        Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([orderId])
+  @@index([status])
+  @@map("returns")
+}
+
+model Warranty {
+  id             String          @id @default(cuid())
+  orderId        String
+  productId      String
+  userId         String
+  warrantyNumber String          @unique
+  purchaseDate   DateTime
+  warrantyPeriod Int
+  expiryDate     DateTime
+  status         WarrantyStatus  @default(ACTIVE)
+  documents      Json?
+  registeredAt   DateTime        @default(now())
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  order          Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product        Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  claims         WarrantyClaim[]
+
+  @@index([userId])
+  @@index([productId])
+  @@index([status])
+  @@map("warranties")
+}
+
+model WarrantyClaim {
+  id          String      @id @default(cuid())
+  warrantyId  String
+  claimNumber String      @unique
+  issue       String
+  description String
+  images      Json?
+  status      ClaimStatus @default(SUBMITTED)
+  resolution  String?
+  adminNotes  String?
+  submittedAt DateTime    @default(now())
+  resolvedAt  DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  warranty    Warranty    @relation(fields: [warrantyId], references: [id], onDelete: Cascade)
+
+  @@index([warrantyId])
+  @@index([status])
+  @@map("warranty_claims")
+}
+
+model StockAlert {
+  id         String      @id @default(cuid())
+  productId  String
+  email      String
+  status     AlertStatus @default(PENDING)
+  notifiedAt DateTime?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([status])
+  @@map("stock_alerts")
+}
+
+model Quote {
+  id                 String      @id @default(cuid())
+  quoteNumber        String      @unique
+  userId             String?
+  email              String
+  name               String
+  phone              String?
+  company            String?
+  items              Json
+  message            String?
+  status             QuoteStatus @default(PENDING)
+  quotedAmount       Decimal?    @db.Decimal(10, 2)
+  validUntil         DateTime?
+  adminNotes         String?
+  convertedToOrderId String?     @unique
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  user               User?       @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@map("quotes")
+}
+
+model GiftCard {
+  id             String                @id @default(cuid())
+  code           String                @unique
+  initialValue   Decimal               @db.Decimal(10, 2)
+  balance        Decimal               @db.Decimal(10, 2)
+  currency       String                @default("INR")
+  purchasedBy    String?
+  recipientEmail String?
+  recipientName  String?
+  message        String?
+  status         GiftCardStatus        @default(ACTIVE)
+  expiresAt      DateTime?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  transactions   GiftCardTransaction[]
+  purchaser      User?                 @relation(fields: [purchasedBy], references: [id])
+
+  @@index([code])
+  @@index([status])
+  @@map("gift_cards")
+}
+
+model GiftCardTransaction {
+  id         String   @id @default(cuid())
+  giftCardId String
+  orderId    String?
+  amount     Decimal  @db.Decimal(10, 2)
+  balance    Decimal  @db.Decimal(10, 2)
+  type       String
+  createdAt  DateTime @default(now())
+  giftCard   GiftCard @relation(fields: [giftCardId], references: [id], onDelete: Cascade)
+
+  @@index([giftCardId])
+  @@map("gift_card_transactions")
+}
+
+model OrderNote {
+  id         String   @id @default(cuid())
+  orderId    String
+  userId     String
+  note       String
+  isInternal Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@map("order_notes")
+}
+
+model ProductComparison {
+  id         String   @id @default(cuid())
+  userId     String?
+  sessionId  String
+  productIds Json
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([sessionId])
+  @@map("product_comparisons")
+}
+
+model ProductToProductAttribute {
+  A                  String
+  B                  String
+  products           Product          @relation(fields: [A], references: [id], onDelete: Cascade)
+  product_attributes ProductAttribute @relation(fields: [B], references: [id], onDelete: Cascade)
+
+  @@id([A, B], map: "_ProductToProductAttribute_AB_pkey")
+  @@index([B], map: "_ProductToProductAttribute_B_index")
+  @@map("_ProductToProductAttribute")
+}
+
+model ProductToProductTag {
+  A            String
+  B            String
+  products     Product    @relation(fields: [A], references: [id], onDelete: Cascade)
+  product_tags ProductTag @relation(fields: [B], references: [id], onDelete: Cascade)
+
+  @@id([A, B], map: "_ProductToProductTag_AB_pkey")
+  @@index([B], map: "_ProductToProductTag_B_index")
+  @@map("_ProductToProductTag")
+}
+
 enum UserRole {
   CUSTOMER
   CONTENT_MANAGER
@@ -719,434 +1168,6 @@ enum MediaType {
   VIDEO
   DOCUMENT
   OTHER
-}
-
-model Media {
-  id           String    @id @default(cuid())
-  filename     String
-  originalName String
-  mimeType     String
-  size         Int
-  width        Int?
-  height       Int?
-  url          String
-  thumbnailUrl String?
-  alt          String?
-  caption      String?
-  type         MediaType @default(IMAGE)
-  folder       String?
-  tags         String[]
-  uploadedBy   String?
-  usageCount   Int       @default(0)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-
-  @@index([type])
-  @@index([folder])
-  @@index([createdAt])
-  @@map("media")
-}
-
-model LandingTemplate {
-  id           String        @id @default(cuid())
-  name         String
-  slug         String        @unique
-  description  String?
-  thumbnail    String?
-  isActive     Boolean       @default(false)
-  config       Json?
-  features     String[]
-  colorScheme  String        @default("light")
-  tags         String[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  siteSettings SiteSettings?
-
-  @@map("landing_templates")
-}
-
-model SiteSettings {
-  id               String           @id @default(cuid())
-  siteName         String           @default("Green Energy Solutions")
-  siteDescription  String?
-  contactEmail     String?
-  contactPhone     String?
-  activeTemplateId String?          @unique
-  activeTemplate   LandingTemplate? @relation(fields: [activeTemplateId], references: [id])
-  maintenanceMode  Boolean          @default(false)
-  headerStyle      String           @default("default") // default, minimal, centered, transparent, mega
-  footerStyle      String           @default("default") // default, minimal, newsletter, social
-  menuStyle        String           @default("default") // default, dropdown, mega, sidebar
-  // SMTP Settings for email
-  smtpHost         String?
-  smtpPort         Int?             @default(587)
-  smtpUser         String?
-  smtpPassword     String?
-  smtpFromEmail    String?
-  smtpFromName     String?
-  smtpSecure       Boolean          @default(false) // true for 465, false for other ports
-  config           Json?
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-
-  @@map("site_settings")
-}
-
-model FeatureFlag {
-  id          String   @id @default(cuid())
-  key         String   @unique
-  name        String
-  description String?
-  enabled     Boolean  @default(false)
-  rollout     Int      @default(100) // Percentage rollout (0-100)
-  config      Json?
-  category    String? // e.g., "ai", "templates", "payments", "admin"
-  createdBy   String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([category])
-  @@index([enabled])
-  @@map("feature_flags")
-}
-
-model GitVersion {
-  id            String   @id @default(cuid())
-  version       String   @unique // e.g., "v1.2.3"
-  commitHash    String   @unique
-  commitMessage String?
-  branch        String   @default("main")
-  author        String?
-  deployedBy    String?
-  deployedAt    DateTime @default(now())
-  isActive      Boolean  @default(false)
-  changelog     String[]
-  environment   String   @default("production") // production, staging, development
-  buildNumber   Int      @default(autoincrement())
-  rollbackable  Boolean  @default(true)
-  metadata      Json?
-
-  @@index([deployedAt])
-  @@index([isActive])
-  @@index([environment])
-  @@map("git_versions")
-}
-
-model Chat {
-  id                      String            @id @default(cuid())
-  visitorName             String?
-  visitorEmail            String?
-  visitorPhone            String?
-  sessionId               String            @unique
-  status                  ChatStatus        @default(ACTIVE)
-  department              String?           @default("general") // general, sales, support, technical
-  assignedTo              String? // Admin user ID
-  startedAt               DateTime          @default(now())
-  endedAt                 DateTime?
-  lastMessageAt           DateTime          @default(now())
-  firstResponseAt         DateTime? // When admin first replied
-  resolvedAt              DateTime? // When marked as resolved
-  responseTime            Int? // Seconds until first response
-  resolutionTime          Int? // Seconds until resolved
-  rating                  Int? // 1-5 stars
-  ratingComment           String?
-  isOfflineMessage        Boolean           @default(false)
-  offlineNotificationSent Boolean           @default(false)
-  emailNotificationSent   Boolean           @default(false)
-  metadata                Json? // Browser info, page URL, etc.
-  messages                ChatMessage[]
-  participants            ChatParticipant[]
-  analytics               ChatAnalytics?
-
-  @@index([status])
-  @@index([department])
-  @@index([assignedTo])
-  @@index([lastMessageAt])
-  @@index([isOfflineMessage])
-  @@map("chats")
-}
-
-model ChatMessage {
-  id          String      @id @default(cuid())
-  chatId      String
-  senderId    String? // User ID or null for visitor
-  senderType  SenderType
-  message     String      @db.Text
-  messageType MessageType @default(TEXT)
-  fileUrl     String? // Cloudinary URL for images/files
-  fileName    String? // Original filename
-  fileSize    Int? // File size in bytes
-  metadata    Json? // Attachments, knowledge base ref, etc.
-  isRead      Boolean     @default(false)
-  createdAt   DateTime    @default(now())
-  chat        Chat        @relation(fields: [chatId], references: [id], onDelete: Cascade)
-
-  @@index([chatId])
-  @@index([createdAt])
-  @@map("chat_messages")
-}
-
-model ChatParticipant {
-  id       String          @id @default(cuid())
-  chatId   String
-  userId   String? // Admin user ID
-  role     ParticipantRole
-  joinedAt DateTime        @default(now())
-  leftAt   DateTime?
-  isActive Boolean         @default(true)
-  chat     Chat            @relation(fields: [chatId], references: [id], onDelete: Cascade)
-
-  @@unique([chatId, userId])
-  @@index([chatId])
-  @@index([userId])
-  @@map("chat_participants")
-}
-
-model ChatKnowledgeBase {
-  id         String   @id @default(cuid())
-  title      String
-  content    String   @db.Text
-  keywords   String[] // For auto-suggestion matching
-  category   String?
-  isActive   Boolean  @default(true)
-  sortOrder  Int      @default(0)
-  views      Int      @default(0)
-  helpful    Int      @default(0)
-  notHelpful Int      @default(0)
-  createdBy  String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  @@index([isActive])
-  @@index([category])
-  @@map("chat_knowledge_base")
-}
-
-model ChatAnalytics {
-  id                   String   @id @default(cuid())
-  chatId               String   @unique
-  chat                 Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
-  totalMessages        Int      @default(0)
-  visitorMessages      Int      @default(0)
-  adminMessages        Int      @default(0)
-  avgResponseTime      Int? // Average admin response time in seconds
-  longestResponseTime  Int? // Longest time between visitor message and admin reply
-  shortestResponseTime Int? // Shortest time between visitor message and admin reply
-  sessionDuration      Int? // Total chat duration in seconds
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-
-  @@index([chatId])
-  @@map("chat_analytics")
-}
-
-model ChatDepartment {
-  id          String   @id @default(cuid())
-  name        String   @unique
-  slug        String   @unique
-  description String?
-  email       String? // Department email for notifications
-  isActive    Boolean  @default(true)
-  sortOrder   Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@map("chat_departments")
-}
-
-model AdminPresence {
-  id         String   @id @default(cuid())
-  userId     String   @unique
-  isOnline   Boolean  @default(false)
-  lastSeenAt DateTime @default(now())
-  socketId   String?
-  department String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  @@index([isOnline])
-  @@index([department])
-  @@map("admin_presence")
-}
-
-model Return {
-  id           String       @id @default(cuid())
-  orderId      String
-  userId       String
-  returnNumber String       @unique
-  reason       ReturnReason
-  description  String?
-  items        Json // Array of {orderItemId, quantity, reason}
-  status       ReturnStatus @default(PENDING)
-  refundAmount Decimal      @db.Decimal(10, 2)
-  refundMethod RefundMethod @default(ORIGINAL_PAYMENT)
-  images       Json? // Array of image URLs showing product condition
-  adminNotes   String?
-  trackingCode String?
-  returnLabel  String? // URL to return shipping label
-  requestedAt  DateTime     @default(now())
-  approvedAt   DateTime?
-  completedAt  DateTime?
-  rejectedAt   DateTime?
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  order        Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([orderId])
-  @@index([status])
-  @@map("returns")
-}
-
-model Warranty {
-  id             String          @id @default(cuid())
-  orderId        String
-  productId      String
-  userId         String
-  warrantyNumber String          @unique
-  purchaseDate   DateTime
-  warrantyPeriod Int // Warranty period in months
-  expiryDate     DateTime
-  status         WarrantyStatus  @default(ACTIVE)
-  documents      Json? // Array of warranty document URLs
-  registeredAt   DateTime        @default(now())
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  claims         WarrantyClaim[]
-  order          Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product        Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
-  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([productId])
-  @@index([status])
-  @@map("warranties")
-}
-
-model WarrantyClaim {
-  id          String      @id @default(cuid())
-  warrantyId  String
-  claimNumber String      @unique
-  issue       String
-  description String
-  images      Json? // Array of issue image URLs
-  status      ClaimStatus @default(SUBMITTED)
-  resolution  String?
-  adminNotes  String?
-  submittedAt DateTime    @default(now())
-  resolvedAt  DateTime?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  warranty    Warranty    @relation(fields: [warrantyId], references: [id], onDelete: Cascade)
-
-  @@index([warrantyId])
-  @@index([status])
-  @@map("warranty_claims")
-}
-
-model StockAlert {
-  id         String      @id @default(cuid())
-  productId  String
-  email      String
-  status     AlertStatus @default(PENDING)
-  notifiedAt DateTime?
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  @@index([productId])
-  @@index([status])
-  @@map("stock_alerts")
-}
-
-model Quote {
-  id                 String      @id @default(cuid())
-  quoteNumber        String      @unique
-  userId             String?
-  email              String
-  name               String
-  phone              String?
-  company            String?
-  items              Json // Array of {productId, quantity, notes}
-  message            String?
-  status             QuoteStatus @default(PENDING)
-  quotedAmount       Decimal?    @db.Decimal(10, 2)
-  validUntil         DateTime?
-  adminNotes         String?
-  convertedToOrderId String?     @unique
-  createdAt          DateTime    @default(now())
-  updatedAt          DateTime    @updatedAt
-  user               User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  @@index([userId])
-  @@index([status])
-  @@map("quotes")
-}
-
-model GiftCard {
-  id             String                @id @default(cuid())
-  code           String                @unique
-  initialValue   Decimal               @db.Decimal(10, 2)
-  balance        Decimal               @db.Decimal(10, 2)
-  currency       String                @default("INR")
-  purchasedBy    String?
-  recipientEmail String?
-  recipientName  String?
-  message        String?
-  status         GiftCardStatus        @default(ACTIVE)
-  expiresAt      DateTime?
-  createdAt      DateTime              @default(now())
-  updatedAt      DateTime              @updatedAt
-  purchaser      User?                 @relation(fields: [purchasedBy], references: [id], onDelete: SetNull)
-  transactions   GiftCardTransaction[]
-
-  @@index([code])
-  @@index([status])
-  @@map("gift_cards")
-}
-
-model GiftCardTransaction {
-  id         String   @id @default(cuid())
-  giftCardId String
-  orderId    String?
-  amount     Decimal  @db.Decimal(10, 2)
-  balance    Decimal  @db.Decimal(10, 2)
-  type       String // PURCHASE, REDEEM, REFUND
-  createdAt  DateTime @default(now())
-  giftCard   GiftCard @relation(fields: [giftCardId], references: [id], onDelete: Cascade)
-
-  @@index([giftCardId])
-  @@map("gift_card_transactions")
-}
-
-model OrderNote {
-  id         String   @id @default(cuid())
-  orderId    String
-  userId     String
-  note       String
-  isInternal Boolean  @default(false) // True = admin only, False = customer visible
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([orderId])
-  @@map("order_notes")
-}
-
-model ProductComparison {
-  id         String   @id @default(cuid())
-  userId     String?
-  sessionId  String
-  productIds Json // Array of product IDs being compared
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([sessionId])
-  @@map("product_comparisons")
 }
 
 enum ChatStatus {
