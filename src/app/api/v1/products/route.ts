@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db } from '@/lib/db';
 import { verifyAuth, requireAdmin } from '@/lib/auth';
+import { logAuditTrail } from '@/lib/audit-trail';
 
 const productQuerySchema = z.object({
   page: z.string().optional().default('1').transform(val => parseInt(val) || 1),
@@ -140,8 +141,8 @@ export async function POST(request: NextRequest) {
       categoryId: z.string().min(1, 'Category is required'),
       brandId: z.string().optional().nullable(),
       type: z.string().optional().default('SIMPLE'),
-      specifications: z.record(z.string()).optional().nullable(),
-      customFields: z.record(z.string()).optional().nullable(),
+      specifications: z.record(z.string(), z.string()).optional().nullable().default({}),
+      customFields: z.record(z.string(), z.string()).optional().nullable().default({}),
       // Accept inventory from form but extract values
       inventory: z.object({
         quantity: z.number().int().min(0),
@@ -206,7 +207,7 @@ export async function POST(request: NextRequest) {
         comparePrice: validatedData.comparePrice,
         costPrice: validatedData.costPrice,
         weight: validatedData.weight,
-        dimensions: validatedData.dimensions,
+        dimensions: validatedData.dimensions ? validatedData.dimensions : undefined,
         images: validatedData.images,
         tags: validatedData.tags,
         isActive: validatedData.isActive,
@@ -214,8 +215,8 @@ export async function POST(request: NextRequest) {
         seoTitle: validatedData.seoTitle,
         seoDesc: validatedData.seoDesc,
         categoryId: validatedData.categoryId,
-        specifications: validatedData.specifications,
-        customFields: validatedData.customFields,
+        specifications: validatedData.specifications && Object.keys(validatedData.specifications).length > 0 ? validatedData.specifications : undefined,
+        customFields: validatedData.customFields && Object.keys(validatedData.customFields).length > 0 ? validatedData.customFields : undefined,
         inventory: validatedData.trackQuantity ? {
           create: {
             quantity: validatedData.quantity,
@@ -229,6 +230,17 @@ export async function POST(request: NextRequest) {
         inventory: true,
       },
     });
+
+    // Log audit trail
+    if (user) {
+      await logAuditTrail({
+        userId: user.id,
+        tableName: 'products',
+        recordId: product.id,
+        action: 'INSERT',
+        newValues: product
+      });
+    }
 
     return NextResponse.json({
       message: 'Product created successfully',

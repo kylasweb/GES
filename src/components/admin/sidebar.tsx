@@ -109,6 +109,7 @@ const navigation = [
             { name: 'Feature Flags', href: '/admin/features' },
             { name: 'Templates', href: '/admin/templates' },
             { name: 'Versions', href: '/admin/versions' },
+            { name: 'Audit Trail', href: '/admin/audit-trail' },
             { name: 'Settings', href: '/admin/settings' },
         ]
     },

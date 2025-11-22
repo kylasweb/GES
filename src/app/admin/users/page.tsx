@@ -24,6 +24,8 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store/auth';
 import { AdminSidebar } from '@/components/admin/sidebar';
+import { ExportButton } from '@/components/admin/export-button';
+import { BulkImport } from '@/components/admin/bulk-import';
 
 interface User {
     id: string;
@@ -385,21 +387,24 @@ export default function UsersManagementPage() {
                                     Manage user accounts, roles, and permissions.
                                 </p>
                             </div>
-                            <Button onClick={() => {
-                                const name = prompt('Enter user name:');
-                                const email = prompt('Enter user email:');
-                                if (name && email) {
-                                    handleCreateUser({
-                                        name,
-                                        email,
-                                        role: 'CUSTOMER',
-                                        isActive: true
-                                    });
-                                }
-                            }}>
-                                <Plus className="w-4 h-4 mr-2" />
-                                Create User
-                            </Button>
+                            <div className="flex items-center space-x-3">
+                                <ExportButton type="users" />
+                                <Button onClick={() => {
+                                    const name = prompt('Enter user name:');
+                                    const email = prompt('Enter user email:');
+                                    if (name && email) {
+                                        handleCreateUser({
+                                            name,
+                                            email,
+                                            role: 'CUSTOMER',
+                                            isActive: true
+                                        });
+                                    }
+                                }}>
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    Create User
+                                </Button>
+                            </div>
                         </div>
                     </div>
 
@@ -636,6 +641,13 @@ export default function UsersManagementPage() {
                             )}
                         </CardContent>
                     </Card>
+                    
+                    <div className="mt-8">
+                        <BulkImport 
+                            type="users" 
+                            onImportComplete={fetchUsers}
+                        />
+                    </div>
                 </div>
             </div>
         </div>

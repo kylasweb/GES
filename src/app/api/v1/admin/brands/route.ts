@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db } from '@/lib/db';
 import { verifyAuth, requireAdmin } from '@/lib/auth';
+import { logAuditTrail } from '@/lib/audit-trail';
 
 export async function GET(request: NextRequest) {
     try {
@@ -75,6 +76,20 @@ export async function POST(request: NextRequest) {
         const brand = await db.brand.create({
             data: validatedData,
         });
+
+        // Get user for audit trail
+        const user = requireAdmin(request);
+
+        // Log audit trail
+        if (user) {
+            await logAuditTrail({
+                userId: user.id,
+                tableName: 'brands',
+                recordId: brand.id,
+                action: 'INSERT',
+                newValues: brand
+            });
+        }
 
         return NextResponse.json({
             message: 'Brand created successfully',

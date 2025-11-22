@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db } from '@/lib/db';
 import { requireAdmin } from '@/lib/auth';
+import { logAuditTrail, getChangedFields } from '@/lib/audit-trail';
 
 interface RouteParams {
     params: Promise<{ id: string }>;
@@ -43,7 +44,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
                 inventory: {
                     select: {
                         quantity: true,
-                        trackQuantity: true,
                         reserved: true,
                         lowStockThreshold: true,
                         reorderPoint: true,
@@ -93,6 +93,11 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
         const validatedData = updateSchema.parse(body);
 
+        // Get current product for audit trail
+        const currentProduct = await db.product.findUnique({
+            where: { id },
+        });
+
         const updatedProduct = await db.product.update({
             where: { id },
             data: validatedData,
@@ -113,17 +118,31 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
                 inventory: {
                     select: {
                         quantity: true,
-                        trackQuantity: true,
                     },
                 },
             },
         });
 
+        // Log audit trail
+        if (user && currentProduct) {
+            const changes = getChangedFields(currentProduct, updatedProduct);
+            if (Object.keys(changes).length > 0) {
+                await logAuditTrail({
+                    userId: user.id,
+                    tableName: 'products',
+                    recordId: id,
+                    action: 'UPDATE',
+                    oldValues: currentProduct,
+                    newValues: updatedProduct
+                });
+            }
+        }
+
         return NextResponse.json({ success: true, data: updatedProduct });
     } catch (error) {
         if (error instanceof z.ZodError) {
             return NextResponse.json(
-                { success: false, error: 'Validation error', details: error.errors },
+                { success: false, error: 'Validation error', details: error.issues },
                 { status: 400 }
             );
         }
@@ -167,6 +186,17 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
         await db.product.delete({
             where: { id },
         });
+
+        // Log audit trail
+        if (user) {
+            await logAuditTrail({
+                userId: user.id,
+                tableName: 'products',
+                recordId: id,
+                action: 'DELETE',
+                oldValues: product
+            });
+        }
 
         return NextResponse.json({
             success: true,

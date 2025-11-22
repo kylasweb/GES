@@ -28,9 +28,9 @@ import {
 } from 'lucide-react';
 
 interface PageProps {
-    params: Promise<{
+    params: {
         slug: string;
-    }>;
+    };
 }
 
 async function getProduct(slug: string) {
@@ -78,7 +78,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         openGraph: {
             title: product.name,
             description: product.shortDesc || product.description,
-            images: images.length > 0 ? [images[0]] : [],
         },
     };
 }
@@ -91,9 +90,9 @@ export default async function ProductPage({ params }: PageProps) {
         notFound();
     }
 
-    const images = Array.isArray(product.images) ? product.images : [];
+    const images = Array.isArray(product.images) ? product.images.filter(img => typeof img === 'string') as string[] : [];
     const videos = Array.isArray(product.videos) ? product.videos : [];
-    const tags = Array.isArray(product.tags) ? product.tags : [];
+    const tags = Array.isArray(product.tags) ? product.tags.filter(tag => typeof tag === 'string') as string[] : [];
     const customFields = product.customFields as Record<string, any> || {};
     const specifications = product.specifications as Record<string, any> || {};
     const dimensions = product.dimensions as Record<string, any> || {};
@@ -141,7 +140,7 @@ export default async function ProductPage({ params }: PageProps) {
                         <div className="relative aspect-square bg-white rounded-lg overflow-hidden border">
                             {images.length > 0 ? (
                                 <Image
-                                    src={images[0]}
+                                    src={images[0] || ''}
                                     alt={product.name}
                                     fill
                                     className="object-contain"
@@ -167,18 +166,20 @@ export default async function ProductPage({ params }: PageProps) {
                         {/* Thumbnail Grid */}
                         {images.length > 1 && (
                             <div className="grid grid-cols-4 gap-2">
-                                {images.slice(0, 4).map((img: string, idx: number) => (
-                                    <div
-                                        key={idx}
-                                        className="relative aspect-square bg-white rounded-lg overflow-hidden border hover:border-green-600 cursor-pointer"
-                                    >
-                                        <Image
-                                            src={img}
-                                            alt={`${product.name} ${idx + 1}`}
-                                            fill
-                                            className="object-contain"
-                                        />
-                                    </div>
+                                {images.slice(0, 4).map((img, idx) => (
+                                    typeof img === 'string' ? (
+                                        <div
+                                            key={idx}
+                                            className="relative aspect-square bg-white rounded-lg overflow-hidden border hover:border-green-600 cursor-pointer"
+                                        >
+                                            <Image
+                                                src={img}
+                                                alt={`${product.name} ${idx + 1}`}
+                                                fill
+                                                className="object-contain"
+                                            />
+                                        </div>
+                                    ) : null
                                 ))}
                             </div>
                         )}
@@ -274,7 +275,7 @@ export default async function ProductPage({ params }: PageProps) {
                                 url={`${process.env.NEXT_PUBLIC_APP_URL}/products/${product.slug}`}
                                 title={product.name}
                                 description={product.shortDesc || ''}
-                                image={images[0] || ''}
+                                image={images[0] ? images[0] : ''}
                             />
                         </div>
 
@@ -301,11 +302,13 @@ export default async function ProductPage({ params }: PageProps) {
                         {/* Tags */}
                         {tags.length > 0 && (
                             <div className="flex flex-wrap gap-2 pt-4 border-t">
-                                {tags.map((tag: string, idx: number) => (
-                                    <Badge key={idx} variant="outline">
-                                        <Tag className="w-3 h-3 mr-1" />
-                                        {tag}
-                                    </Badge>
+                                {tags.map((tag, idx) => (
+                                    typeof tag === 'string' ? (
+                                        <Badge key={idx} variant="outline">
+                                            <Tag className="w-3 h-3 mr-1" />
+                                            {tag}
+                                        </Badge>
+                                    ) : null
                                 ))}
                             </div>
                         )}
@@ -459,7 +462,7 @@ export default async function ProductPage({ params }: PageProps) {
                                                         {new Date(review.createdAt).toLocaleDateString()}
                                                     </span>
                                                 </div>
-                                                <p className="text-gray-700">{review.comment}</p>
+                                                <p className="text-gray-700">{review.content}</p>
                                             </div>
                                         ))}
                                     </div>

@@ -47,6 +47,8 @@ import {
 import { useAuthStore } from '@/lib/store/auth';
 import { AdminSidebar } from '@/components/admin/sidebar';
 import { toast } from 'sonner';
+import { ExportButton } from '@/components/admin/export-button';
+import { BulkImport } from '@/components/admin/bulk-import';
 
 interface Brand {
     id: string;
@@ -54,7 +56,9 @@ interface Brand {
     slug: string;
     description?: string;
     logo?: string;
+    image?: string;
     website?: string;
+    sortOrder?: number;
     isActive: boolean;
     _count?: {
         products: number;
@@ -76,6 +80,7 @@ export default function AdminBrandsPage() {
         description: '',
         logo: '',
         website: '',
+        sortOrder: 0,
         isActive: true,
     });
 
@@ -130,7 +135,7 @@ export default function AdminBrandsPage() {
 
             toast.success('Brand created successfully');
             setIsCreateDialogOpen(false);
-            setFormData({ name: '', description: '', logo: '', website: '', isActive: true });
+            setFormData({ name: '', description: '', logo: '', website: '', sortOrder: 0, isActive: true });
             fetchBrands();
         } catch (error) {
             console.error('Error creating brand:', error);
@@ -165,7 +170,7 @@ export default function AdminBrandsPage() {
             toast.success('Brand updated successfully');
             setIsEditDialogOpen(false);
             setSelectedBrand(null);
-            setFormData({ name: '', description: '', logo: '', website: '', isActive: true });
+            setFormData({ name: '', description: '', logo: '', website: '', sortOrder: 0, isActive: true });
             fetchBrands();
         } catch (error) {
             console.error('Error updating brand:', error);
@@ -202,6 +207,7 @@ export default function AdminBrandsPage() {
             description: brand.description || '',
             logo: brand.logo || '',
             website: brand.website || '',
+            sortOrder: brand.sortOrder || 0,
             isActive: brand.isActive,
         });
         setIsEditDialogOpen(true);
@@ -225,77 +231,93 @@ export default function AdminBrandsPage() {
                                     Manage product brands and manufacturers
                                 </p>
                             </div>
-                            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-                                <DialogTrigger asChild>
-                                    <Button>
-                                        <Plus className="w-4 h-4 mr-2" />
-                                        Add Brand
-                                    </Button>
-                                </DialogTrigger>
-                                <DialogContent className="sm:max-w-[425px]">
-                                    <DialogHeader>
-                                        <DialogTitle>Create New Brand</DialogTitle>
-                                        <DialogDescription>
-                                            Add a new brand to your product catalog.
-                                        </DialogDescription>
-                                    </DialogHeader>
-                                    <div className="grid gap-4 py-4">
-                                        <div className="grid grid-cols-4 items-center gap-4">
-                                            <Label htmlFor="name" className="text-right">
-                                                Name
-                                            </Label>
-                                            <Input
-                                                id="name"
-                                                value={formData.name}
-                                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                                className="col-span-3"
-                                                placeholder="Brand name"
-                                            />
-                                        </div>
-                                        <div className="grid grid-cols-4 items-center gap-4">
-                                            <Label htmlFor="description" className="text-right">
-                                                Description
-                                            </Label>
-                                            <Textarea
-                                                id="description"
-                                                value={formData.description}
-                                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                                className="col-span-3"
-                                                placeholder="Brand description"
-                                            />
-                                        </div>
-                                        <div className="grid grid-cols-4 items-center gap-4">
-                                            <Label htmlFor="logo" className="text-right">
-                                                Logo URL
-                                            </Label>
-                                            <Input
-                                                id="logo"
-                                                value={formData.logo}
-                                                onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
-                                                className="col-span-3"
-                                                placeholder="https://example.com/logo.jpg"
-                                            />
-                                        </div>
-                                        <div className="grid grid-cols-4 items-center gap-4">
-                                            <Label htmlFor="website" className="text-right">
-                                                Website
-                                            </Label>
-                                            <Input
-                                                id="website"
-                                                value={formData.website}
-                                                onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                                                className="col-span-3"
-                                                placeholder="https://example.com"
-                                            />
-                                        </div>
-                                    </div>
-                                    <DialogFooter>
-                                        <Button type="submit" onClick={handleCreate}>
-                                            Create Brand
+                            <div className="flex items-center space-x-3">
+                                <ExportButton type="brands" />
+                                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button>
+                                            <Plus className="w-4 h-4 mr-2" />
+                                            Add Brand
                                         </Button>
-                                    </DialogFooter>
-                                </DialogContent>
-                            </Dialog>
+                                    </DialogTrigger>
+                                    <DialogContent className="sm:max-w-[425px]">
+                                        <DialogHeader>
+                                            <DialogTitle>Create New Brand</DialogTitle>
+                                            <DialogDescription>
+                                                Add a new brand to your product catalog.
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <div className="grid gap-4 py-4">
+                                            <div className="grid grid-cols-4 items-center gap-4">
+                                                <Label htmlFor="name" className="text-right">
+                                                    Name
+                                                </Label>
+                                                <Input
+                                                    id="name"
+                                                    value={formData.name}
+                                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                                    className="col-span-3"
+                                                    placeholder="Brand name"
+                                                />
+                                            </div>
+                                            <div className="grid grid-cols-4 items-center gap-4">
+                                                <Label htmlFor="description" className="text-right">
+                                                    Description
+                                                </Label>
+                                                <Textarea
+                                                    id="description"
+                                                    value={formData.description}
+                                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                                    className="col-span-3"
+                                                    placeholder="Brand description"
+                                                />
+                                            </div>
+                                            <div className="grid grid-cols-4 items-center gap-4">
+                                                <Label htmlFor="logo" className="text-right">
+                                                    Logo URL
+                                                </Label>
+                                                <Input
+                                                    id="logo"
+                                                    value={formData.logo}
+                                                    onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
+                                                    className="col-span-3"
+                                                    placeholder="https://example.com/logo.jpg"
+                                                />
+                                            </div>
+                                            <div className="grid grid-cols-4 items-center gap-4">
+                                                <Label htmlFor="website" className="text-right">
+                                                    Website
+                                                </Label>
+                                                <Input
+                                                    id="website"
+                                                    value={formData.website}
+                                                    onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                                                    className="col-span-3"
+                                                    placeholder="https://example.com"
+                                                />
+                                            </div>
+                                            <div className="grid grid-cols-4 items-center gap-4">
+                                                <Label htmlFor="sortOrder" className="text-right">
+                                                    Sort Order
+                                                </Label>
+                                                <Input
+                                                    id="sortOrder"
+                                                    type="number"
+                                                    value={formData.sortOrder}
+                                                    onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })}
+                                                    className="col-span-3"
+                                                    placeholder="0"
+                                                />
+                                            </div>
+                                        </div>
+                                        <DialogFooter>
+                                            <Button type="submit" onClick={handleCreate}>
+                                                Create Brand
+                                            </Button>
+                                        </DialogFooter>
+                                    </DialogContent>
+                                </Dialog>
+                            </div>
                         </div>
                     </div>
                 </header>
@@ -345,9 +367,9 @@ export default function AdminBrandsPage() {
                                                 <TableRow key={brand.id}>
                                                     <TableCell className="font-medium">
                                                         <div className="flex items-center">
-                                                            {brand.image && (
+                                                            {brand.logo && (
                                                                 <img
-                                                                    src={brand.image}
+                                                                    src={brand.logo}
                                                                     alt={brand.name}
                                                                     className="w-8 h-8 rounded-full mr-3 object-cover"
                                                                 />
@@ -417,6 +439,13 @@ export default function AdminBrandsPage() {
                                 )}
                             </CardContent>
                         </Card>
+                        
+                        <div className="mt-8">
+                            <BulkImport 
+                                type="brands" 
+                                onImportComplete={fetchBrands}
+                            />
+                        </div>
                     </div>
                 </main>
             </div>
@@ -477,6 +506,19 @@ export default function AdminBrandsPage() {
                                 onChange={(e) => setFormData({ ...formData, website: e.target.value })}
                                 className="col-span-3"
                                 placeholder="https://example.com"
+                            />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="edit-sortOrder" className="text-right">
+                                Sort Order
+                            </Label>
+                            <Input
+                                id="edit-sortOrder"
+                                type="number"
+                                value={formData.sortOrder}
+                                onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })}
+                                className="col-span-3"
+                                placeholder="0"
                             />
                         </div>
                     </div>

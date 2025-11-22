@@ -29,6 +29,8 @@ import Link from 'next/link';
 import { AdminSidebar } from '@/components/admin/sidebar';
 import { AITools } from '@/components/admin/ai-tools';
 import { AIProductGenerator } from '@/components/admin/ai-product-generator';
+import { ExportButton } from '@/components/admin/export-button';
+import { BulkImport } from '@/components/admin/bulk-import';
 import { useRouter } from 'next/navigation';
 
 interface Product {
@@ -419,6 +421,7 @@ export default function ProductsManagementPage() {
                                 <Sparkles className="w-4 h-4 mr-2" />
                                 Generate with AI
                             </Button>
+                            <ExportButton type="products" />
                             <Button
                                 variant="outline"
                                 onClick={handleDownloadTemplate}
@@ -652,6 +655,13 @@ export default function ProductsManagementPage() {
                             )}
                         </CardContent>
                     </Card>
+                    
+                    <div className="mt-8">
+                        <BulkImport 
+                            type="products" 
+                            onImportComplete={fetchProducts}
+                        />
+                    </div>
                 </div>
             </div>
 

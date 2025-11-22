@@ -23,6 +23,7 @@ import {
 import { useAuthStore } from '@/lib/store/auth';
 import Link from 'next/link';
 import { AdminSidebar } from '@/components/admin/sidebar';
+import { ExportButton } from '@/components/admin/export-button';
 
 interface Order {
     id: string;
@@ -253,10 +254,15 @@ export default function OrdersManagementPage() {
                 <div className="p-8">
                     {/* Header */}
                     <div className="mb-8">
-                        <h1 className="text-3xl font-bold text-gray-900">Orders Management</h1>
-                        <p className="text-gray-600 mt-2">
-                            Manage customer orders, track shipments, and update order status.
-                        </p>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h1 className="text-3xl font-bold text-gray-900">Orders Management</h1>
+                                <p className="text-gray-600 mt-2">
+                                    Manage customer orders, track shipments, and update order status.
+                                </p>
+                            </div>
+                            <ExportButton type="orders" />
+                        </div>
                     </div>
 
                     {error && (

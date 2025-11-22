@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { db } from '@/lib/db';
 import { verifyAuth, requireAdmin } from '@/lib/auth';
+import { logAuditTrail, getChangedFields } from '@/lib/audit-trail';
 
 export async function GET(
     request: NextRequest,
@@ -104,11 +105,34 @@ export async function PUT(
             );
         }
 
+        // Get current brand for audit trail
+        const currentBrand = await db.brand.findUnique({
+            where: { id },
+        });
+
         // Update brand
         const brand = await db.brand.update({
             where: { id },
             data: validatedData,
         });
+
+        // Get user for audit trail
+        const user = requireAdmin(request);
+
+        // Log audit trail
+        if (user && currentBrand) {
+            const changes = getChangedFields(currentBrand, brand);
+            if (Object.keys(changes).length > 0) {
+                await logAuditTrail({
+                    userId: user.id,
+                    tableName: 'brands',
+                    recordId: id,
+                    action: 'UPDATE',
+                    oldValues: currentBrand,
+                    newValues: brand
+                });
+            }
+        }
 
         return NextResponse.json({
             message: 'Brand updated successfully',
@@ -179,6 +203,20 @@ export async function DELETE(
                 { error: 'Cannot delete brand with associated products. Please reassign or remove products first.' },
                 { status: 400 }
             );
+        }
+
+        // Get user for audit trail
+        const user = requireAdmin(request);
+
+        // Log audit trail
+        if (user) {
+            await logAuditTrail({
+                userId: user.id,
+                tableName: 'brands',
+                recordId: id,
+                action: 'DELETE',
+                oldValues: existingBrand
+            });
         }
 
         // Delete brand
