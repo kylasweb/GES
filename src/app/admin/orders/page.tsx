@@ -9,6 +9,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
     ShoppingCart,
     Search,
     Eye,
@@ -24,6 +34,7 @@ import { useAuthStore } from '@/lib/store/auth';
 import Link from 'next/link';
 import { AdminSidebar } from '@/components/admin/sidebar';
 import { ExportButton } from '@/components/admin/export-button';
+import { useToast } from '@/hooks/use-toast';
 
 interface Order {
     id: string;
@@ -50,6 +61,7 @@ const statusOptions = [
 
 export default function OrdersManagementPage() {
     const { token } = useAuthStore();
+    const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(true);
     const [orders, setOrders] = useState<Order[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -57,6 +69,14 @@ export default function OrdersManagementPage() {
     const [error, setError] = useState<string | null>(null);
     const [selectedOrders, setSelectedOrders] = useState<Set<string>>(new Set());
     const [isBulkMode, setIsBulkMode] = useState(false);
+
+    // Loading states
+    const [isUpdating, setIsUpdating] = useState(false);
+    const [updatingOrderId, setUpdatingOrderId] = useState<string | null>(null);
+
+    // Bulk update dialog
+    const [bulkUpdateDialogOpen, setBulkUpdateDialogOpen] = useState(false);
+    const [bulkStatusToApply, setBulkStatusToApply] = useState<string>('');
 
     useEffect(() => {
         fetchOrders();
@@ -83,6 +103,7 @@ export default function OrdersManagementPage() {
     };
 
     const handleStatusUpdate = async (orderId: string, newStatus: string) => {
+        setUpdatingOrderId(orderId);
         try {
             const response = await fetch(`/api/v1/orders/${orderId}`, {
                 method: 'PUT',
@@ -99,11 +120,25 @@ export default function OrdersManagementPage() {
                 setOrders(orders.map(order =>
                     order.id === orderId ? { ...order, status: newStatus } : order
                 ));
+                toast({
+                    title: 'Success',
+                    description: `Order status updated to ${newStatus}`,
+                });
             } else {
-                setError(data.error || 'Failed to update order status');
+                toast({
+                    title: 'Error',
+                    description: data.error || 'Failed to update order status',
+                    variant: 'destructive',
+                });
             }
         } catch (err) {
-            setError('Failed to update order status');
+            toast({
+                title: 'Error',
+                description: 'Failed to update order status',
+                variant: 'destructive',
+            });
+        } finally {
+            setUpdatingOrderId(null);
         }
     };
 
@@ -130,9 +165,15 @@ export default function OrdersManagementPage() {
         }
     };
 
-    const handleBulkStatusUpdate = async (newStatus: string) => {
-        if (selectedOrders.size === 0) return;
+    const initiateBulkStatusUpdate = (newStatus: string) => {
+        setBulkStatusToApply(newStatus);
+        setBulkUpdateDialogOpen(true);
+    };
 
+    const handleBulkStatusUpdate = async () => {
+        if (selectedOrders.size === 0 || !bulkStatusToApply) return;
+
+        setIsUpdating(true);
         try {
             const updatePromises = Array.from(selectedOrders).map(orderId =>
                 fetch(`/api/v1/orders/${orderId}`, {
@@ -141,7 +182,7 @@ export default function OrdersManagementPage() {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ status: newStatus })
+                    body: JSON.stringify({ status: bulkStatusToApply })
                 })
             );
 
@@ -154,18 +195,38 @@ export default function OrdersManagementPage() {
             if (successCount > 0) {
                 // Update local state
                 setOrders(orders.map(o =>
-                    selectedOrders.has(o.id) ? { ...o, status: newStatus } : o
+                    selectedOrders.has(o.id) ? { ...o, status: bulkStatusToApply } : o
                 ));
                 setSelectedOrders(new Set());
                 setIsBulkMode(false);
+                toast({
+                    title: 'Success',
+                    description: `${successCount} orders updated successfully`,
+                });
                 if (failCount > 0) {
-                    setError(`${successCount} orders updated, ${failCount} failed`);
+                    toast({
+                        title: 'Warning',
+                        description: `${failCount} updates failed`,
+                        variant: 'destructive',
+                    });
                 }
             } else {
-                setError('Failed to update orders');
+                toast({
+                    title: 'Error',
+                    description: 'Failed to update orders',
+                    variant: 'destructive',
+                });
             }
         } catch (err) {
-            setError('Failed to update orders');
+            toast({
+                title: 'Error',
+                description: 'Failed to update orders',
+                variant: 'destructive',
+            });
+        } finally {
+            setIsUpdating(false);
+            setBulkUpdateDialogOpen(false);
+            setBulkStatusToApply('');
         }
     };
 
@@ -309,11 +370,12 @@ export default function OrdersManagementPage() {
                                         <span className="text-sm font-medium text-blue-900">
                                             {selectedOrders.size} order{selectedOrders.size !== 1 ? 's' : ''} selected
                                         </span>
-                                        <Select onValueChange={handleBulkStatusUpdate}>
+                                        <Select onValueChange={initiateBulkStatusUpdate}>
                                             <SelectTrigger className="w-40">
                                                 <SelectValue placeholder="Update Status" />
                                             </SelectTrigger>
                                             <SelectContent>
+                                                <SelectItem value="pending">Pending</SelectItem>
                                                 <SelectItem value="processing">Processing</SelectItem>
                                                 <SelectItem value="shipped">Shipped</SelectItem>
                                                 <SelectItem value="delivered">Delivered</SelectItem>
@@ -398,21 +460,25 @@ export default function OrdersManagementPage() {
                                                             <span className="ml-1 capitalize">{order.status}</span>
                                                         </div>
                                                     </Badge>
-                                                    <Select
-                                                        value={order.status}
-                                                        onValueChange={(value) => handleStatusUpdate(order.id, value)}
-                                                    >
-                                                        <SelectTrigger className="w-32 h-8">
-                                                            <SelectValue />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectItem value="pending">Pending</SelectItem>
-                                                            <SelectItem value="processing">Processing</SelectItem>
-                                                            <SelectItem value="shipped">Shipped</SelectItem>
-                                                            <SelectItem value="delivered">Delivered</SelectItem>
-                                                            <SelectItem value="cancelled">Cancelled</SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
+                                                    {updatingOrderId === order.id ? (
+                                                        <RefreshCw className="w-4 h-4 animate-spin text-gray-500" />
+                                                    ) : (
+                                                        <Select
+                                                            value={order.status}
+                                                            onValueChange={(value) => handleStatusUpdate(order.id, value)}
+                                                        >
+                                                            <SelectTrigger className="w-32 h-8">
+                                                                <SelectValue />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="pending">Pending</SelectItem>
+                                                                <SelectItem value="processing">Processing</SelectItem>
+                                                                <SelectItem value="shipped">Shipped</SelectItem>
+                                                                <SelectItem value="delivered">Delivered</SelectItem>
+                                                                <SelectItem value="cancelled">Cancelled</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                    )}
                                                 </div>
                                             </TableCell>
                                             <TableCell>
@@ -463,6 +529,34 @@ export default function OrdersManagementPage() {
                             )}
                         </CardContent>
                     </Card>
+
+                    {/* Bulk Update Confirmation Dialog */}
+                    <AlertDialog open={bulkUpdateDialogOpen} onOpenChange={setBulkUpdateDialogOpen}>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Update Status?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Are you sure you want to update the status of {selectedOrders.size} selected orders to "{bulkStatusToApply}"?
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel disabled={isUpdating}>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                    onClick={handleBulkStatusUpdate}
+                                    disabled={isUpdating}
+                                >
+                                    {isUpdating ? (
+                                        <>
+                                            <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+                                            Updating...
+                                        </>
+                                    ) : (
+                                        'Update Status'
+                                    )}
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                 </div>
             </div>
         </div>

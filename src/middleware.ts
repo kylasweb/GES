@@ -70,7 +70,8 @@ export async function middleware(request: NextRequest) {
       '/api/v1/products',
       '/api/v1/categories',
       '/api/v1/content/landing',
-      '/api/v1/payments/callback'
+      '/api/v1/payments/callback',
+      '/api/v1/appearance'
     ];
 
     const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));

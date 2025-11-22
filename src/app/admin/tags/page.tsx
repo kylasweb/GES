@@ -1,12 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import {
     Dialog,
     DialogContent,
@@ -17,13 +23,12 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog';
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -75,6 +80,9 @@ export default function AdminTagsPage() {
         color: '#3b82f6',
         isActive: true,
     });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [tagToDelete, setTagToDelete] = useState<ProductTag | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const fetchTags = async () => {
         try {
@@ -105,6 +113,7 @@ export default function AdminTagsPage() {
 
     const handleCreate = async () => {
         try {
+            setIsSubmitting(true);
             // Generate slug from name
             const slug = formData.name
                 .toLowerCase()
@@ -132,6 +141,8 @@ export default function AdminTagsPage() {
         } catch (error) {
             console.error('Error creating tag:', error);
             toast.error(error instanceof Error ? error.message : 'Failed to create tag');
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -139,6 +150,7 @@ export default function AdminTagsPage() {
         if (!selectedTag) return;
 
         try {
+            setIsSubmitting(true);
             // Generate slug from name
             const slug = formData.name
                 .toLowerCase()
@@ -166,39 +178,10 @@ export default function AdminTagsPage() {
             fetchTags();
         } catch (error) {
             console.error('Error updating tag:', error);
-            toast.error(error instanceof Error ? error.message : 'Failed to update tag');
-        }
-    };
-
-    const handleDelete = async (tagId: string) => {
-        try {
-            const response = await fetch(`/api/v1/admin/tags/${tagId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-            });
-
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'Failed to delete tag');
-            }
-
-            toast.success('Tag deleted successfully');
-            fetchTags();
-        } catch (error) {
-            console.error('Error deleting tag:', error);
-            toast.error(error instanceof Error ? error.message : 'Failed to delete tag');
-        }
-    };
-
-    const openEditDialog = (tag: ProductTag) => {
-        setSelectedTag(tag);
-        setFormData({
             name: tag.name,
-            description: tag.description || '',
-            color: tag.color || '#3b82f6',
-            isActive: tag.isActive,
+                description: tag.description || '',
+                    color: tag.color || '#3b82f6',
+                        isActive: tag.isActive,
         });
         setIsEditDialogOpen(true);
     };
@@ -235,57 +218,61 @@ export default function AdminTagsPage() {
                                             Add a new tag to categorize products.
                                         </DialogDescription>
                                     </DialogHeader>
-                                    <div className="grid gap-4 py-4">
-                                        <div className="grid grid-cols-4 items-center gap-4">
-                                            <Label htmlFor="name" className="text-right">
-                                                Name
-                                            </Label>
-                                            <Input
-                                                id="name"
-                                                value={formData.name}
-                                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                                className="col-span-3"
-                                                placeholder="Tag name"
-                                            />
-                                        </div>
-                                        <div className="grid grid-cols-4 items-center gap-4">
-                                            <Label htmlFor="description" className="text-right">
-                                                Description
-                                            </Label>
-                                            <Textarea
-                                                id="description"
-                                                value={formData.description}
-                                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                                className="col-span-3"
-                                                placeholder="Tag description"
-                                            />
-                                        </div>
-                                        <div className="grid grid-cols-4 items-center gap-4">
-                                            <Label htmlFor="color" className="text-right">
-                                                Color
-                                            </Label>
-                                            <div className="col-span-3 flex items-center space-x-2">
+                                    <form onSubmit={(e) => { e.preventDefault(); handleCreate(); }}>
+                                        <div className="grid gap-4 py-4">
+                                            <div className="grid grid-cols-4 items-center gap-4">
+                                                <Label htmlFor="name" className="text-right">
+                                                    Name
+                                                </Label>
                                                 <Input
-                                                    id="color"
-                                                    type="color"
-                                                    value={formData.color}
-                                                    onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                                                    className="w-12 h-10 p-1 border rounded"
-                                                />
-                                                <Input
-                                                    value={formData.color}
-                                                    onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                                                    placeholder="#3b82f6"
-                                                    className="flex-1"
+                                                    id="name"
+                                                    value={formData.name}
+                                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                                    className="col-span-3"
+                                                    placeholder="Tag name"
+                                                    required
                                                 />
                                             </div>
+                                            <div className="grid grid-cols-4 items-center gap-4">
+                                                <Label htmlFor="description" className="text-right">
+                                                    Description
+                                                </Label>
+                                                <Textarea
+                                                    id="description"
+                                                    value={formData.description}
+                                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                                    className="col-span-3"
+                                                    placeholder="Tag description"
+                                                />
+                                            </div>
+                                            <div className="grid grid-cols-4 items-center gap-4">
+                                                <Label htmlFor="color" className="text-right">
+                                                    Color
+                                                </Label>
+                                                <div className="col-span-3 flex items-center space-x-2">
+                                                    <Input
+                                                        id="color"
+                                                        type="color"
+                                                        value={formData.color}
+                                                        onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                                                        className="w-12 h-10 p-1 border rounded"
+                                                    />
+                                                    <Input
+                                                        value={formData.color}
+                                                        onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                                                        placeholder="#3b82f6"
+                                                        className="flex-1"
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <DialogFooter>
-                                        <Button type="submit" onClick={handleCreate}>
-                                            Create Tag
-                                        </Button>
-                                    </DialogFooter>
+                                        <DialogFooter>
+                                            <Button type="submit" disabled={isSubmitting}>
+                                                {isSubmitting ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}
+                                                Create Tag
+                                            </Button>
+                                        </DialogFooter>
+                                    </form>
                                 </DialogContent>
                             </Dialog>
                         </div>
@@ -370,115 +357,308 @@ export default function AdminTagsPage() {
                                                         <div className="flex justify-end space-x-2">
                                                             <Button
                                                                 variant="outline"
-                                                                size="sm"
-                                                                onClick={() => openEditDialog(tag)}
-                                                            >
-                                                                <Edit className="w-4 h-4" />
-                                                            </Button>
-                                                            <AlertDialog>
-                                                                <AlertDialogTrigger asChild>
-                                                                    <Button variant="outline" size="sm">
-                                                                        <Trash2 className="w-4 h-4" />
-                                                                    </Button>
-                                                                </AlertDialogTrigger>
-                                                                <AlertDialogContent>
-                                                                    <AlertDialogHeader>
-                                                                        <AlertDialogTitle>Delete Tag</AlertDialogTitle>
-                                                                        <AlertDialogDescription>
-                                                                            Are you sure you want to delete "{tag.name}"? This action cannot be undone.
-                                                                            {tag.productCount > 0 && (
-                                                                                <span className="block mt-2 text-red-600">
-                                                                                    Warning: This tag has {tag.productCount} associated products.
-                                                                                </span>
-                                                                            )}
-                                                                        </AlertDialogDescription>
-                                                                    </AlertDialogHeader>
-                                                                    <AlertDialogFooter>
-                                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                        <AlertDialogAction
-                                                                            onClick={() => handleDelete(tag.id)}
-                                                                            className="bg-red-600 hover:bg-red-700"
-                                                                        >
-                                                                            Delete
-                                                                        </AlertDialogAction>
-                                                                    </AlertDialogFooter>
-                                                                </AlertDialogContent>
-                                                            </AlertDialog>
+                                )}
+                                                        </CardContent>
+                                                    </Card>
+                                                </div>
+                </main>
+
+                                        {/* Edit Dialog */}
+                                        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                                            <DialogContent className="sm:max-w-[425px]">
+                                                <DialogHeader>
+                                                    <DialogTitle>Edit Tag</DialogTitle>
+                                                    <DialogDescription>
+                                                        Update tag information.
+                                                    </DialogDescription>
+                                                </DialogHeader>
+                                                <div className="grid gap-4 py-4">
+                                                    <div className="grid grid-cols-4 items-center gap-4">
+                                                        <Label htmlFor="edit-name" className="text-right">
+                                                            Name
+                                                        </Label>
+                                                        <Input
+                                                            id="edit-name"
+                                                            value={formData.name}
+                                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                                            className="col-span-3"
+                                                            placeholder="Tag name"
+                                                        />
+                                                    </div>
+                                                    <div className="grid grid-cols-4 items-center gap-4">
+                                                        <Label htmlFor="edit-description" className="text-right">
+                                                            Description
+                                                        </Label>
+                                                        <Textarea
+                                                            id="edit-description"
+                                                            value={formData.description}
+                                                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                                            className="col-span-3"
+                                                            placeholder="Tag description"
+                                                        />
+                                                    </div>
+                                                    <div className="grid grid-cols-4 items-center gap-4">
+                                                        <Label htmlFor="edit-color" className="text-right">
+                                                            Color
+                                                        </Label>
+                                                        <div className="col-span-3 flex items-center space-x-2">
+                                                            <Input
+                                                                id="edit-color"
+                                                                type="color"
+                                                                value={formData.color}
+                                                                onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                                                                className="w-12 h-10 p-1 border rounded"
+                                                            />
+                                                            <Input
+                                                                value={formData.color}
+                                                                onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                                                                placeholder="#3b82f6"
+                                                                className="flex-1"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <DialogFooter>
+                                                    <Button type="submit" onClick={handleUpdate} disabled={isSubmitting}>
+                                                        {isSubmitting ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}
+                                                        value={formData.name}
+                                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                                        className="col-span-3"
+                                                        placeholder="Tag name"
+                                                        required
+                                                />
+                                                    </div>
+                                                    <div className="grid grid-cols-4 items-center gap-4">
+                                                        <Label htmlFor="description" className="text-right">
+                                                            Description
+                                                        </Label>
+                                                        <Textarea
+                                                            id="description"
+                                                            value={formData.description}
+                                                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                                            className="col-span-3"
+                                                            placeholder="Tag description"
+                                                        />
+                                                    </div>
+                                                    <div className="grid grid-cols-4 items-center gap-4">
+                                                        <Label htmlFor="color" className="text-right">
+                                                            Color
+                                                        </Label>
+                                                        <div className="col-span-3 flex items-center space-x-2">
+                                                            <Input
+                                                                id="color"
+                                                                type="color"
+                                                                value={formData.color}
+                                                                onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                                                                className="w-12 h-10 p-1 border rounded"
+                                                            />
+                                                            <Input
+                                                                value={formData.color}
+                                                                onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                                                                placeholder="#3b82f6"
+                                                                className="flex-1"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <DialogFooter>
+                                                    <Button type="submit" disabled={isSubmitting}>
+                                                        {isSubmitting ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}
+                                                        Create Tag
+                                                    </Button>
+                                                </DialogFooter>
+                                            </form>
+                                        </DialogContent>
+                                    </Dialog>
+                        </div>
+                    </div>
+                </header>
+
+                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                        <Card>
+                            <CardHeader>
+                                <div className="flex justify-between items-center">
+                                    <CardTitle>All Tags ({tags.length})</CardTitle>
+                                    <div className="flex items-center space-x-2">
+                                        <div className="relative">
+                                            <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                                            <Input
+                                                placeholder="Search tags..."
+                                                value={searchTerm}
+                                                onChange={(e) => setSearchTerm(e.target.value)}
+                                                className="pl-10 w-64"
+                                            />
+                                        </div>
+                                        <Button variant="outline" size="sm" onClick={fetchTags}>
+                                            <RefreshCw className="w-4 h-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                {isLoading ? (
+                                    <div className="flex justify-center items-center py-8">
+                                        <RefreshCw className="w-6 h-6 animate-spin" />
+                                        <span className="ml-2">Loading tags...</span>
+                                    </div>
+                                ) : (
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Name</TableHead>
+                                                <TableHead>Slug</TableHead>
+                                                <TableHead>Products</TableHead>
+                                                <TableHead>Color</TableHead>
+                                                <TableHead>Status</TableHead>
+                                                <TableHead>Created</TableHead>
+                                                <TableHead className="text-right">Actions</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {filteredTags.map((tag) => (
+                                                <TableRow key={tag.id}>
+                                                    <TableCell className="font-medium">
+                                                        <div className="flex items-center">
+                                                            <Tag className="w-4 h-4 mr-2 text-gray-400" />
+                                                            {tag.name}
                                                         </div>
                                                     </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
+                                                    <TableCell className="text-gray-500">{tag.slug}</TableCell>
+                                                    <TableCell>
+                                                        <Badge variant="secondary">
+                                                            <Package className="w-3 h-3 mr-1" />
+                                                            {tag.productCount}
+                                                        </Badge>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <div className="flex items-center space-x-2">
+                                                            <div
+                                                                className="w-4 h-4 rounded-full border"
+                                                                style={{ backgroundColor: tag.color }}
+                                                            />
+                                                            <span className="text-sm text-gray-600">{tag.color}</span>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Badge variant={tag.isActive ? 'default' : 'secondary'}>
+                                                            {tag.isActive ? 'Active' : 'Inactive'}
+                                                        </Badge>
+                                                    </TableCell>
+                                                    <TableCell className="text-gray-500">
+                                                        {new Date(tag.createdAt).toLocaleDateString()}
+                                                    </TableCell>
+                                                    <TableCell className="text-right">
+                                                        <div className="flex justify-end space-x-2">
+                                                            <Button
+                                                                variant="outline"
                                 )}
-                            </CardContent>
-                        </Card>
-                    </div>
+                                                        </CardContent>
+                                                    </Card>
+                                                </div>
                 </main>
-            </div>
 
-            {/* Edit Dialog */}
-            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                        <DialogTitle>Edit Tag</DialogTitle>
-                        <DialogDescription>
-                            Update tag information.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="edit-name" className="text-right">
-                                Name
-                            </Label>
-                            <Input
-                                id="edit-name"
-                                value={formData.name}
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                className="col-span-3"
-                                placeholder="Tag name"
-                            />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="edit-description" className="text-right">
-                                Description
-                            </Label>
-                            <Textarea
-                                id="edit-description"
-                                value={formData.description}
-                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                className="col-span-3"
-                                placeholder="Tag description"
-                            />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="edit-color" className="text-right">
-                                Color
-                            </Label>
-                            <div className="col-span-3 flex items-center space-x-2">
-                                <Input
-                                    id="edit-color"
-                                    type="color"
-                                    value={formData.color}
-                                    onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                                    className="w-12 h-10 p-1 border rounded"
-                                />
-                                <Input
-                                    value={formData.color}
-                                    onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                                    placeholder="#3b82f6"
-                                    className="flex-1"
-                                />
+                                        {/* Edit Dialog */}
+                                        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                                            <DialogContent className="sm:max-w-[425px]">
+                                                <DialogHeader>
+                                                    <DialogTitle>Edit Tag</DialogTitle>
+                                                    <DialogDescription>
+                                                        Update tag information.
+                                                    </DialogDescription>
+                                                </DialogHeader>
+                                                <div className="grid gap-4 py-4">
+                                                    <div className="grid grid-cols-4 items-center gap-4">
+                                                        <Label htmlFor="edit-name" className="text-right">
+                                                            Name
+                                                        </Label>
+                                                        <Input
+                                                            id="edit-name"
+                                                            value={formData.name}
+                                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                                            className="col-span-3"
+                                                            placeholder="Tag name"
+                                                        />
+                                                    </div>
+                                                    <div className="grid grid-cols-4 items-center gap-4">
+                                                        <Label htmlFor="edit-description" className="text-right">
+                                                            Description
+                                                        </Label>
+                                                        <Textarea
+                                                            id="edit-description"
+                                                            value={formData.description}
+                                                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                                            className="col-span-3"
+                                                            placeholder="Tag description"
+                                                        />
+                                                    </div>
+                                                    <div className="grid grid-cols-4 items-center gap-4">
+                                                        <Label htmlFor="edit-color" className="text-right">
+                                                            Color
+                                                        </Label>
+                                                        <div className="col-span-3 flex items-center space-x-2">
+                                                            <Input
+                                                                id="edit-color"
+                                                                type="color"
+                                                                value={formData.color}
+                                                                onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                                                                className="w-12 h-10 p-1 border rounded"
+                                                            />
+                                                            <Input
+                                                                value={formData.color}
+                                                                onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                                                                placeholder="#3b82f6"
+                                                                className="flex-1"
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <DialogFooter>
+                                                    <Button type="submit" onClick={handleUpdate} disabled={isSubmitting}>
+                                                        {isSubmitting ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}
+                                                        Update Tag
+                                                    </Button>
+                                                </DialogFooter>
+                                            </DialogContent>
+                                        </Dialog>
+                                    </div>
+
+            {/* Delete Confirmation Dialog */}
+                                <AlertDialog open={!!tagToDelete} onOpenChange={(open) => !open && setTagToDelete(null)}>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Delete Tag</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                Are you sure you want to delete &quot;{tagToDelete?.name}&quot;? This action cannot be undone.
+                                                {tagToDelete && tagToDelete.productCount > 0 && (
+                                                    <span className="block mt-2 text-red-600">
+                                                        Warning: This tag has {tagToDelete.productCount} associated products.
+                                                    </span>
+                                                )}
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    handleDelete();
+                                                }}
+                                                className="bg-red-600 hover:bg-red-700"
+                                                disabled={isDeleting}
+                                            >
+                                                {isDeleting ? (
+                                                    <>
+                                                        <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+                                                        Deleting...
+                                                    </>
+                                                ) : (
+                                                    'Delete'
+                                                )}
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
                             </div>
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button type="submit" onClick={handleUpdate}>
-                            Update Tag
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-        </div>
-    );
+                            );
 }

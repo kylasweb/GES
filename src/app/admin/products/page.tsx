@@ -9,6 +9,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
     Package,
     Plus,
     Search,
@@ -22,7 +32,8 @@ import {
     Square,
     Download,
     Upload,
-    FileSpreadsheet
+    FileSpreadsheet,
+    RefreshCw
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store/auth';
 import Link from 'next/link';
@@ -32,6 +43,7 @@ import { AIProductGenerator } from '@/components/admin/ai-product-generator';
 import { ExportButton } from '@/components/admin/export-button';
 import { BulkImport } from '@/components/admin/bulk-import';
 import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 interface Product {
     id: string;
@@ -67,7 +79,6 @@ export default function ProductsManagementPage() {
     const [categories, setCategories] = useState<Category[]>([]);
     const [brands, setBrands] = useState<Brand[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
-    const [error, setError] = useState<string | null>(null);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const [isAIToolsOpen, setIsAIToolsOpen] = useState(false);
     const [isAIGeneratorOpen, setIsAIGeneratorOpen] = useState(false);
@@ -76,6 +87,12 @@ export default function ProductsManagementPage() {
     const [isBulkUploadOpen, setIsBulkUploadOpen] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [isUploading, setIsUploading] = useState(false);
+
+    // Delete Dialog States
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [productToDelete, setProductToDelete] = useState<string | null>(null);
+    const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     useEffect(() => {
         fetchProducts();
@@ -94,10 +111,10 @@ export default function ProductsManagementPage() {
             if (data.success) {
                 setProducts(data.data.products);
             } else {
-                setError(data.error || 'Failed to load products');
+                toast.error(data.error || 'Failed to load products');
             }
         } catch (err) {
-            setError('Failed to load products');
+            toast.error('Failed to load products');
         } finally {
             setIsLoading(false);
         }
@@ -132,7 +149,6 @@ export default function ProductsManagementPage() {
     };
 
     const handleAIProductGenerated = (product: any) => {
-        // Store the AI-generated product in session storage to pass to the new product page
         sessionStorage.setItem('aiGeneratedProduct', JSON.stringify(product));
         router.push('/admin/products/new');
     };
@@ -143,11 +159,17 @@ export default function ProductsManagementPage() {
         product.category.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const handleDelete = async (productId: string) => {
-        if (!confirm('Are you sure you want to delete this product?')) return;
+    const confirmDelete = (productId: string) => {
+        setProductToDelete(productId);
+        setDeleteDialogOpen(true);
+    };
 
+    const handleDelete = async () => {
+        if (!productToDelete) return;
+
+        setIsDeleting(true);
         try {
-            const response = await fetch(`/api/v1/products/${productId}`, {
+            const response = await fetch(`/api/v1/products/${productToDelete}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -155,12 +177,17 @@ export default function ProductsManagementPage() {
             const data = await response.json();
 
             if (data.success) {
-                setProducts(products.filter(p => p.id !== productId));
+                setProducts(products.filter(p => p.id !== productToDelete));
+                toast.success('Product deleted successfully');
             } else {
-                setError(data.error || 'Failed to delete product');
+                toast.error(data.error || 'Failed to delete product');
             }
         } catch (err) {
-            setError('Failed to delete product');
+            toast.error('Failed to delete product');
+        } finally {
+            setIsDeleting(false);
+            setDeleteDialogOpen(false);
+            setProductToDelete(null);
         }
     };
 
@@ -189,8 +216,8 @@ export default function ProductsManagementPage() {
 
     const handleBulkDelete = async () => {
         if (selectedProducts.size === 0) return;
-        if (!confirm(`Are you sure you want to delete ${selectedProducts.size} products?`)) return;
 
+        setIsDeleting(true);
         try {
             const deletePromises = Array.from(selectedProducts).map(productId =>
                 fetch(`/api/v1/products/${productId}`, {
@@ -210,13 +237,18 @@ export default function ProductsManagementPage() {
                 setSelectedProducts(new Set());
                 setIsBulkMode(false);
                 if (failCount > 0) {
-                    setError(`${successCount} products deleted, ${failCount} failed`);
+                    toast.warning(`${successCount} products deleted, ${failCount} failed`);
+                } else {
+                    toast.success(`${successCount} products deleted successfully`);
                 }
             } else {
-                setError('Failed to delete products');
+                toast.error('Failed to delete products');
             }
         } catch (err) {
-            setError('Failed to delete products');
+            toast.error('Failed to delete products');
+        } finally {
+            setIsDeleting(false);
+            setBulkDeleteDialogOpen(false);
         }
     };
 
@@ -242,20 +274,21 @@ export default function ProductsManagementPage() {
             const failCount = results.length - successCount;
 
             if (successCount > 0) {
-                // Update local state
                 setProducts(products.map(p =>
                     selectedProducts.has(p.id) ? { ...p, isActive } : p
                 ));
                 setSelectedProducts(new Set());
                 setIsBulkMode(false);
                 if (failCount > 0) {
-                    setError(`${successCount} products updated, ${failCount} failed`);
+                    toast.warning(`${successCount} products updated, ${failCount} failed`);
+                } else {
+                    toast.success(`${successCount} products updated successfully`);
                 }
             } else {
-                setError('Failed to update products');
+                toast.error('Failed to update products');
             }
         } catch (err) {
-            setError('Failed to update products');
+            toast.error('Failed to update products');
         }
     };
 
@@ -281,62 +314,35 @@ export default function ProductsManagementPage() {
             const failCount = results.length - successCount;
 
             if (successCount > 0) {
-                // Update local state
                 setProducts(products.map(p =>
                     selectedProducts.has(p.id) ? { ...p, featured } : p
                 ));
                 setSelectedProducts(new Set());
                 setIsBulkMode(false);
                 if (failCount > 0) {
-                    setError(`${successCount} products updated, ${failCount} failed`);
+                    toast.warning(`${successCount} products updated, ${failCount} failed`);
+                } else {
+                    toast.success(`${successCount} products updated successfully`);
                 }
             } else {
-                setError('Failed to update products');
+                toast.error('Failed to update products');
             }
         } catch (err) {
-            setError('Failed to update products');
+            toast.error('Failed to update products');
         }
     };
 
     const handleDownloadTemplate = () => {
-        // Create sample CSV template
         const headers = [
-            'name',
-            'sku',
-            'description',
-            'shortDesc',
-            'price',
-            'comparePrice',
-            'costPrice',
-            'trackQuantity',
-            'quantity',
-            'weight',
-            'categoryName',
-            'brandName',
-            'isActive',
-            'featured',
-            'seoTitle',
-            'seoDesc',
-            'images'
+            'name', 'sku', 'description', 'shortDesc', 'price', 'comparePrice',
+            'costPrice', 'trackQuantity', 'quantity', 'weight', 'categoryName',
+            'brandName', 'isActive', 'featured', 'seoTitle', 'seoDesc', 'images'
         ];
 
         const sampleData = [
-            'Sample Product 1',
-            'SP001',
-            'This is a detailed description of the product',
-            'Short description',
-            '99.99',
-            '129.99',
-            '50.00',
-            'true',
-            '100',
-            '1.5',
-            'Electronics',
-            'Sample Brand',
-            'true',
-            'false',
-            'Sample Product SEO Title',
-            'Sample product SEO description',
+            'Sample Product 1', 'SP001', 'Detailed description', 'Short description',
+            '99.99', '129.99', '50.00', 'true', '100', '1.5', 'Electronics',
+            'Sample Brand', 'true', 'false', 'SEO Title', 'SEO Description',
             'https://example.com/image1.jpg,https://example.com/image2.jpg'
         ];
 
@@ -371,13 +377,13 @@ export default function ProductsManagementPage() {
             const data = await response.json();
 
             if (data.success) {
-                setError(`Successfully uploaded ${data.data.successful} products. ${data.data.failed} failed.`);
-                fetchProducts(); // Refresh the list
+                toast.success(`Successfully uploaded ${data.data.successful} products. ${data.data.failed} failed.`);
+                fetchProducts();
             } else {
-                setError(data.error || 'Failed to upload products');
+                toast.error(data.error || 'Failed to upload products');
             }
         } catch (err) {
-            setError('Failed to upload products');
+            toast.error('Failed to upload products');
         } finally {
             setIsUploading(false);
             setUploadProgress(0);
@@ -446,12 +452,6 @@ export default function ProductsManagementPage() {
                             </Link>
                         </div>
                     </div>
-
-                    {error && (
-                        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-                            <p className="text-red-800">{error}</p>
-                        </div>
-                    )}
 
                     {/* Search and Filters */}
                     <Card className="mb-6">
@@ -530,7 +530,7 @@ export default function ProductsManagementPage() {
                                         <Button
                                             variant="destructive"
                                             size="sm"
-                                            onClick={handleBulkDelete}
+                                            onClick={() => setBulkDeleteDialogOpen(true)}
                                         >
                                             <Trash2 className="w-4 h-4 mr-2" />
                                             Delete Selected
@@ -624,7 +624,7 @@ export default function ProductsManagementPage() {
                                                     <Button
                                                         variant="outline"
                                                         size="sm"
-                                                        onClick={() => handleDelete(product.id)}
+                                                        onClick={() => confirmDelete(product.id)}
                                                         className="text-red-600 hover:text-red-700"
                                                     >
                                                         <Trash2 className="w-4 h-4" />
@@ -655,10 +655,10 @@ export default function ProductsManagementPage() {
                             )}
                         </CardContent>
                     </Card>
-                    
+
                     <div className="mt-8">
-                        <BulkImport 
-                            type="products" 
+                        <BulkImport
+                            type="products"
                             onImportComplete={fetchProducts}
                         />
                     </div>
@@ -678,7 +678,6 @@ export default function ProductsManagementPage() {
                             productName={selectedProduct!.name}
                             productCategory={selectedProduct!.category.name}
                             onDescriptionGenerated={(description) => {
-                                // Could auto-fill form fields here
                                 console.log('Generated description:', description);
                             }}
                             onTitleGenerated={(title) => {
@@ -777,6 +776,64 @@ export default function ProductsManagementPage() {
                     </div>
                 </DialogContent>
             </Dialog>
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the product.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDelete}
+                            className="bg-red-600 hover:bg-red-700"
+                            disabled={isDeleting}
+                        >
+                            {isDeleting ? (
+                                <>
+                                    <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+                                    Deleting...
+                                </>
+                            ) : (
+                                'Delete'
+                            )}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Bulk Delete Confirmation Dialog */}
+            <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete {selectedProducts.size} selected products.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleBulkDelete}
+                            className="bg-red-600 hover:bg-red-700"
+                            disabled={isDeleting}
+                        >
+                            {isDeleting ? (
+                                <>
+                                    <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+                                    Deleting...
+                                </>
+                            ) : (
+                                'Delete Selected'
+                            )}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

@@ -252,57 +252,61 @@ export default function AdminAttributesPage() {
                                             Add a new attribute for product variations.
                                         </DialogDescription>
                                     </DialogHeader>
-                                    <div className="grid gap-4 py-4">
-                                        <div className="grid grid-cols-4 items-center gap-4">
-                                            <Label htmlFor="name" className="text-right">
-                                                Name
-                                            </Label>
-                                            <Input
-                                                id="name"
-                                                value={formData.name}
-                                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                                className="col-span-3"
-                                                placeholder="Attribute name (e.g., Color, Size)"
-                                            />
+                                    <form onSubmit={(e) => { e.preventDefault(); handleCreate(); }}>
+                                        <div className="grid gap-4 py-4">
+                                            <div className="grid grid-cols-4 items-center gap-4">
+                                                <Label htmlFor="name" className="text-right">
+                                                    Name
+                                                </Label>
+                                                <Input
+                                                    id="name"
+                                                    value={formData.name}
+                                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                                    className="col-span-3"
+                                                    placeholder="Attribute name (e.g., Color, Size)"
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="grid grid-cols-4 items-center gap-4">
+                                                <Label htmlFor="type" className="text-right">
+                                                    Type
+                                                </Label>
+                                                <Select
+                                                    value={formData.type}
+                                                    onValueChange={(value: 'text' | 'color' | 'select') =>
+                                                        setFormData({ ...formData, type: value })
+                                                    }
+                                                >
+                                                    <SelectTrigger className="col-span-3">
+                                                        <SelectValue placeholder="Select attribute type" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="text">Text</SelectItem>
+                                                        <SelectItem value="color">Color</SelectItem>
+                                                        <SelectItem value="select">Select</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="grid grid-cols-4 items-center gap-4">
+                                                <Label htmlFor="description" className="text-right">
+                                                    Description
+                                                </Label>
+                                                <Textarea
+                                                    id="description"
+                                                    value={formData.description}
+                                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                                    className="col-span-3"
+                                                    placeholder="Attribute description"
+                                                />
+                                            </div>
                                         </div>
-                                        <div className="grid grid-cols-4 items-center gap-4">
-                                            <Label htmlFor="type" className="text-right">
-                                                Type
-                                            </Label>
-                                            <Select
-                                                value={formData.type}
-                                                onValueChange={(value: 'text' | 'color' | 'select') =>
-                                                    setFormData({ ...formData, type: value })
-                                                }
-                                            >
-                                                <SelectTrigger className="col-span-3">
-                                                    <SelectValue placeholder="Select attribute type" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="text">Text</SelectItem>
-                                                    <SelectItem value="color">Color</SelectItem>
-                                                    <SelectItem value="select">Select</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div className="grid grid-cols-4 items-center gap-4">
-                                            <Label htmlFor="description" className="text-right">
-                                                Description
-                                            </Label>
-                                            <Textarea
-                                                id="description"
-                                                value={formData.description}
-                                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                                className="col-span-3"
-                                                placeholder="Attribute description"
-                                            />
-                                        </div>
-                                    </div>
-                                    <DialogFooter>
-                                        <Button type="submit" onClick={handleCreate}>
-                                            Create Attribute
-                                        </Button>
-                                    </DialogFooter>
+                                        <DialogFooter>
+                                            <Button type="submit" disabled={isLoading}>
+                                                {isLoading ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}
+                                                Create Attribute
+                                            </Button>
+                                        </DialogFooter>
+                                    </form>
                                 </DialogContent>
                             </Dialog>
                         </div>

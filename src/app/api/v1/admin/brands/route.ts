@@ -40,8 +40,8 @@ export async function POST(request: NextRequest) {
             name: z.string().min(1, 'Brand name is required'),
             slug: z.string().min(1, 'Brand slug is required'),
             description: z.string().optional(),
-            logo: z.string().url().optional(),
-            website: z.string().url().optional(),
+            logo: z.union([z.string().url(), z.literal('')]).optional(),
+            website: z.union([z.string().url(), z.literal('')]).optional(),
             sortOrder: z.number().int().min(0).default(0),
             isActive: z.boolean().default(true),
         });

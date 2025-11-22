@@ -46,6 +46,7 @@ const navigation = [
             { name: 'Add New', href: '/admin/products/new' },
             { name: 'Bulk AI Generate', href: '/admin/bulk-generate' },
             { name: 'Brands', href: '/admin/brands' },
+            { name: 'Categories', href: '/admin/categories' },
             { name: 'Attributes', href: '/admin/attributes' },
             { name: 'Tags', href: '/admin/tags' },
             { name: 'Variations', href: '/admin/variations' },

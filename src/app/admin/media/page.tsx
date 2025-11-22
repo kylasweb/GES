@@ -11,6 +11,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
     Image as ImageIcon,
     Upload,
     Search,
@@ -28,7 +38,8 @@ import {
     Plus,
     Filter,
     CheckSquare,
-    Square
+    Square,
+    RefreshCw
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store/auth';
 import { AdminSidebar } from '@/components/admin/sidebar';
@@ -71,6 +82,13 @@ export default function MediaLibraryPage() {
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [editingMedia, setEditingMedia] = useState<MediaFile | null>(null);
     const [isUploading, setIsUploading] = useState(false);
+    const [isUpdating, setIsUpdating] = useState(false);
+
+    // Delete states
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [mediaToDelete, setMediaToDelete] = useState<string | null>(null);
+    const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     // Upload form state
     const [uploadFiles, setUploadFiles] = useState<File[]>([]);
@@ -200,6 +218,7 @@ export default function MediaLibraryPage() {
     const handleUpdate = async () => {
         if (!editingMedia) return;
 
+        setIsUpdating(true);
         try {
             const response = await fetch(`/api/v1/admin/media/${editingMedia.id}`, {
                 method: 'PUT',
@@ -237,14 +256,22 @@ export default function MediaLibraryPage() {
                 description: 'Failed to update media',
                 variant: 'destructive',
             });
+        } finally {
+            setIsUpdating(false);
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (!confirm('Are you sure you want to delete this media file?')) return;
+    const confirmDelete = (id: string) => {
+        setMediaToDelete(id);
+        setDeleteDialogOpen(true);
+    };
 
+    const handleDelete = async () => {
+        if (!mediaToDelete) return;
+
+        setIsDeleting(true);
         try {
-            const response = await fetch(`/api/v1/admin/media/${id}`, {
+            const response = await fetch(`/api/v1/admin/media/${mediaToDelete}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` },
             });
@@ -270,13 +297,17 @@ export default function MediaLibraryPage() {
                 description: 'Failed to delete media',
                 variant: 'destructive',
             });
+        } finally {
+            setIsDeleting(false);
+            setDeleteDialogOpen(false);
+            setMediaToDelete(null);
         }
     };
 
     const handleBulkDelete = async () => {
         if (selectedMedia.size === 0) return;
-        if (!confirm(`Are you sure you want to delete ${selectedMedia.size} media file(s)?`)) return;
 
+        setIsDeleting(true);
         try {
             const response = await fetch('/api/v1/admin/media', {
                 method: 'DELETE',
@@ -309,6 +340,9 @@ export default function MediaLibraryPage() {
                 description: 'Failed to delete media',
                 variant: 'destructive',
             });
+        } finally {
+            setIsDeleting(false);
+            setBulkDeleteDialogOpen(false);
         }
     };
 
@@ -362,7 +396,10 @@ export default function MediaLibraryPage() {
             <div className="flex h-screen bg-gray-100">
                 <AdminSidebar />
                 <div className="flex-1 flex items-center justify-center">
-                    <div className="text-gray-600">Loading media library...</div>
+                    <div className="text-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                        <p className="text-gray-600">Loading media library...</p>
+                    </div>
                 </div>
             </div>
         );
@@ -396,7 +433,7 @@ export default function MediaLibraryPage() {
                                     Upload Files
                                 </Button>
                                 {selectedMedia.size > 0 && (
-                                    <Button variant="destructive" onClick={handleBulkDelete}>
+                                    <Button variant="destructive" onClick={() => setBulkDeleteDialogOpen(true)}>
                                         <Trash2 className="w-4 h-4 mr-2" />
                                         Delete ({selectedMedia.size})
                                     </Button>
@@ -581,7 +618,7 @@ export default function MediaLibraryPage() {
                                                     variant="ghost"
                                                     size="sm"
                                                     className="h-7 flex-1 text-red-600 hover:text-red-700"
-                                                    onClick={() => handleDelete(item.id)}
+                                                    onClick={() => confirmDelete(item.id)}
                                                 >
                                                     <Trash2 className="w-3 h-3" />
                                                 </Button>
@@ -671,7 +708,7 @@ export default function MediaLibraryPage() {
                                                         variant="ghost"
                                                         size="sm"
                                                         className="text-red-600 hover:text-red-700"
-                                                        onClick={() => handleDelete(item.id)}
+                                                        onClick={() => confirmDelete(item.id)}
                                                     >
                                                         <Trash2 className="w-4 h-4" />
                                                     </Button>
@@ -689,137 +726,25 @@ export default function MediaLibraryPage() {
             {/* Upload Dialog */}
             <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
                 <DialogContent className="max-w-md">
-                    <DialogHeader>
-                        <DialogTitle>Upload Files</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                        <div>
-                            <Label>Selected Files ({uploadFiles.length})</Label>
-                            <div className="mt-2 space-y-2 max-h-40 overflow-y-auto">
-                                {uploadFiles.map((file, index) => (
-                                    <div key={index} className="flex items-center justify-between text-sm bg-gray-50 p-2 rounded">
-                                        <span className="truncate flex-1">{file.name}</span>
-                                        <span className="text-gray-600 ml-2">{formatFileSize(file.size)}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                        <div>
-                            <Label htmlFor="folder">Folder</Label>
-                            <Select value={uploadFolder} onValueChange={setUploadFolder}>
-                                <SelectTrigger>
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="general">General</SelectItem>
-                                    <SelectItem value="products">Products</SelectItem>
-                                    <SelectItem value="banners">Banners</SelectItem>
-                                    <SelectItem value="blog">Blog</SelectItem>
-                                    <SelectItem value="categories">Categories</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div>
-                            <Label htmlFor="alt">Alt Text (Optional)</Label>
-                            <Input
-                                id="alt"
-                                value={uploadAlt}
-                                onChange={(e) => setUploadAlt(e.target.value)}
-                                placeholder="Description for accessibility"
-                            />
-                        </div>
-                        <div>
-                            <Label htmlFor="caption">Caption (Optional)</Label>
-                            <Textarea
-                                id="caption"
-                                value={uploadCaption}
-                                onChange={(e) => setUploadCaption(e.target.value)}
-                                placeholder="Caption or description"
-                                rows={2}
-                            />
-                        </div>
-                        <div>
-                            <Label htmlFor="tags">Tags (Optional)</Label>
-                            <Input
-                                id="tags"
-                                value={uploadTags}
-                                onChange={(e) => setUploadTags(e.target.value)}
-                                placeholder="product, featured, banner (comma-separated)"
-                            />
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsUploadDialogOpen(false)}>
-                            Cancel
-                        </Button>
-                        <Button onClick={handleUpload} disabled={isUploading || uploadFiles.length === 0}>
-                            {isUploading ? 'Uploading...' : 'Upload'}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            {/* Edit Dialog */}
-            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                <DialogContent className="max-w-2xl">
-                    <DialogHeader>
-                        <DialogTitle>Edit Media</DialogTitle>
-                    </DialogHeader>
-                    {editingMedia && (
+                    <form onSubmit={(e) => { e.preventDefault(); handleUpload(); }}>
+                        <DialogHeader>
+                            <DialogTitle>Upload Files</DialogTitle>
+                        </DialogHeader>
                         <div className="space-y-4">
-                            <div className="flex space-x-4">
-                                <div className="w-48 h-48 bg-gray-100 rounded flex items-center justify-center overflow-hidden flex-shrink-0">
-                                    {editingMedia.type === 'IMAGE' ? (
-                                        <img
-                                            src={editingMedia.url}
-                                            alt={editingMedia.alt || editingMedia.originalName}
-                                            className="w-full h-full object-contain"
-                                        />
-                                    ) : (
-                                        <div className="text-center">
-                                            {getMediaIcon(editingMedia.type)}
-                                            <div className="text-sm text-gray-600 mt-2">{editingMedia.originalName}</div>
+                            <div>
+                                <Label>Selected Files ({uploadFiles.length})</Label>
+                                <div className="mt-2 space-y-2 max-h-40 overflow-y-auto">
+                                    {uploadFiles.map((file, index) => (
+                                        <div key={index} className="flex items-center justify-between text-sm bg-gray-50 p-2 rounded">
+                                            <span className="truncate flex-1">{file.name}</span>
+                                            <span className="text-gray-600 ml-2">{formatFileSize(file.size)}</span>
                                         </div>
-                                    )}
-                                </div>
-                                <div className="flex-1 space-y-4">
-                                    <div>
-                                        <Label>File Name</Label>
-                                        <Input value={editingMedia.originalName} disabled />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div>
-                                            <Label>Type</Label>
-                                            <Input value={editingMedia.type} disabled />
-                                        </div>
-                                        <div>
-                                            <Label>Size</Label>
-                                            <Input value={formatFileSize(editingMedia.size)} disabled />
-                                        </div>
-                                    </div>
-                                    {editingMedia.width && editingMedia.height && (
-                                        <div>
-                                            <Label>Dimensions</Label>
-                                            <Input value={`${editingMedia.width} × ${editingMedia.height}`} disabled />
-                                        </div>
-                                    )}
+                                    ))}
                                 </div>
                             </div>
                             <div>
-                                <Label htmlFor="edit-url">URL</Label>
-                                <div className="flex space-x-2">
-                                    <Input id="edit-url" value={editingMedia.url} disabled />
-                                    <Button variant="outline" onClick={() => copyUrl(editingMedia.url)}>
-                                        <Copy className="w-4 h-4" />
-                                    </Button>
-                                </div>
-                            </div>
-                            <div>
-                                <Label htmlFor="edit-folder">Folder</Label>
-                                <Select
-                                    value={editingMedia.folder || 'general'}
-                                    onValueChange={(value) => setEditingMedia({ ...editingMedia, folder: value })}
-                                >
+                                <Label htmlFor="folder">Folder</Label>
+                                <Select value={uploadFolder} onValueChange={setUploadFolder}>
                                     <SelectTrigger>
                                         <SelectValue />
                                     </SelectTrigger>
@@ -833,48 +758,231 @@ export default function MediaLibraryPage() {
                                 </Select>
                             </div>
                             <div>
-                                <Label htmlFor="edit-alt">Alt Text</Label>
+                                <Label htmlFor="alt">Alt Text (Optional)</Label>
                                 <Input
-                                    id="edit-alt"
-                                    value={editingMedia.alt || ''}
-                                    onChange={(e) => setEditingMedia({ ...editingMedia, alt: e.target.value })}
+                                    id="alt"
+                                    value={uploadAlt}
+                                    onChange={(e) => setUploadAlt(e.target.value)}
                                     placeholder="Description for accessibility"
                                 />
                             </div>
                             <div>
-                                <Label htmlFor="edit-caption">Caption</Label>
+                                <Label htmlFor="caption">Caption (Optional)</Label>
                                 <Textarea
-                                    id="edit-caption"
-                                    value={editingMedia.caption || ''}
-                                    onChange={(e) => setEditingMedia({ ...editingMedia, caption: e.target.value })}
+                                    id="caption"
+                                    value={uploadCaption}
+                                    onChange={(e) => setUploadCaption(e.target.value)}
                                     placeholder="Caption or description"
                                     rows={2}
                                 />
                             </div>
                             <div>
-                                <Label htmlFor="edit-tags">Tags</Label>
+                                <Label htmlFor="tags">Tags (Optional)</Label>
                                 <Input
-                                    id="edit-tags"
-                                    value={editingMedia.tags.join(', ')}
-                                    onChange={(e) => setEditingMedia({
-                                        ...editingMedia,
-                                        tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean)
-                                    })}
+                                    id="tags"
+                                    value={uploadTags}
+                                    onChange={(e) => setUploadTags(e.target.value)}
                                     placeholder="product, featured, banner (comma-separated)"
                                 />
                             </div>
                         </div>
-                    )}
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                            Cancel
-                        </Button>
-                        <Button onClick={handleUpdate}>
-                            Update Media
-                        </Button>
-                    </DialogFooter>
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setIsUploadDialogOpen(false)}>
+                                Cancel
+                            </Button>
+                            <Button type="submit" disabled={isUploading || uploadFiles.length === 0}>
+                                {isUploading ? (
+                                    <>
+                                        <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+                                        Uploading...
+                                    </>
+                                ) : (
+                                    'Upload'
+                                )}
+                            </Button>
+                        </DialogFooter>
+                    </form>
                 </DialogContent>
             </Dialog>
+
+            {/* Edit Dialog */}
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                <DialogContent className="max-w-2xl">
+                    <form onSubmit={(e) => { e.preventDefault(); handleUpdate(); }}>
+                        <DialogHeader>
+                            <DialogTitle>Edit Media</DialogTitle>
+                        </DialogHeader>
+                        {editingMedia && (
+                            <div className="space-y-4">
+                                <div className="flex space-x-4">
+                                    <div className="w-48 h-48 bg-gray-100 rounded flex items-center justify-center overflow-hidden flex-shrink-0">
+                                        {editingMedia.type === 'IMAGE' ? (
+                                            <img
+                                                src={editingMedia.url}
+                                                alt={editingMedia.alt || editingMedia.originalName}
+                                                className="w-full h-full object-contain"
+                                            />
+                                        ) : (
+                                            <div className="text-center">
+                                                {getMediaIcon(editingMedia.type)}
+                                                <div className="text-sm text-gray-600 mt-2">{editingMedia.originalName}</div>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="flex-1 space-y-4">
+                                        <div>
+                                            <Label>File Name</Label>
+                                            <Input value={editingMedia.originalName} disabled />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <Label>Type</Label>
+                                                <Input value={editingMedia.type} disabled />
+                                            </div>
+                                            <div>
+                                                <Label>Size</Label>
+                                                <Input value={formatFileSize(editingMedia.size)} disabled />
+                                            </div>
+                                        </div>
+                                        {editingMedia.width && editingMedia.height && (
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div>
+                                                    <Label>Width</Label>
+                                                    <Input value={editingMedia.width} disabled />
+                                                </div>
+                                                <div>
+                                                    <Label>Height</Label>
+                                                    <Input value={editingMedia.height} disabled />
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                                <div>
+                                    <Label htmlFor="edit-alt">Alt Text</Label>
+                                    <Input
+                                        id="edit-alt"
+                                        value={editingMedia.alt || ''}
+                                        onChange={(e) => setEditingMedia({ ...editingMedia, alt: e.target.value })}
+                                    />
+                                </div>
+                                <div>
+                                    <Label htmlFor="edit-caption">Caption</Label>
+                                    <Textarea
+                                        id="edit-caption"
+                                        value={editingMedia.caption || ''}
+                                        onChange={(e) => setEditingMedia({ ...editingMedia, caption: e.target.value })}
+                                        rows={2}
+                                    />
+                                </div>
+                                <div>
+                                    <Label htmlFor="edit-folder">Folder</Label>
+                                    <Select
+                                        value={editingMedia.folder || 'general'}
+                                        onValueChange={(value) => setEditingMedia({ ...editingMedia, folder: value })}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="general">General</SelectItem>
+                                            <SelectItem value="products">Products</SelectItem>
+                                            <SelectItem value="banners">Banners</SelectItem>
+                                            <SelectItem value="blog">Blog</SelectItem>
+                                            <SelectItem value="categories">Categories</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div>
+                                    <Label htmlFor="edit-tags">Tags</Label>
+                                    <Input
+                                        id="edit-tags"
+                                        value={editingMedia.tags?.join(', ') || ''}
+                                        onChange={(e) => setEditingMedia({
+                                            ...editingMedia,
+                                            tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean)
+                                        })}
+                                        placeholder="Comma-separated tags"
+                                    />
+                                </div>
+                            </div>
+                        )}
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                                Cancel
+                            </Button>
+                            <Button type="submit" disabled={isUpdating}>
+                                {isUpdating ? (
+                                    <>
+                                        <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+                                        Saving...
+                                    </>
+                                ) : (
+                                    'Save Changes'
+                                )}
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the media file.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDelete}
+                            className="bg-red-600 hover:bg-red-700"
+                            disabled={isDeleting}
+                        >
+                            {isDeleting ? (
+                                <>
+                                    <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+                                    Deleting...
+                                </>
+                            ) : (
+                                'Delete'
+                            )}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Bulk Delete Confirmation Dialog */}
+            <AlertDialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete {selectedMedia.size} selected files.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleBulkDelete}
+                            className="bg-red-600 hover:bg-red-700"
+                            disabled={isDeleting}
+                        >
+                            {isDeleting ? (
+                                <>
+                                    <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+                                    Deleting...
+                                </>
+                            ) : (
+                                'Delete Selected'
+                            )}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

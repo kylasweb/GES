@@ -49,12 +49,13 @@ export function LandingPage() {
           easing: 'easeOutExpo'
         });
       }
-      
+
       const heroButtons = heroRef.current.querySelector('.hero-buttons');
       if (heroButtons) {
         animate(heroButtons as HTMLElement, {
           translateY: [20, 0],
           opacity: [0, 1],
+          delay: 600,
           duration: 800,
           easing: 'easeOutExpo'
         });
@@ -82,6 +83,7 @@ export function LandingPage() {
       }, { threshold: 0.1 });
 
       observer.observe(featuresRef.current);
+      return () => observer.disconnect();
     }
 
     // Stats section animation
@@ -105,6 +107,7 @@ export function LandingPage() {
       }, { threshold: 0.1 });
 
       observer.observe(statsRef.current);
+      return () => observer.disconnect();
     }
 
     // Testimonials section animation
@@ -127,6 +130,7 @@ export function LandingPage() {
       }, { threshold: 0.1 });
 
       observer.observe(testimonialsRef.current);
+      return () => observer.disconnect();
     }
 
     // Products section animation
@@ -150,6 +154,7 @@ export function LandingPage() {
       }, { threshold: 0.1 });
 
       observer.observe(productsRef.current);
+      return () => observer.disconnect();
     }
 
     // CTA section animation
@@ -173,6 +178,7 @@ export function LandingPage() {
       }, { threshold: 0.1 });
 
       observer.observe(ctaRef.current);
+      return () => observer.disconnect();
     }
   }, []);
 
@@ -478,7 +484,7 @@ export function LandingPage() {
                   </div>
                 </div>
                 <blockquote className="text-lg text-gray-700 italic leading-relaxed">
-                  "Green Energy Solutions transformed my home with solar panels. I'm saving 70% on my electricity bills!"
+                  &quot;Green Energy Solutions transformed my home with solar panels. I&apos;m saving 70% on my electricity bills!&quot;
                 </blockquote>
               </div>
             </div>
@@ -496,55 +502,46 @@ export function LandingPage() {
             </Badge>
             <h2 className="text-3xl md:text-5xl font-bold mb-6">
               <span className="bg-gradient-to-r from-green-600 to-emerald-600 dark:from-green-400 dark:to-emerald-400 bg-clip-text text-transparent">
-                Featured Products
+                Best Selling Products
               </span>
             </h2>
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-              Discover our most popular green energy solutions
+              Explore our top-rated products that are making a difference in the world.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {products.map((product) => (
-              <Card key={product.id} className="product-card group hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-0 overflow-hidden dark:bg-gray-800 dark:hover:shadow-green-500/20">
-                <div className="aspect-square overflow-hidden bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 relative">
-                  <div className="absolute inset-0 bg-gradient-to-br from-green-200 to-emerald-200 dark:from-green-800/30 dark:to-emerald-800/30 opacity-50"></div>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    {product.category.name === 'Batteries' && <Battery className="h-24 w-24 text-green-600 dark:text-green-400" />}
-                    {product.category.name === 'Solar Panels' && <Sun className="h-24 w-24 text-yellow-500 dark:text-yellow-400" />}
-                    {product.category.name === 'Accessories' && <Zap className="h-24 w-24 text-blue-600 dark:text-blue-400" />}
+              <Card key={product.id} className="product-card overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 group bg-white dark:bg-gray-800">
+                <div className="relative aspect-square overflow-hidden">
+                  <img
+                    src={product.images[0]}
+                    alt={product.name}
+                    className="object-cover w-full h-full transform group-hover:scale-110 transition-transform duration-500"
+                  />
+                  <div className="absolute top-4 right-4">
+                    <Badge className="bg-green-500 hover:bg-green-600">New</Badge>
                   </div>
-                  {product.comparePrice && (
-                    <Badge className="absolute top-4 right-4 bg-red-500 text-white dark:bg-red-600">
-                      -{Math.round((1 - product.price / product.comparePrice) * 100)}%
-                    </Badge>
-                  )}
                 </div>
-                <CardContent className="p-4">
-                  <Badge variant="secondary" className="mb-2 bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 border-green-200 dark:from-green-900/50 dark:to-emerald-900/50 dark:text-green-200 dark:border-green-700">
-                    {product.category.name}
-                  </Badge>
-                  <CardTitle className="text-lg mb-2 line-clamp-2 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors dark:text-gray-100">
+                <CardHeader>
+                  <div className="text-sm text-green-600 dark:text-green-400 font-medium mb-2">{product.category.name}</div>
+                  <CardTitle className="text-lg line-clamp-2 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
                     {product.name}
                   </CardTitle>
-                  <CardDescription className="line-clamp-2 mb-4 dark:text-gray-300">
-                    {product.shortDesc}
-                  </CardDescription>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 dark:from-green-400 dark:to-emerald-400 bg-clip-text text-transparent">
-                        ₹{product.price.toLocaleString()}
-                      </span>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex flex-col">
+                      <span className="text-2xl font-bold text-gray-900 dark:text-white">₹{product.price.toLocaleString()}</span>
                       {product.comparePrice && (
-                        <span className="text-sm text-gray-500 dark:text-gray-400 line-through ml-2">
-                          ₹{product.comparePrice.toLocaleString()}
-                        </span>
+                        <span className="text-sm text-gray-500 line-through">₹{product.comparePrice.toLocaleString()}</span>
                       )}
                     </div>
-                    <Button size="sm" className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 dark:from-green-500 dark:to-emerald-500 dark:hover:from-green-600 dark:hover:to-emerald-600 text-white group-hover:scale-110 transition-transform">
-                      <ShoppingCart className="h-4 w-4" />
-                    </Button>
                   </div>
+                  <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
+                    <ShoppingCart className="w-4 h-4 mr-2" />
+                    Add to Cart
+                  </Button>
                 </CardContent>
               </Card>
             ))}
@@ -553,50 +550,32 @@ export function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section ref={ctaRef} className="py-20 bg-gradient-to-r from-green-600 via-emerald-600 to-cyan-600 dark:from-green-700 dark:via-emerald-700 dark:to-cyan-700 relative overflow-hidden">
-        <div className="absolute inset-0 bg-black/20 dark:bg-black/40"></div>
-        <div className="container px-4 relative z-10">
-          <div className="max-w-4xl mx-auto text-center text-white">
-            <Badge className="cta-element mb-4 bg-white/20 dark:bg-white/10 text-white border-white/30 dark:border-white/20">
-              <Globe className="h-4 w-4 mr-2" />
-              Join the Green Revolution
-            </Badge>
-            <h2 className="cta-element text-3xl md:text-5xl font-bold mb-6">
-              Ready to Make a Difference?
-            </h2>
-            <p className="cta-element text-xl text-green-100 dark:text-green-50 mb-8 max-w-2xl mx-auto">
-              Start your journey towards sustainable energy today and be part of the solution for a cleaner tomorrow.
+      <section ref={ctaRef} className="py-20 bg-gradient-to-br from-green-900 to-emerald-900 text-white relative overflow-hidden">
+        <div className="absolute inset-0">
+          <div className="absolute top-0 left-0 w-full h-full bg-[url('https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?auto=format&fit=crop&q=80')] bg-cover bg-center opacity-10 mix-blend-overlay"></div>
+        </div>
+        <div className="container px-4 relative z-10 text-center">
+          <div className="cta-element mb-8">
+            <h2 className="text-4xl md:text-6xl font-bold mb-6">Ready to Switch to Green Energy?</h2>
+            <p className="text-xl md:text-2xl text-green-100 max-w-3xl mx-auto">
+              Join thousands of satisfied customers who are making a positive impact on the environment while saving money.
             </p>
-            <div className="cta-element flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-white text-green-600 hover:bg-gray-100 dark:bg-gray-100 dark:text-green-700 dark:hover:bg-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
-                Get Started Now
+          </div>
+          <div className="cta-element flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/contact">
+              <Button size="lg" className="bg-white text-green-900 hover:bg-green-50 text-lg px-8 py-6">
+                Get a Quote
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-              <Button variant="outline" size="lg" className="border-2 border-white text-white hover:bg-white hover:text-green-600 dark:border-gray-100 dark:hover:bg-gray-100 dark:hover:text-green-700 transition-all duration-300">
-                <Play className="mr-2 h-5 w-5" />
-                Watch Demo
+            </Link>
+            <Link href="/products">
+              <Button variant="outline" size="lg" className="border-2 border-white text-white hover:bg-white/10 text-lg px-8 py-6">
+                View All Products
               </Button>
-            </div>
+            </Link>
           </div>
         </div>
       </section>
-
-      <style jsx>{`
-        @keyframes gradient {
-          0%, 100% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-        }
-        .animate-gradient {
-          background-size: 200% 200%;
-          animation: gradient 3s ease infinite;
-        }
-        .animation-delay-2000 {
-          animation-delay: 2s;
-        }
-        .animation-delay-4000 {
-          animation-delay: 4s;
-        }
-      `}</style>
     </div>
   );
 }

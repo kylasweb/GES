@@ -1,12 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
 import {
     Dialog,
     DialogContent,
@@ -17,13 +23,12 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog';
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table';
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -83,6 +88,9 @@ export default function AdminBrandsPage() {
         sortOrder: 0,
         isActive: true,
     });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [brandToDelete, setBrandToDelete] = useState<Brand | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const fetchBrands = async () => {
         try {
@@ -113,6 +121,7 @@ export default function AdminBrandsPage() {
 
     const handleCreate = async () => {
         try {
+            setIsSubmitting(true);
             // Generate slug from name
             const slug = formData.name
                 .toLowerCase()
@@ -140,6 +149,8 @@ export default function AdminBrandsPage() {
         } catch (error) {
             console.error('Error creating brand:', error);
             toast.error(error instanceof Error ? error.message : 'Failed to create brand');
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -147,6 +158,7 @@ export default function AdminBrandsPage() {
         if (!selectedBrand) return;
 
         try {
+            setIsSubmitting(true);
             // Generate slug from name
             const slug = formData.name
                 .toLowerCase()
@@ -174,41 +186,12 @@ export default function AdminBrandsPage() {
             fetchBrands();
         } catch (error) {
             console.error('Error updating brand:', error);
-            toast.error(error instanceof Error ? error.message : 'Failed to update brand');
-        }
-    };
-
-    const handleDelete = async (brandId: string) => {
-        try {
-            const response = await fetch(`/api/v1/admin/brands/${brandId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-            });
-
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'Failed to delete brand');
-            }
-
-            toast.success('Brand deleted successfully');
-            fetchBrands();
-        } catch (error) {
-            console.error('Error deleting brand:', error);
-            toast.error(error instanceof Error ? error.message : 'Failed to delete brand');
-        }
-    };
-
-    const openEditDialog = (brand: Brand) => {
-        setSelectedBrand(brand);
-        setFormData({
             name: brand.name,
-            description: brand.description || '',
-            logo: brand.logo || '',
-            website: brand.website || '',
-            sortOrder: brand.sortOrder || 0,
-            isActive: brand.isActive,
+                description: brand.description || '',
+                    logo: brand.logo || '',
+                        website: brand.website || '',
+                            sortOrder: brand.sortOrder || 0,
+                                isActive: brand.isActive,
         });
         setIsEditDialogOpen(true);
     };
@@ -247,74 +230,78 @@ export default function AdminBrandsPage() {
                                                 Add a new brand to your product catalog.
                                             </DialogDescription>
                                         </DialogHeader>
-                                        <div className="grid gap-4 py-4">
-                                            <div className="grid grid-cols-4 items-center gap-4">
-                                                <Label htmlFor="name" className="text-right">
-                                                    Name
-                                                </Label>
-                                                <Input
-                                                    id="name"
-                                                    value={formData.name}
-                                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                                    className="col-span-3"
-                                                    placeholder="Brand name"
-                                                />
+                                        <form onSubmit={(e) => { e.preventDefault(); handleCreate(); }}>
+                                            <div className="grid gap-4 py-4">
+                                                <div className="grid grid-cols-4 items-center gap-4">
+                                                    <Label htmlFor="name" className="text-right">
+                                                        Name
+                                                    </Label>
+                                                    <Input
+                                                        id="name"
+                                                        value={formData.name}
+                                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                                        className="col-span-3"
+                                                        placeholder="Brand name"
+                                                        required
+                                                    />
+                                                </div>
+                                                <div className="grid grid-cols-4 items-center gap-4">
+                                                    <Label htmlFor="description" className="text-right">
+                                                        Description
+                                                    </Label>
+                                                    <Textarea
+                                                        id="description"
+                                                        value={formData.description}
+                                                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                                        className="col-span-3"
+                                                        placeholder="Brand description"
+                                                    />
+                                                </div>
+                                                <div className="grid grid-cols-4 items-center gap-4">
+                                                    <Label htmlFor="logo" className="text-right">
+                                                        Logo URL
+                                                    </Label>
+                                                    <Input
+                                                        id="logo"
+                                                        value={formData.logo}
+                                                        onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
+                                                        className="col-span-3"
+                                                        placeholder="https://example.com/logo.jpg"
+                                                    />
+                                                </div>
+                                                <div className="grid grid-cols-4 items-center gap-4">
+                                                    <Label htmlFor="website" className="text-right">
+                                                        Website
+                                                    </Label>
+                                                    <Input
+                                                        id="website"
+                                                        value={formData.website}
+                                                        onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                                                        className="col-span-3"
+                                                        placeholder="https://example.com"
+                                                    />
+                                                </div>
+                                                <div className="grid grid-cols-4 items-center gap-4">
+                                                    <Label htmlFor="sortOrder" className="text-right">
+                                                        Sort Order
+                                                    </Label>
+                                                    <Input
+                                                        id="sortOrder"
+                                                        type="number"
+                                                        value={formData.sortOrder}
+                                                        onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })}
+                                                        className="col-span-3"
+                                                        placeholder="0"
+                                                    />
+                                                </div>
                                             </div>
-                                            <div className="grid grid-cols-4 items-center gap-4">
-                                                <Label htmlFor="description" className="text-right">
-                                                    Description
-                                                </Label>
-                                                <Textarea
-                                                    id="description"
-                                                    value={formData.description}
-                                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                                    className="col-span-3"
-                                                    placeholder="Brand description"
-                                                />
-                                            </div>
-                                            <div className="grid grid-cols-4 items-center gap-4">
-                                                <Label htmlFor="logo" className="text-right">
-                                                    Logo URL
-                                                </Label>
-                                                <Input
-                                                    id="logo"
-                                                    value={formData.logo}
-                                                    onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
-                                                    className="col-span-3"
-                                                    placeholder="https://example.com/logo.jpg"
-                                                />
-                                            </div>
-                                            <div className="grid grid-cols-4 items-center gap-4">
-                                                <Label htmlFor="website" className="text-right">
-                                                    Website
-                                                </Label>
-                                                <Input
-                                                    id="website"
-                                                    value={formData.website}
-                                                    onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                                                    className="col-span-3"
-                                                    placeholder="https://example.com"
-                                                />
-                                            </div>
-                                            <div className="grid grid-cols-4 items-center gap-4">
-                                                <Label htmlFor="sortOrder" className="text-right">
-                                                    Sort Order
-                                                </Label>
-                                                <Input
-                                                    id="sortOrder"
-                                                    type="number"
-                                                    value={formData.sortOrder}
-                                                    onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })}
-                                                    className="col-span-3"
-                                                    placeholder="0"
-                                                />
-                                            </div>
-                                        </div>
-                                        <DialogFooter>
-                                            <Button type="submit" onClick={handleCreate}>
-                                                Create Brand
-                                            </Button>
-                                        </DialogFooter>
+                                            <DialogFooter>
+                                                <Button type="submit" disabled={isSubmitting}>
+                                                    {isSubmitting ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}
+                                                    Create Brand
+                                                </Button>
+                                            </DialogFooter>
+                                        </form>
                                     </DialogContent>
                                 </Dialog>
                             </div>
@@ -396,40 +383,202 @@ export default function AdminBrandsPage() {
                                                         <div className="flex justify-end space-x-2">
                                                             <Button
                                                                 variant="outline"
-                                                                size="sm"
-                                                                onClick={() => openEditDialog(brand)}
-                                                            >
-                                                                <Edit className="w-4 h-4" />
-                                                            </Button>
-                                                            <AlertDialog>
-                                                                <AlertDialogTrigger asChild>
-                                                                    <Button variant="outline" size="sm">
-                                                                        <Trash2 className="w-4 h-4" />
-                                                                    </Button>
-                                                                </AlertDialogTrigger>
-                                                                <AlertDialogContent>
-                                                                    <AlertDialogHeader>
-                                                                        <AlertDialogTitle>Delete Brand</AlertDialogTitle>
-                                                                        <AlertDialogDescription>
-                                                                            Are you sure you want to delete "{brand.name}"? This action cannot be undone.
-                                                                            {(brand._count?.products || 0) > 0 && (
-                                                                                <span className="block mt-2 text-red-600">
-                                                                                    Warning: This brand has {brand._count?.products} associated products.
-                                                                                </span>
-                                                                            )}
-                                                                        </AlertDialogDescription>
-                                                                    </AlertDialogHeader>
-                                                                    <AlertDialogFooter>
-                                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                        <AlertDialogAction
-                                                                            onClick={() => handleDelete(brand.id)}
-                                                                            className="bg-red-600 hover:bg-red-700"
-                                                                        >
-                                                                            Delete
-                                                                        </AlertDialogAction>
-                                                                    </AlertDialogFooter>
-                                                                </AlertDialogContent>
-                                                            </AlertDialog>
+                                )}
+                                                        </CardContent>
+                                                    </Card>
+
+                                                    <div className="mt-8">
+                                                        <BulkImport
+                                                            type="brands"
+                                                            onImportComplete={fetchBrands}
+                                                        />
+                                                    </div>
+                                                </div>
+                </main>
+
+                                        {/* Edit Dialog */}
+                                        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                                            <DialogContent className="sm:max-w-[425px]">
+                                                <DialogHeader>
+                                                    <DialogTitle>Edit Brand</DialogTitle>
+                                                    <DialogDescription>
+                                                        Update brand information.
+                                                    </DialogDescription>
+                                                </DialogHeader>
+                                                <div className="grid gap-4 py-4">
+                                                    <div className="grid grid-cols-4 items-center gap-4">
+                                                        <Label htmlFor="edit-name" className="text-right">
+                                                            Name
+                                                        </Label>
+                                                        <Input
+                                                            id="edit-name"
+                                                            value={formData.name}
+                                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                                            className="col-span-3"
+                                                            placeholder="Brand name"
+                                                        />
+                                                    </div>
+                                                    <div className="grid grid-cols-4 items-center gap-4">
+                                                        <Label htmlFor="edit-description" className="text-right">
+                                                            Description
+                                                        </Label>
+                                                        <Textarea
+                                                            id="edit-description"
+                                                            value={formData.description}
+                                                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                                            className="col-span-3"
+                                                            placeholder="Brand description"
+                                                        />
+                                                    </div>
+                                                    <div className="grid grid-cols-4 items-center gap-4">
+                                                        <Label htmlFor="edit-logo" className="text-right">
+                                                            Logo URL
+                                                        </Label>
+                                                        <Input
+                                                            id="edit-logo"
+                                                            value={formData.logo}
+                                                            onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
+                                                            className="col-span-3"
+                                                            placeholder="https://example.com/logo.jpg"
+                                                        />
+                                                    </div>
+                                                    <div className="grid grid-cols-4 items-center gap-4">
+                                                        <Label htmlFor="edit-website" className="text-right">
+                                                            Website
+                                                        </Label>
+                                                        <Input
+                                                            id="edit-website"
+                                                            value={formData.website}
+                                                            onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                                                            className="col-span-3"
+                                                            placeholder="https://example.com"
+                                                        />
+                                                    </div>
+                                                    <div className="grid grid-cols-4 items-center gap-4">
+                                                        <Label htmlFor="edit-sortOrder" className="text-right">
+                                                            Sort Order
+                                                        </Label>
+                                                        <Input
+                                                            id="edit-sortOrder"
+                                                            type="number"
+                                                            value={formData.sortOrder}
+                                                            onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })}
+                                                            className="col-span-3"
+                                                            placeholder="0"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <DialogFooter>
+                                                    <Button type="submit" onClick={handleUpdate} disabled={isSubmitting}>
+                                                        {isSubmitting ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}
+                                                        onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                                                        className="col-span-3"
+                                                        placeholder="https://example.com"
+                                                    />
+                                                </div>
+                                                <div className="grid grid-cols-4 items-center gap-4">
+                                                    <Label htmlFor="sortOrder" className="text-right">
+                                                        Sort Order
+                                                    </Label>
+                                                    <Input
+                                                        id="sortOrder"
+                                                        type="number"
+                                                        value={formData.sortOrder}
+                                                        onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })}
+                                                        className="col-span-3"
+                                                        placeholder="0"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <DialogFooter>
+                                                <Button type="submit" disabled={isSubmitting}>
+                                                    {isSubmitting ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}
+                                                    Create Brand
+                                                </Button>
+                                            </DialogFooter>
+                                        </form>
+                                    </DialogContent>
+                                </Dialog>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                        <Card>
+                            <CardHeader>
+                                <div className="flex justify-between items-center">
+                                    <CardTitle>All Brands ({brands.length})</CardTitle>
+                                    <div className="flex items-center space-x-2">
+                                        <div className="relative">
+                                            <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                                            <Input
+                                                placeholder="Search brands..."
+                                                value={searchTerm}
+                                                onChange={(e) => setSearchTerm(e.target.value)}
+                                                className="pl-10 w-64"
+                                            />
+                                        </div>
+                                        <Button variant="outline" size="sm" onClick={fetchBrands}>
+                                            <RefreshCw className="w-4 h-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                {isLoading ? (
+                                    <div className="flex justify-center items-center py-8">
+                                        <RefreshCw className="w-6 h-6 animate-spin" />
+                                        <span className="ml-2">Loading brands...</span>
+                                    </div>
+                                ) : (
+                                    <Table>
+                                        <TableHeader>
+                                            <TableRow>
+                                                <TableHead>Name</TableHead>
+                                                <TableHead>Slug</TableHead>
+                                                <TableHead>Products</TableHead>
+                                                <TableHead>Status</TableHead>
+                                                <TableHead>Created</TableHead>
+                                                <TableHead className="text-right">Actions</TableHead>
+                                            </TableRow>
+                                        </TableHeader>
+                                        <TableBody>
+                                            {filteredBrands.map((brand) => (
+                                                <TableRow key={brand.id}>
+                                                    <TableCell className="font-medium">
+                                                        <div className="flex items-center">
+                                                            {brand.logo && (
+                                                                <img
+                                                                    src={brand.logo}
+                                                                    alt={brand.name}
+                                                                    className="w-8 h-8 rounded-full mr-3 object-cover"
+                                                                />
+                                                            )}
+                                                            {brand.name}
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="text-gray-500">{brand.slug}</TableCell>
+                                                    <TableCell>
+                                                        <Badge variant="secondary">
+                                                            <Package className="w-3 h-3 mr-1" />
+                                                            {brand._count?.products || 0}
+                                                        </Badge>
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Badge variant={brand.isActive ? 'default' : 'secondary'}>
+                                                            {brand.isActive ? 'Active' : 'Inactive'}
+                                                        </Badge>
+                                                    </TableCell>
+                                                    <TableCell className="text-gray-500">
+                                                        {new Date(brand.createdAt).toLocaleDateString()}
+                                                    </TableCell>
+                                                    <TableCell className="text-right">
+                                                        <div className="flex justify-end space-x-2">
+                                                            <Button
+                                                                variant="outline"
+                                                            />
                                                         </div>
                                                     </TableCell>
                                                 </TableRow>
@@ -439,96 +588,135 @@ export default function AdminBrandsPage() {
                                 )}
                             </CardContent>
                         </Card>
-                        
+
                         <div className="mt-8">
-                            <BulkImport 
-                                type="brands" 
+                            <BulkImport
+                                type="brands"
                                 onImportComplete={fetchBrands}
                             />
                         </div>
                     </div>
                 </main>
-            </div>
 
-            {/* Edit Dialog */}
-            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                        <DialogTitle>Edit Brand</DialogTitle>
-                        <DialogDescription>
-                            Update brand information.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="edit-name" className="text-right">
-                                Name
-                            </Label>
-                            <Input
-                                id="edit-name"
-                                value={formData.name}
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                className="col-span-3"
-                                placeholder="Brand name"
-                            />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="edit-description" className="text-right">
-                                Description
-                            </Label>
-                            <Textarea
-                                id="edit-description"
-                                value={formData.description}
-                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                className="col-span-3"
-                                placeholder="Brand description"
-                            />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="edit-logo" className="text-right">
-                                Logo URL
-                            </Label>
-                            <Input
-                                id="edit-logo"
-                                value={formData.logo}
-                                onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
-                                className="col-span-3"
-                                placeholder="https://example.com/logo.jpg"
-                            />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="edit-website" className="text-right">
-                                Website
-                            </Label>
-                            <Input
-                                id="edit-website"
-                                value={formData.website}
-                                onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-                                className="col-span-3"
-                                placeholder="https://example.com"
-                            />
-                        </div>
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="edit-sortOrder" className="text-right">
-                                Sort Order
-                            </Label>
-                            <Input
-                                id="edit-sortOrder"
-                                type="number"
-                                value={formData.sortOrder}
-                                onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })}
-                                className="col-span-3"
-                                placeholder="0"
-                            />
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button type="submit" onClick={handleUpdate}>
-                            Update Brand
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-        </div>
-    );
+                {/* Edit Dialog */ }
+    <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+                <DialogTitle>Edit Brand</DialogTitle>
+                <DialogDescription>
+                    Update brand information.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="edit-name" className="text-right">
+                        Name
+                    </Label>
+                    <Input
+                        id="edit-name"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        className="col-span-3"
+                        placeholder="Brand name"
+                    />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="edit-description" className="text-right">
+                        Description
+                    </Label>
+                    <Textarea
+                        id="edit-description"
+                        value={formData.description}
+                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        className="col-span-3"
+                        placeholder="Brand description"
+                    />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="edit-logo" className="text-right">
+                        Logo URL
+                    </Label>
+                    <Input
+                        id="edit-logo"
+                        value={formData.logo}
+                        onChange={(e) => setFormData({ ...formData, logo: e.target.value })}
+                        className="col-span-3"
+                        placeholder="https://example.com/logo.jpg"
+                    />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="edit-website" className="text-right">
+                        Website
+                    </Label>
+                    <Input
+                        id="edit-website"
+                        value={formData.website}
+                        onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                        className="col-span-3"
+                        placeholder="https://example.com"
+                    />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="edit-sortOrder" className="text-right">
+                        Sort Order
+                    </Label>
+                    <Input
+                        id="edit-sortOrder"
+                        type="number"
+                        value={formData.sortOrder}
+                        onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })}
+                        className="col-span-3"
+                        placeholder="0"
+                    />
+                </div>
+            </div>
+            <DialogFooter>
+                <Button type="submit" onClick={handleUpdate} disabled={isSubmitting}>
+                    {isSubmitting ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}
+                    Update Brand
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
+            </div >
+
+        {/* Delete Confirmation Dialog */ }
+        < AlertDialog open = {!!brandToDelete
+} onOpenChange = {(open) => !open && setBrandToDelete(null)}>
+    <AlertDialogContent>
+        <AlertDialogHeader>
+            <AlertDialogTitle>Delete Brand</AlertDialogTitle>
+            <AlertDialogDescription>
+                Are you sure you want to delete &quot;{brandToDelete?.name}&quot;? This action cannot be undone.
+                {(brandToDelete?._count?.products || 0) > 0 && (
+                    <span className="block mt-2 text-red-600">
+                        Warning: This brand has {brandToDelete?._count?.products} associated products.
+                    </span>
+                )}
+            </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+                onClick={(e) => {
+                    e.preventDefault();
+                    handleDelete();
+                }}
+                className="bg-red-600 hover:bg-red-700"
+                disabled={isDeleting}
+            >
+                {isDeleting ? (
+                    <>
+                        <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+                        Deleting...
+                    </>
+                ) : (
+                    'Delete'
+                )}
+            </AlertDialogAction>
+        </AlertDialogFooter>
+    </AlertDialogContent>
+            </AlertDialog >
+        </div >
+                            );
 }

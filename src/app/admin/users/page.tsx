@@ -8,6 +8,16 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
 import {
     Users,
     Search,
@@ -20,7 +30,8 @@ import {
     BarChart3,
     Download,
     Plus,
-    Trash2
+    Trash2,
+    RefreshCw
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store/auth';
 import { AdminSidebar } from '@/components/admin/sidebar';
@@ -75,6 +86,18 @@ export default function UsersManagementPage() {
     const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
     const [isBulkMode, setIsBulkMode] = useState(false);
 
+    // Dialog states
+    const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+    const [selectedUser, setSelectedUser] = useState<User | null>(null);
+    const [formData, setFormData] = useState({
+        name: '',
+        email: '',
+        role: 'CUSTOMER',
+        isActive: true
+    });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
     useEffect(() => {
         fetchUsers();
     }, []);
@@ -97,6 +120,88 @@ export default function UsersManagementPage() {
         } finally {
             setIsLoading(false);
         }
+    };
+
+    const handleCreateSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        try {
+            const response = await fetch('/api/v1/admin/users', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(formData)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setUsers([...users, data.data]);
+                setSuccess('User created successfully!');
+                setIsCreateDialogOpen(false);
+                setFormData({ name: '', email: '', role: 'CUSTOMER', isActive: true });
+                setTimeout(() => setSuccess(null), 3000);
+            } else {
+                setError(data.error || 'Failed to create user');
+            }
+        } catch (err) {
+            setError('Failed to create user');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleEditSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!selectedUser) return;
+        setIsSubmitting(true);
+
+        try {
+            const response = await fetch(`/api/v1/admin/users/${selectedUser.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    name: formData.name,
+                    email: formData.email,
+                    role: formData.role,
+                    isActive: formData.isActive
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setUsers(users.map(user =>
+                    user.id === selectedUser.id ? { ...user, ...data.data } : user
+                ));
+                setSuccess('User updated successfully!');
+                setIsEditDialogOpen(false);
+                setSelectedUser(null);
+                setTimeout(() => setSuccess(null), 3000);
+            } else {
+                setError(data.error || 'Failed to update user');
+            }
+        } catch (err) {
+            setError('Failed to update user');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const openEditDialog = (user: User) => {
+        setSelectedUser(user);
+        setFormData({
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            isActive: user.isActive
+        });
+        setIsEditDialogOpen(true);
     };
 
     const handleRoleUpdate = async (userId: string, newRole: string) => {
@@ -275,58 +380,6 @@ export default function UsersManagementPage() {
         window.URL.revokeObjectURL(url);
     };
 
-    const handleCreateUser = async (userData: { name: string; email: string; role: string; isActive: boolean }) => {
-        try {
-            const response = await fetch('/api/v1/admin/users', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(userData)
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                setUsers([...users, data.data]);
-                setSuccess('User created successfully!');
-                setTimeout(() => setSuccess(null), 3000);
-            } else {
-                setError(data.error || 'Failed to create user');
-            }
-        } catch (err) {
-            setError('Failed to create user');
-        }
-    };
-
-    const handleEditUser = async (userId: string, userData: Partial<User>) => {
-        try {
-            const response = await fetch(`/api/v1/admin/users/${userId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(userData)
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                setUsers(users.map(user =>
-                    user.id === userId ? { ...user, ...userData } : user
-                ));
-                setSuccess('User updated successfully!');
-                setTimeout(() => setSuccess(null), 3000);
-            } else {
-                setError(data.error || 'Failed to update user');
-            }
-        } catch (err) {
-            setError('Failed to update user');
-        }
-    };
-
     const handleDeleteUser = async (userId: string) => {
         if (!confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
             return;
@@ -389,21 +442,92 @@ export default function UsersManagementPage() {
                             </div>
                             <div className="flex items-center space-x-3">
                                 <ExportButton type="users" />
-                                <Button onClick={() => {
-                                    const name = prompt('Enter user name:');
-                                    const email = prompt('Enter user email:');
-                                    if (name && email) {
-                                        handleCreateUser({
-                                            name,
-                                            email,
-                                            role: 'CUSTOMER',
-                                            isActive: true
-                                        });
-                                    }
-                                }}>
-                                    <Plus className="w-4 h-4 mr-2" />
-                                    Create User
-                                </Button>
+                                <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button>
+                                            <Plus className="w-4 h-4 mr-2" />
+                                            Create User
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                        <DialogHeader>
+                                            <DialogTitle>Create New User</DialogTitle>
+                                            <DialogDescription>
+                                                Add a new user to the system.
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <form onSubmit={handleCreateSubmit}>
+                                            <div className="grid gap-4 py-4">
+                                                <div className="grid grid-cols-4 items-center gap-4">
+                                                    <Label htmlFor="name" className="text-right">
+                                                        Name
+                                                    </Label>
+                                                    <Input
+                                                        id="name"
+                                                        value={formData.name}
+                                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                                        className="col-span-3"
+                                                        required
+                                                    />
+                                                </div>
+                                                <div className="grid grid-cols-4 items-center gap-4">
+                                                    <Label htmlFor="email" className="text-right">
+                                                        Email
+                                                    </Label>
+                                                    <Input
+                                                        id="email"
+                                                        type="email"
+                                                        value={formData.email}
+                                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                                        className="col-span-3"
+                                                        required
+                                                    />
+                                                </div>
+                                                <div className="grid grid-cols-4 items-center gap-4">
+                                                    <Label htmlFor="role" className="text-right">
+                                                        Role
+                                                    </Label>
+                                                    <Select
+                                                        value={formData.role}
+                                                        onValueChange={(value) => setFormData({ ...formData, role: value })}
+                                                    >
+                                                        <SelectTrigger className="col-span-3">
+                                                            <SelectValue placeholder="Select role" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {roleOptions.filter(opt => opt.value !== 'all').map((option) => (
+                                                                <SelectItem key={option.value} value={option.value}>
+                                                                    {option.label}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div className="grid grid-cols-4 items-center gap-4">
+                                                    <Label htmlFor="isActive" className="text-right">
+                                                        Status
+                                                    </Label>
+                                                    <div className="col-span-3 flex items-center space-x-2">
+                                                        <Checkbox
+                                                            id="isActive"
+                                                            checked={formData.isActive}
+                                                            onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked as boolean })}
+                                                        />
+                                                        <label htmlFor="isActive" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                                            Active
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <DialogFooter>
+                                                <Button type="submit" disabled={isSubmitting}>
+                                                    {isSubmitting ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}
+                                                    Create User
+                                                </Button>
+                                            </DialogFooter>
+                                        </form>
+                                    </DialogContent>
+                                </Dialog>
                             </div>
                         </div>
                     </div>
@@ -594,12 +718,7 @@ export default function UsersManagementPage() {
                                                         <Button
                                                             variant="outline"
                                                             size="sm"
-                                                            onClick={() => {
-                                                                const newName = prompt('Enter new name:', user.name);
-                                                                if (newName && newName !== user.name) {
-                                                                    handleEditUser(user.id, { name: newName });
-                                                                }
-                                                            }}
+                                                            onClick={() => openEditDialog(user)}
                                                         >
                                                             <Edit className="w-4 h-4" />
                                                         </Button>
@@ -641,15 +760,97 @@ export default function UsersManagementPage() {
                             )}
                         </CardContent>
                     </Card>
-                    
+
                     <div className="mt-8">
-                        <BulkImport 
-                            type="users" 
+                        <BulkImport
+                            type="users"
                             onImportComplete={fetchUsers}
                         />
                     </div>
                 </div>
             </div>
+
+            {/* Edit Dialog */}
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit User</DialogTitle>
+                        <DialogDescription>
+                            Update user details.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleEditSubmit}>
+                        <div className="grid gap-4 py-4">
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="edit-name" className="text-right">
+                                    Name
+                                </Label>
+                                <Input
+                                    id="edit-name"
+                                    value={formData.name}
+                                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                    className="col-span-3"
+                                    required
+                                />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="edit-email" className="text-right">
+                                    Email
+                                </Label>
+                                <Input
+                                    id="edit-email"
+                                    type="email"
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                    className="col-span-3"
+                                    required
+                                />
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="edit-role" className="text-right">
+                                    Role
+                                </Label>
+                                <Select
+                                    value={formData.role}
+                                    onValueChange={(value) => setFormData({ ...formData, role: value })}
+                                >
+                                    <SelectTrigger className="col-span-3">
+                                        <SelectValue placeholder="Select role" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {roleOptions.filter(opt => opt.value !== 'all').map((option) => (
+                                            <SelectItem key={option.value} value={option.value}>
+                                                {option.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="edit-isActive" className="text-right">
+                                    Status
+                                </Label>
+                                <div className="col-span-3 flex items-center space-x-2">
+                                    <Checkbox
+                                        id="edit-isActive"
+                                        checked={formData.isActive}
+                                        onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked as boolean })}
+                                    />
+                                    <label htmlFor="edit-isActive" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                        Active
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button type="submit" disabled={isSubmitting}>
+                                {isSubmitting ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}
+                                Update User
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

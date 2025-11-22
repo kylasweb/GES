@@ -24,7 +24,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { AdminSidebar } from '@/components/admin/sidebar';
 import { useAuthStore } from '@/lib/store/auth';
 import { useToast } from '@/hooks/use-toast';
-import { Edit, Trash2, Plus, Tag, Calendar, Percent, DollarSign } from 'lucide-react';
+import { Edit, Trash2, Plus, Tag, Calendar, Percent, DollarSign, RefreshCw } from 'lucide-react';
 
 interface Coupon {
     id: string;
@@ -50,6 +50,7 @@ export default function CouponsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState({
         code: '',
         description: '',
@@ -101,6 +102,7 @@ export default function CouponsPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsSubmitting(true);
 
         const payload = {
             code: formData.code.toUpperCase(),
@@ -153,6 +155,8 @@ export default function CouponsPage() {
                 description: 'Failed to save coupon',
                 variant: 'destructive',
             });
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -399,7 +403,8 @@ export default function CouponsPage() {
                                         <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                                             Cancel
                                         </Button>
-                                        <Button type="submit" className="bg-gradient-to-r from-green-600 to-emerald-600">
+                                        <Button type="submit" className="bg-gradient-to-r from-green-600 to-emerald-600" disabled={isSubmitting}>
+                                            {isSubmitting ? <RefreshCw className="w-4 h-4 animate-spin mr-2" /> : null}
                                             {editingCoupon ? 'Update' : 'Create'} Coupon
                                         </Button>
                                     </div>

@@ -8,6 +8,16 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
     ArrowLeft,
     Edit,
     Trash2,
@@ -22,7 +32,8 @@ import {
     TrendingUp,
     Eye,
     Copy,
-    ExternalLink
+    ExternalLink,
+    RefreshCw
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store/auth';
 import { AdminSidebar } from '@/components/admin/sidebar';
@@ -73,6 +84,11 @@ export default function ProductDetailPage() {
     const [product, setProduct] = useState<Product | null>(null);
     const [mainImage, setMainImage] = useState(0);
 
+    // Action states
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [isUpdating, setIsUpdating] = useState(false);
+
     useEffect(() => {
         if (params.id) {
             fetchProduct();
@@ -108,10 +124,7 @@ export default function ProductDetailPage() {
     };
 
     const handleDelete = async () => {
-        if (!confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
-            return;
-        }
-
+        setIsDeleting(true);
         try {
             const response = await fetch(`/api/v1/admin/products/${params.id}`, {
                 method: 'DELETE',
@@ -139,12 +152,16 @@ export default function ProductDetailPage() {
                 description: 'Failed to delete product',
                 variant: 'destructive',
             });
+        } finally {
+            setIsDeleting(false);
+            setDeleteDialogOpen(false);
         }
     };
 
     const handleToggleActive = async () => {
         if (!product) return;
 
+        setIsUpdating(true);
         try {
             const response = await fetch(`/api/v1/admin/products/${params.id}`, {
                 method: 'PATCH',
@@ -176,6 +193,8 @@ export default function ProductDetailPage() {
                 description: 'Failed to update product',
                 variant: 'destructive',
             });
+        } finally {
+            setIsUpdating(false);
         }
     };
 
@@ -270,7 +289,11 @@ export default function ProductDetailPage() {
                                 <Button
                                     variant="outline"
                                     onClick={handleToggleActive}
+                                    disabled={isUpdating}
                                 >
+                                    {isUpdating ? (
+                                        <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+                                    ) : null}
                                     {product.isActive ? 'Deactivate' : 'Activate'}
                                 </Button>
                                 <Button
@@ -282,7 +305,7 @@ export default function ProductDetailPage() {
                                 </Button>
                                 <Button
                                     variant="destructive"
-                                    onClick={handleDelete}
+                                    onClick={() => setDeleteDialogOpen(true)}
                                 >
                                     <Trash2 className="w-4 h-4 mr-2" />
                                     Delete
@@ -629,6 +652,35 @@ export default function ProductDetailPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Delete Confirmation Dialog */}
+            <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the product.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDelete}
+                            className="bg-red-600 hover:bg-red-700"
+                            disabled={isDeleting}
+                        >
+                            {isDeleting ? (
+                                <>
+                                    <RefreshCw className="w-4 h-4 animate-spin mr-2" />
+                                    Deleting...
+                                </>
+                            ) : (
+                                'Delete'
+                            )}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
