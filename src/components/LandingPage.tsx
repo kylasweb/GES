@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import anime from 'animejs';
+import { animate, stagger } from 'animejs';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -39,23 +39,19 @@ export function LandingPage() {
   useEffect(() => {
     // Hero section animation
     if (heroRef.current) {
-      anime.timeline({
-        easing: 'easeOutExpo',
-        duration: 750
-      })
-      .add({
-        targets: heroRef.current.querySelectorAll('.hero-element'),
+      animate(heroRef.current.querySelectorAll('.hero-element'), {
         translateX: [40, 0],
         opacity: [0, 1],
-        delay: anime.stagger(100),
-        duration: 1200
-      })
-      .add({
-        targets: heroRef.current.querySelector('.hero-buttons'),
+        delay: stagger(100),
+        duration: 1200,
+        easing: 'easeOutExpo'
+      });
+      animate(heroRef.current.querySelector('.hero-buttons'), {
         translateY: [20, 0],
         opacity: [0, 1],
-        duration: 800
-      }, '-=600');
+        duration: 800,
+        easing: 'easeOutExpo'
+      });
     }
 
     // Features section animation
@@ -63,11 +59,10 @@ export function LandingPage() {
       const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
-            anime({
-              targets: featuresRef.current?.querySelectorAll('.feature-card'),
+            animate(featuresRef.current?.querySelectorAll('.feature-card'), {
               translateY: [50, 0],
               opacity: [0, 1],
-              delay: anime.stagger(150),
+              delay: stagger(150),
               duration: 1000,
               easing: 'easeOutQuart'
             });
@@ -84,11 +79,10 @@ export function LandingPage() {
       const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
-            anime({
-              targets: statsRef.current?.querySelectorAll('.stat-item'),
+            animate(statsRef.current?.querySelectorAll('.stat-item'), {
               scale: [0.8, 1],
               opacity: [0, 1],
-              delay: anime.stagger(100),
+              delay: stagger(100),
               duration: 800,
               easing: 'spring(1, 80, 10, 0)'
             });
@@ -105,8 +99,7 @@ export function LandingPage() {
       const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
-            anime({
-              targets: testimonialsRef.current?.querySelector('.testimonial-card'),
+            animate(testimonialsRef.current?.querySelector('.testimonial-card'), {
               translateX: [40, 0],
               opacity: [0, 1],
               duration: 1000,
@@ -125,11 +118,10 @@ export function LandingPage() {
       const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
-            anime({
-              targets: productsRef.current?.querySelectorAll('.product-card'),
+            animate(productsRef.current?.querySelectorAll('.product-card'), {
               translateY: [30, 0],
               opacity: [0, 1],
-              delay: anime.stagger(100),
+              delay: stagger(100),
               duration: 800,
               easing: 'easeOutQuart'
             });
@@ -146,11 +138,10 @@ export function LandingPage() {
       const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
-            anime({
-              targets: ctaRef.current?.querySelectorAll('.cta-element'),
+            animate(ctaRef.current?.querySelectorAll('.cta-element'), {
               translateY: [20, 0],
               opacity: [0, 1],
-              delay: anime.stagger(150),
+              delay: stagger(150),
               duration: 1000,
               easing: 'easeOutQuart'
             });
