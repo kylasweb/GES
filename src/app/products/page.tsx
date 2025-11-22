@@ -1,6 +1,7 @@
-import { Metadata } from 'next';
+'use client';
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { db } from '@/lib/db';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -22,11 +23,6 @@ import {
   Wrench
 } from 'lucide-react';
 
-export const metadata: Metadata = {
-  title: 'All Products - Green Energy Solutions',
-  description: 'Browse our complete range of eco-friendly batteries, solar panels, and energy solutions for your home and business.',
-};
-
 interface Product {
   id: string;
   name: string;
@@ -36,55 +32,51 @@ interface Product {
   comparePrice?: number;
   images: string[];
   featured: boolean;
+  quantity?: number;
   category: {
     name: string;
     slug: string;
   };
-  inventory: {
+  inventory?: {
     quantity: number;
   };
   _count: {
     reviews: number;
   };
-  reviews: {
+  reviews?: {
     rating: number;
   }[];
 }
 
-async function getProducts() {
-  const products = await db.product.findMany({
-    where: {
-      isActive: true,
-    },
-    include: {
-      category: true,
-      inventory: true,
-      _count: {
-        select: {
-          reviews: true,
-        },
-      },
-      reviews: {
-        select: {
-          rating: true,
-        },
-        take: 5,
-      },
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
-  });
+export default function ProductsPage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  return products;
-}
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const res = await fetch('/api/v1/products');
+        if (res.ok) {
+          const data = await res.json();
+          setProducts(data.products || data.data?.products || []);
+        } else {
+          setError('Failed to load products');
+        }
+      } catch (err) {
+        setError('Failed to load products');
+        console.error('Error fetching products:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-export default async function ProductsPage() {
-  const products = await getProducts();
-  
+    fetchProducts();
+  }, []);
+
   // Calculate average ratings
   const productsWithRatings = products.map(product => {
-    const averageRating = product.reviews.length > 0
+    const averageRating = product.reviews && product.reviews.length > 0
       ? product.reviews.reduce((acc, review) => acc + review.rating, 0) / product.reviews.length
       : 0;
     
@@ -93,6 +85,31 @@ export default async function ProductsPage() {
       averageRating,
     };
   });
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <Package className="h-16 w-16 text-gray-400 mx-auto mb-4 animate-spin" />
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">Loading products...</h3>
+          <p className="text-gray-600">Please wait while we fetch our product catalog.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <Package className="h-16 w-16 text-red-400 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">Error loading products</h3>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <Button onClick={() => window.location.reload()}>Try Again</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -254,7 +271,20 @@ export default async function ProductsPage() {
               <p className="text-gray-600">{products.length} products found</p>
             </div>
             
-            {productsWithRatings.length === 0 ? (
+            {loading ? (
+              <div className="text-center py-16">
+                <Package className="h-16 w-16 text-gray-400 mx-auto mb-4 animate-spin" />
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Loading products...</h3>
+                <p className="text-gray-600">Please wait while we fetch our product catalog.</p>
+              </div>
+            ) : error ? (
+              <div className="text-center py-16">
+                <Package className="h-16 w-16 text-red-400 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">Error loading products</h3>
+                <p className="text-gray-600 mb-6">{error}</p>
+                <Button onClick={() => window.location.reload()}>Try Again</Button>
+              </div>
+            ) : productsWithRatings.length === 0 ? (
               <div className="text-center py-16">
                 <Package className="h-16 w-16 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold text-gray-900 mb-2">No products found</h3>
@@ -270,7 +300,7 @@ export default async function ProductsPage() {
                     ? Math.round(((Number(product.comparePrice) - Number(product.price)) / Number(product.comparePrice)) * 100)
                     : 0;
                   
-                  const inStock = product.inventory ? product.inventory.quantity > 0 : product.quantity > 0;
+                  const inStock = product.inventory ? product.inventory.quantity > 0 : (product.quantity || 0) > 0;
                   
                   return (
                     <Card key={product.id} className="overflow-hidden hover:shadow-lg transition-all duration-300">
