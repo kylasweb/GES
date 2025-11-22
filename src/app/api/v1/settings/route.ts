@@ -15,32 +15,24 @@ export async function GET() {
             return NextResponse.json(cachedSettings);
         }
 
-        // Fetch fresh settings
+        // Fetch fresh settings with active template
         let settings = await db.siteSettings.findFirst({
-            select: {
-                headerStyle: true,
-                footerStyle: true,
-                menuStyle: true,
-            },
+            include: {
+                activeTemplate: true
+            }
         });
 
         // Create default settings if none exist
         if (!settings) {
             settings = await db.siteSettings.create({
                 data: {
-                    headerStyle: 'default',
-                    footerStyle: 'default',
-                    menuStyle: 'default',
+                    siteName: 'Green Energy Solutions',
                     maintenanceMode: false,
-                    config: {
-                        siteName: 'Green Energy Solutions',
-                    },
+                    config: {},
                 },
-                select: {
-                    headerStyle: true,
-                    footerStyle: true,
-                    menuStyle: true,
-                },
+                include: {
+                    activeTemplate: true
+                }
             });
         }
 
@@ -50,13 +42,12 @@ export async function GET() {
 
         return NextResponse.json(settings);
     } catch (error) {
-        console.error('Error fetching appearance settings:', error);
+        console.error('Error fetching site settings:', error);
 
         // Return defaults on error
         return NextResponse.json({
-            headerStyle: 'default',
-            footerStyle: 'default',
-            menuStyle: 'default',
+            siteName: 'Green Energy Solutions',
+            activeTemplate: null
         });
     }
 }

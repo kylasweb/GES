@@ -1,44 +1,44 @@
-import { db as prisma } from '@/lib/db';
+'use client';
+
+import { useEffect, useState } from 'react';
 import { TemplateRenderer } from '@/components/template-renderer';
 
-async function getActiveTemplate() {
-  try {
-    const settings = await prisma.siteSettings.findFirst({
-      include: { activeTemplate: true }
-    });
-    
-    return settings?.activeTemplate?.slug || 'default';
-  } catch (error) {
-    console.error('Failed to fetch active template:', error);
-    return 'default';
+export default function HomePage() {
+  const [templateSlug, setTemplateSlug] = useState('default');
+  const [data, setData] = useState({ categories: [], products: [], deals: [] });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch template and data client-side
+        const [templateRes, dataRes] = await Promise.all([
+          fetch('/api/v1/settings/site'),
+          fetch('/api/v1/landing-data')
+        ]);
+
+        if (templateRes.ok) {
+          const templateData = await templateRes.json();
+          setTemplateSlug(templateData?.activeTemplate?.slug || 'default');
+        }
+
+        if (dataRes.ok) {
+          const landingData = await dataRes.json();
+          setData(landingData);
+        }
+      } catch (error) {
+        console.error('Failed to fetch data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return <div>Loading...</div>;
   }
-}
-
-async function getLandingData() {
-  try {
-    // Fetch all data needed for landing pages
-    const [categories, products, deals] = await Promise.all([
-      prisma.category.findMany({ where: { isActive: true }, take: 8 }),
-      prisma.product.findMany({ 
-        where: { isActive: true, featured: true }, 
-        include: { category: true, brand: true },
-        take: 12 
-      }),
-      prisma.deal.findMany({ where: { isActive: true }, take: 6 })
-    ]);
-
-    return { categories, products, deals };
-  } catch (error) {
-    console.error('Failed to fetch landing data:', error);
-    return { categories: [], products: [], deals: [] };
-  }
-}
-
-export default async function HomePage() {
-  const [templateSlug, data] = await Promise.all([
-    getActiveTemplate(),
-    getLandingData()
-  ]);
 
   return <TemplateRenderer templateSlug={templateSlug} data={data} />;
 }

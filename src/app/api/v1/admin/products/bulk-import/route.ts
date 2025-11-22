@@ -3,8 +3,7 @@ import { parse } from 'csv-parse/sync';
 import { db } from '@/lib/db';
 import { requireAdmin } from '@/lib/auth';
 import { logAuditTrail } from '@/lib/audit-trail';
-import { Category, Brand } from '@prisma/client';
-import { Decimal } from '@prisma/client/runtime/library';
+import { Category, Brand, Decimal } from '@prisma/client';
 
 // Define the structure of CSV records
 interface CSVRecord {
