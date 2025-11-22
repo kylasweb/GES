@@ -13,6 +13,17 @@ interface SocialShareProps {
 
 export function SocialShare({ url, title, description, image }: SocialShareProps) {
     const { toast } = useToast();
+    
+    // Only run in browser environment
+    if (typeof window === 'undefined') {
+        return (
+            <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Share:</span>
+                <span className="text-sm text-gray-500">Available in browser</span>
+            </div>
+        );
+    }
+    
     const encodedUrl = encodeURIComponent(url);
     const encodedTitle = encodeURIComponent(title);
     const encodedDescription = encodeURIComponent(description || '');
@@ -28,10 +39,22 @@ export function SocialShare({ url, title, description, image }: SocialShareProps
     };
 
     const handleShare = (platform: string, link: string) => {
+        // Only run in browser environment
+        if (typeof window === 'undefined') return;
         window.open(link, '_blank', 'width=600,height=400');
     };
 
     const handleCopyLink = async () => {
+        // Only run in browser environment
+        if (typeof window === 'undefined' || !navigator.clipboard) {
+            toast({
+                title: 'Copy Failed',
+                description: 'Clipboard not available',
+                variant: 'destructive',
+            });
+            return;
+        }
+        
         try {
             await navigator.clipboard.writeText(url);
             toast({

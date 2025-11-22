@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken } from '@/lib/auth';
+import { jwtVerify } from 'jose';
 
 export const runtime = 'nodejs';
 
@@ -21,10 +21,11 @@ export async function middleware(request: NextRequest) {
 
     try {
       // Verify token and check admin role
-      const user = await verifyToken(token);
+      const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+      const { payload } = await jwtVerify(token, secret);
       const adminRoles = ['SUPER_ADMIN', 'ORDER_MANAGER', 'FINANCE_MANAGER', 'CONTENT_MANAGER'];
 
-      if (!user || !adminRoles.includes(user?.role || '')) {
+      if (!adminRoles.includes((payload as any)?.role || '')) {
         // Redirect to dashboard if not admin
         return NextResponse.redirect(new URL('/dashboard', request.url));
       }
@@ -50,14 +51,8 @@ export async function middleware(request: NextRequest) {
 
     try {
       // Verify token
-      const user = await verifyToken(token);
-
-      if (!user) {
-        // Redirect to login if invalid token
-        const loginUrl = new URL('/auth', request.url);
-        loginUrl.searchParams.set('redirect', pathname);
-        return NextResponse.redirect(loginUrl);
-      }
+      const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+      await jwtVerify(token, secret);
     } catch (error) {
       // Invalid token, redirect to login
       const loginUrl = new URL('/auth', request.url);
@@ -91,14 +86,8 @@ export async function middleware(request: NextRequest) {
       }
 
       try {
-        const user = await verifyToken(token);
-
-        if (!user) {
-          return NextResponse.json(
-            { success: false, error: 'Invalid authentication' },
-            { status: 401 }
-          );
-        }
+        const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+        const { payload } = await jwtVerify(token, secret);
 
         // Check admin-only API routes
         const adminRoutes = [
@@ -114,7 +103,7 @@ export async function middleware(request: NextRequest) {
         if (isAdminRoute) {
           const adminRoles = ['SUPER_ADMIN', 'ORDER_MANAGER', 'FINANCE_MANAGER', 'CONTENT_MANAGER'];
 
-          if (!adminRoles.includes(user?.role || '')) {
+          if (!adminRoles.includes((payload as any)?.role || '')) {
             return NextResponse.json(
               { success: false, error: 'Admin access required' },
               { status: 403 }
