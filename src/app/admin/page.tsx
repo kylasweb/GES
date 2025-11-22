@@ -41,10 +41,27 @@ interface DashboardStats {
   lowStockProducts: any[];
 }
 
+interface SystemHealth {
+  success: boolean;
+  status: string;
+  services: {
+    database: { status: string; details: string };
+    paymentGateway: { status: string; details: string; provider: string };
+    emailService: { status: string; details: string; configured: boolean };
+    storage: { status: string; details: string };
+  };
+  system: {
+    uptime: number;
+    uptimeFormatted: string;
+    memory: { percentage: number };
+  };
+}
+
 export default function AdminDashboard() {
   const { user, token } = useAuthStore();
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [systemHealth, setSystemHealth] = useState<SystemHealth | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -60,6 +77,7 @@ export default function AdminDashboard() {
     }
 
     fetchDashboardData();
+    fetchSystemHealth();
   }, [token, user]);
 
   const fetchDashboardData = async () => {
@@ -79,6 +97,22 @@ export default function AdminDashboard() {
       setError('Failed to load dashboard data');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchSystemHealth = async () => {
+    try {
+      const response = await fetch('/api/v1/admin/health', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setSystemHealth(data);
+      }
+    } catch (err) {
+      console.error('Failed to load system health:', err);
     }
   };
 
@@ -467,22 +501,66 @@ export default function AdminDashboard() {
                         <CardTitle>System Health</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">Database</span>
-                          <Badge className="bg-green-100 text-green-800">Healthy</Badge>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">Payment Gateway</span>
-                          <Badge className="bg-green-100 text-green-800">Connected</Badge>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">Email Service</span>
-                          <Badge className="bg-green-100 text-green-800">Active</Badge>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">Storage</span>
-                          <Badge className="bg-green-100 text-green-800">Available</Badge>
-                        </div>
+                        {systemHealth ? (
+                          <>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium">Database</span>
+                              <Badge className={
+                                systemHealth.services.database.status === 'healthy' ? 'bg-green-100 text-green-800' :
+                                  systemHealth.services.database.status === 'degraded' ? 'bg-yellow-100 text-yellow-800' :
+                                    'bg-red-100 text-red-800'
+                              }>
+                                {systemHealth.services.database.status === 'healthy' ? 'Healthy' :
+                                  systemHealth.services.database.status === 'degraded' ? 'Degraded' : 'Down'}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium">Payment Gateway</span>
+                              <Badge className={
+                                systemHealth.services.paymentGateway.status === 'healthy' ? 'bg-green-100 text-green-800' :
+                                  systemHealth.services.paymentGateway.status === 'degraded' ? 'bg-yellow-100 text-yellow-800' :
+                                    'bg-red-100 text-red-800'
+                              }>
+                                {systemHealth.services.paymentGateway.status === 'healthy' ? 'Connected' :
+                                  systemHealth.services.paymentGateway.status === 'degraded' ? 'Degraded' : 'Down'}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium">Email Service</span>
+                              <Badge className={
+                                systemHealth.services.emailService.status === 'healthy' ? 'bg-green-100 text-green-800' :
+                                  systemHealth.services.emailService.status === 'degraded' ? 'bg-yellow-100 text-yellow-800' :
+                                    systemHealth.services.emailService.configured ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
+                              }>
+                                {systemHealth.services.emailService.status === 'healthy' ? 'Active' :
+                                  systemHealth.services.emailService.status === 'degraded' ? 'Degraded' :
+                                    systemHealth.services.emailService.configured ? 'Down' : 'Not Configured'}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-medium">Storage</span>
+                              <Badge className={
+                                systemHealth.services.storage.status === 'healthy' ? 'bg-green-100 text-green-800' :
+                                  systemHealth.services.storage.status === 'degraded' ? 'bg-yellow-100  text-yellow-800' :
+                                    'bg-red-100 text-red-800'
+                              }>
+                                {systemHealth.services.storage.status === 'healthy' ? 'Available' :
+                                  systemHealth.services.storage.status === 'degraded' ? 'Degraded' : 'Down'}
+                              </Badge>
+                            </div>
+                            <div className="pt-3 border-t">
+                              <div className="text-xs text-gray-600 space-y-1">
+                                <div>Uptime: {systemHealth.system.uptimeFormatted}</div>
+                                <div>Memory: {systemHealth.system.memory.percentage}%</div>
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="text-center py-4">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
+                            <p className="text-sm text-gray-600 mt-2">Loading health status...</p>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   </div>
