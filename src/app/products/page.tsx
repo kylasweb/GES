@@ -307,17 +307,12 @@ export default function ProductsPage() {
                       <Link href={`/products/${product.slug}`}>
                         <div className="relative">
                           <div className="aspect-square bg-gray-100 flex items-center justify-center">
-                            {product.images && Array.isArray(product.images) && product.images.length > 0 && typeof product.images[0] === 'string' ? (
-                              // eslint-disable-next-line @next/next/no-img-element
+                            {product.images?.[0] && (
                               <img
                                 src={product.images[0]}
                                 alt={product.name}
-                                className="w-full h-full object-contain p-4"
-                                width={300}
-                                height={300}
+                                className="object-cover w-full h-full"
                               />
-                            ) : (
-                              <Package className="h-16 w-16 text-gray-400" />
                             )}
                           </div>
                           

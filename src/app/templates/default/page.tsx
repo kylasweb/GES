@@ -248,7 +248,6 @@ export default function DefaultTemplate({ data }: { data?: { products: Product[]
                 <CardContent className="p-4">
                   <div className="aspect-square relative mb-3 bg-gray-100 rounded-lg overflow-hidden">
                     {product.images[0] && (
-                      // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={product.images[0]}
                         alt={product.name}
@@ -302,7 +301,6 @@ export default function DefaultTemplate({ data }: { data?: { products: Product[]
                   <CardContent className="p-3">
                     <div className="aspect-square relative mb-2 bg-gray-100 rounded-lg overflow-hidden">
                       {product.images[0] && (
-                        // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={product.images[0]}
                           alt={product.name}

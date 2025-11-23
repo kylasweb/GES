@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { verifyToken } from '@/lib/auth';
 import { z } from 'zod';
-import { Decimal } from '@prisma/client';
 
 const giftCardSchema = z.object({
     amount: z.number().positive().min(100).max(50000),
@@ -20,14 +19,12 @@ const applyGiftCardSchema = z.object({
     orderId: z.string()
 });
 
-// Helper function to convert Decimal to number
-function toNumber(value: Decimal | number): number {
+// Helper function to convert value to number
+function toNumber(value: any): number {
     if (typeof value === 'number') {
         return value;
     }
-    return typeof value === 'object' && 'toNumber' in value
-        ? (value as Decimal).toNumber()
-        : Number(value);
+    return Number(value);
 }
 
 // Helper function to handle nullable dates

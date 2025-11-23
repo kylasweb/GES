@@ -3,7 +3,7 @@ import { parse } from 'csv-parse/sync';
 import { db } from '@/lib/db';
 import { requireAdmin } from '@/lib/auth';
 import { logAuditTrail } from '@/lib/audit-trail';
-import { Category, Brand, Decimal } from '@prisma/client';
+import { Category, Brand } from '@prisma/client';
 
 // Define the structure of CSV records
 interface CSVRecord {
@@ -129,9 +129,9 @@ export async function POST(request: NextRequest) {
                         description: record.description || '',
                         shortDesc: record.shortDesc || '',
                         sku: record.sku,
-                        price: new Decimal(parseFloat(record.price) || 0),
-                        comparePrice: record.comparePrice ? new Decimal(parseFloat(record.comparePrice)) : null,
-                        costPrice: record.costPrice ? new Decimal(parseFloat(record.costPrice)) : null,
+                        price: parseFloat(record.price) || 0,
+                        comparePrice: record.comparePrice ? parseFloat(record.comparePrice) : null,
+                        costPrice: record.costPrice ? parseFloat(record.costPrice) : null,
                         trackQuantity: record.trackQuantity === 'true' || record.trackQuantity === '1',
                         quantity: quantity,
                         weight: record.weight ? parseFloat(record.weight) : null,
