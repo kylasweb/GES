@@ -1,581 +1,465 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { animate, stagger } from 'animejs';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
-  Battery,
-  Sun,
-  Zap,
-  Leaf,
-  Shield,
+  ChevronRight,
   Star,
-  ArrowRight,
   ShoppingCart,
-  Users,
-  CheckCircle,
-  Play,
-  BarChart3,
-  Lightbulb,
-  Wind,
-  Droplets,
-  Heart,
-  Globe,
-  Sparkles,
-  Award
+  Zap,
+  TrendingUp,
+  Gift,
+  Truck,
+  Shield,
+  Tag,
+  Leaf,
+  Sun,
+  Battery,
+  Wrench,
+  Menu,
+  X
 } from 'lucide-react';
-import Link from 'next/link';
+
+interface Product {
+  id: string;
+  name: string;
+  slug: string;
+  price: number;
+  comparePrice?: number;
+  images: string[];
+  category: { name: string };
+  rating?: number;
+  reviews?: number;
+}
+
+interface Deal {
+  id: string;
+  name: string;
+  discount: number;
+  productId: string;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  slug: string;
+}
 
 export function LandingPage() {
-  const heroRef = useRef<HTMLDivElement>(null);
-  const featuresRef = useRef<HTMLDivElement>(null);
-  const statsRef = useRef<HTMLDivElement>(null);
-  const testimonialsRef = useRef<HTMLDivElement>(null);
-  const productsRef = useRef<HTMLDivElement>(null);
-  const ctaRef = useRef<HTMLDivElement>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [deals, setDeals] = useState<Deal[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    // Hero section animation
-    if (heroRef.current) {
-      const heroElements = heroRef.current.querySelectorAll('.hero-element');
-      if (heroElements && heroElements.length > 0) {
-        animate(Array.from(heroElements), {
-          translateX: [40, 0],
-          opacity: [0, 1],
-          delay: stagger(100),
-          duration: 1200,
-          easing: 'easeOutExpo'
-        });
+    const fetchData = async () => {
+      try {
+        const [productsRes, dealsRes, categoriesRes] = await Promise.all([
+          fetch('/api/v1/products?featured=true&limit=20'),
+          fetch('/api/v1/deals/active'),
+          fetch('/api/v1/categories?limit=8')
+        ]);
+
+        if (productsRes.ok) {
+          const data = await productsRes.json();
+          setProducts(data.data?.products || data.products || []);
+        }
+
+        if (dealsRes.ok) {
+          const data = await dealsRes.json();
+          setDeals(data.deals || []);
+        }
+
+        if (categoriesRes.ok) {
+          const data = await categoriesRes.json();
+          setCategories(data.data?.categories || data.categories || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch data:', error);
+      } finally {
+        setIsLoading(false);
       }
+    };
 
-      const heroButtons = heroRef.current.querySelector('.hero-buttons');
-      if (heroButtons) {
-        animate(heroButtons as HTMLElement, {
-          translateY: [20, 0],
-          opacity: [0, 1],
-          delay: 600,
-          duration: 800,
-          easing: 'easeOutExpo'
-        });
-      }
-    }
-
-    // Features section animation
-    if (featuresRef.current) {
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            const featureCards = featuresRef.current?.querySelectorAll('.feature-card');
-            if (featureCards && featureCards.length > 0) {
-              animate(Array.from(featureCards), {
-                translateY: [50, 0],
-                opacity: [0, 1],
-                delay: stagger(150),
-                duration: 1000,
-                easing: 'easeOutQuart'
-              });
-            }
-            observer.disconnect();
-          }
-        });
-      }, { threshold: 0.1 });
-
-      observer.observe(featuresRef.current);
-      return () => observer.disconnect();
-    }
-
-    // Stats section animation
-    if (statsRef.current) {
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            const statItems = statsRef.current?.querySelectorAll('.stat-item');
-            if (statItems && statItems.length > 0) {
-              animate(Array.from(statItems), {
-                scale: [0.8, 1],
-                opacity: [0, 1],
-                delay: stagger(100),
-                duration: 800,
-                easing: 'spring(1, 80, 10, 0)'
-              });
-            }
-            observer.disconnect();
-          }
-        });
-      }, { threshold: 0.1 });
-
-      observer.observe(statsRef.current);
-      return () => observer.disconnect();
-    }
-
-    // Testimonials section animation
-    if (testimonialsRef.current) {
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            const testimonialCard = testimonialsRef.current?.querySelector('.testimonial-card');
-            if (testimonialCard) {
-              animate(testimonialCard as HTMLElement, {
-                translateX: [40, 0],
-                opacity: [0, 1],
-                duration: 1000,
-                easing: 'easeOutQuart'
-              });
-            }
-            observer.disconnect();
-          }
-        });
-      }, { threshold: 0.1 });
-
-      observer.observe(testimonialsRef.current);
-      return () => observer.disconnect();
-    }
-
-    // Products section animation
-    if (productsRef.current) {
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            const productCards = productsRef.current?.querySelectorAll('.product-card');
-            if (productCards && productCards.length > 0) {
-              animate(Array.from(productCards), {
-                translateY: [30, 0],
-                opacity: [0, 1],
-                delay: stagger(100),
-                duration: 800,
-                easing: 'easeOutQuart'
-              });
-            }
-            observer.disconnect();
-          }
-        });
-      }, { threshold: 0.1 });
-
-      observer.observe(productsRef.current);
-      return () => observer.disconnect();
-    }
-
-    // CTA section animation
-    if (ctaRef.current) {
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            const ctaElements = ctaRef.current?.querySelectorAll('.cta-element');
-            if (ctaElements && ctaElements.length > 0) {
-              animate(Array.from(ctaElements), {
-                translateY: [20, 0],
-                opacity: [0, 1],
-                delay: stagger(150),
-                duration: 1000,
-                easing: 'easeOutQuart'
-              });
-            }
-            observer.disconnect();
-          }
-        });
-      }, { threshold: 0.1 });
-
-      observer.observe(ctaRef.current);
-      return () => observer.disconnect();
-    }
+    fetchData();
   }, []);
+
+  const featuredCategories = [
+    { name: 'Solar Panels', icon: Sun, color: 'bg-yellow-500', href: '/products/solar-panels' },
+    { name: 'Batteries', icon: Battery, color: 'bg-blue-500', href: '/products/batteries' },
+    { name: 'Accessories', icon: Wrench, color: 'bg-green-500', href: '/products/accessories' },
+    { name: 'Deals', icon: Zap, color: 'bg-red-500', href: '/products?deals=true' },
+    { name: 'Best Sellers', icon: TrendingUp, color: 'bg-purple-500', href: '/products?sort=popular' },
+    { name: 'New Arrivals', icon: Leaf, color: 'bg-pink-500', href: '/products?sort=newest' },
+  ];
+
+  const banners = [
+    {
+      title: 'Mega Solar Sale',
+      subtitle: 'Up to 50% OFF on Solar Panels',
+      color: 'from-yellow-400 to-orange-500',
+    },
+    {
+      title: 'Battery Bonanza',
+      subtitle: 'Extra 30% OFF on all Batteries',
+      color: 'from-blue-400 to-cyan-500',
+    },
+    {
+      title: 'Green Friday Deals',
+      subtitle: 'Massive discounts on everything',
+      color: 'from-green-400 to-emerald-500',
+    }
+  ];
 
   const features = [
     {
-      icon: Battery,
-      title: "Premium Batteries",
-      description: "High-capacity, long-lasting batteries with advanced technology for all your energy storage needs.",
-      gradient: "from-green-400 to-emerald-500",
-      features: ["Long Life", "Fast Charging", "Eco-Friendly"]
-    },
-    {
-      icon: Sun,
-      title: "Solar Panels",
-      description: "Efficient solar panels that harness the power of the sun to reduce your carbon footprint.",
-      gradient: "from-yellow-400 to-orange-500",
-      features: ["High Efficiency", "Weather Proof", "Easy Install"]
+      icon: Truck,
+      title: "Free Delivery",
+      description: "On orders above ₹1000"
     },
     {
       icon: Shield,
-      title: "Warranty & Support",
-      description: "Comprehensive warranty and dedicated support to ensure your peace of mind.",
-      gradient: "from-blue-400 to-cyan-500",
-      features: ["5 Year Warranty", "24/7 Support", "Expert Team"]
+      title: "2 Year Warranty",
+      description: "On all products"
+    },
+    {
+      icon: Gift,
+      title: "Gift Vouchers",
+      description: "Available now"
+    },
+    {
+      icon: Tag,
+      title: "Best Prices",
+      description: "Guaranteed"
     }
   ];
 
-  const stats = [
-    { number: "500+", label: "Happy Customers", icon: Users },
-    { number: "50+", label: "Products", icon: Battery },
-    { number: "5 Years", label: "Warranty", icon: Shield },
-    { number: "24/7", label: "Support", icon: Heart }
-  ];
-
-  const testimonials = [
-    {
-      name: "Rajesh Kumar",
-      role: "Homeowner",
-      content: "Green Energy Solutions transformed my home with solar panels. I'm saving 70% on my electricity bills!",
-      rating: 5,
-      avatar: "👨‍💼"
-    },
-    {
-      name: "Priya Sharma",
-      role: "Business Owner",
-      content: "Excellent service and quality products. The team helped us choose the perfect solar solution for our office.",
-      rating: 5,
-      avatar: "👩‍💼"
-    },
-    {
-      name: "Amit Patel",
-      role: "Engineer",
-      content: "The battery backup system is incredible. Power outages are no longer a concern for our family.",
-      rating: 5,
-      avatar: "👨‍🔧"
-    }
-  ];
-
-  const products = [
-    {
-      id: "1",
-      name: "Solar Charge Controller 20A",
-      slug: "solar-charge-controller-20a",
-      shortDesc: "Efficient PWM charge controller for solar panels",
-      price: 1800,
-      comparePrice: 2200,
-      images: ["https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=400&h=400&fit=crop"],
-      featured: true,
-      category: {
-        name: "Accessories",
-        slug: "accessories"
-      }
-    },
-    {
-      id: "2",
-      name: "12V 100Ah Solar Battery",
-      slug: "12v-100ah-solar-battery",
-      shortDesc: "High-capacity deep cycle battery for solar systems",
-      price: 8500,
-      comparePrice: 10500,
-      images: ["https://images.unsplash.com/photo-1594608661623-aa0bd3a69d98?w=400&h=400&fit=crop"],
-      featured: true,
-      category: {
-        name: "Batteries",
-        slug: "batteries"
-      }
-    },
-    {
-      id: "3",
-      name: "300W Monocrystalline Solar Panel",
-      slug: "300w-monocrystalline-solar-panel",
-      shortDesc: "High-efficiency solar panel with 25-year warranty",
-      price: 12500,
-      comparePrice: 15000,
-      images: ["https://images.unsplash.com/photo-1594608661623-aa0bd3a69d98?w=400&h=400&fit=crop"],
-      featured: true,
-      category: {
-        name: "Solar Panels",
-        slug: "solar-panels"
-      }
-    },
-    {
-      id: "4",
-      name: "Hybrid Inverter 5kW",
-      slug: "hybrid-inverter-5kw",
-      shortDesc: "Smart inverter with battery management system",
-      price: 45000,
-      comparePrice: 52000,
-      images: ["https://images.unsplash.com/photo-1594608661623-aa0bd3a69d98?w=400&h=400&fit=crop"],
-      featured: true,
-      category: {
-        name: "Accessories",
-        slug: "accessories"
-      }
-    }
-  ];
+  if (isLoading) {
+    return <div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>;
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-cyan-50 to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 overflow-hidden">
-      {/* Animated Background Blobs */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-20 left-10 w-72 h-72 bg-gradient-to-br from-green-200 to-emerald-200 dark:from-green-900 dark:to-emerald-900 rounded-full mix-blend-multiply dark:mix-blend-soft-light filter blur-xl opacity-30 dark:opacity-20 animate-pulse"></div>
-        <div className="absolute top-40 right-10 w-96 h-96 bg-gradient-to-br from-blue-200 to-cyan-200 dark:from-blue-900 dark:to-cyan-900 rounded-full mix-blend-multiply dark:mix-blend-soft-light filter blur-xl opacity-30 dark:opacity-20 animate-pulse animation-delay-2000"></div>
-        <div className="absolute bottom-20 left-1/2 w-80 h-80 bg-gradient-to-br from-yellow-200 to-orange-200 dark:from-yellow-900 dark:to-orange-900 rounded-full mix-blend-multiply dark:mix-blend-soft-light filter blur-xl opacity-30 dark:opacity-20 animate-pulse animation-delay-4000"></div>
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm sticky top-0 z-50">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center">
+              <Link href="/" className="text-2xl font-bold text-green-600">
+                GreenEnergy
+              </Link>
+            </div>
+            
+            {/* Desktop Navigation */}
+            <nav className="hidden md:flex items-center space-x-8">
+              <Link href="/products" className="text-gray-700 hover:text-green-600 font-medium">Products</Link>
+              <Link href="/categories" className="text-gray-700 hover:text-green-600 font-medium">Categories</Link>
+              <Link href="/deals" className="text-gray-700 hover:text-green-600 font-medium">Deals</Link>
+              <Link href="/about" className="text-gray-700 hover:text-green-600 font-medium">About</Link>
+              <Link href="/contact" className="text-gray-700 hover:text-green-600 font-medium">Contact</Link>
+            </nav>
+            
+            <div className="flex items-center space-x-4">
+              <Button variant="ghost" size="icon">
+                <ShoppingCart className="h-6 w-6" />
+              </Button>
+              <Button className="bg-green-600 hover:bg-green-700 hidden md:flex">
+                Sign In
+              </Button>
+              
+              {/* Mobile menu button */}
+              <button 
+                className="md:hidden"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </button>
+            </div>
+          </div>
+          
+          {/* Mobile Navigation */}
+          {mobileMenuOpen && (
+            <div className="md:hidden py-4 border-t">
+              <div className="flex flex-col space-y-3">
+                <Link href="/products" className="text-gray-700 hover:text-green-600 font-medium">Products</Link>
+                <Link href="/categories" className="text-gray-700 hover:text-green-600 font-medium">Categories</Link>
+                <Link href="/deals" className="text-gray-700 hover:text-green-600 font-medium">Deals</Link>
+                <Link href="/about" className="text-gray-700 hover:text-green-600 font-medium">About</Link>
+                <Link href="/contact" className="text-gray-700 hover:text-green-600 font-medium">Contact</Link>
+                <Button className="bg-green-600 hover:bg-green-700 w-full">
+                  Sign In
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </header>
 
       {/* Hero Section */}
-      <section ref={heroRef} className="relative py-20 md:py-32 overflow-hidden">
-        <div className="container px-4">
-          <div className="max-w-6xl mx-auto">
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <div className="text-center lg:text-left space-y-8">
-                <div className="hero-element inline-flex items-center space-x-2 bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/50 dark:to-emerald-900/50 px-4 py-2 rounded-full border border-green-200 dark:border-green-700">
-                  <Sparkles className="h-4 w-4 text-green-600 dark:text-green-400" />
-                  <span className="text-green-800 dark:text-green-200 font-medium">🌱 Sustainable Energy Solutions</span>
-                </div>
-
-                <h1 className="hero-element text-4xl md:text-6xl lg:text-7xl font-bold leading-tight">
-                  <span className="bg-gradient-to-r from-green-600 via-emerald-600 to-cyan-600 dark:from-green-400 dark:via-emerald-400 dark:to-cyan-400 bg-clip-text text-transparent animate-gradient">
-                    Power Your Future
-                  </span>
-                  <br />
-                  <span className="text-gray-900 dark:text-gray-100">with Green Energy Solutions</span>
-                </h1>
-
-                <p className="hero-element text-xl md:text-2xl text-gray-600 dark:text-gray-300 leading-relaxed max-w-2xl mx-auto lg:mx-0">
-                  Discover our premium range of eco-friendly batteries and solar panels designed for a sustainable tomorrow.
-                </p>
-
-                <div className="hero-buttons flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                  <Link href="#products">
-                    <Button size="lg" className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 group">
-                      <ShoppingCart className="mr-2 h-5 w-5 group-hover:animate-bounce" />
-                      Shop Products
-                      <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                    </Button>
-                  </Link>
-                  <Link href="#about">
-                    <Button variant="outline" size="lg" className="border-2 border-green-200 dark:border-green-700 hover:bg-green-50 dark:hover:bg-green-900/30 hover:border-green-400 dark:hover:border-green-500 hover:text-green-700 dark:hover:text-green-300 dark:text-gray-200 transition-all duration-300 hover:scale-105 group">
-                      <Play className="mr-2 h-5 w-5 group-hover:scale-110" />
-                      Learn More
-                    </Button>
-                  </Link>
-                </div>
-
-                <div className="hero-element flex items-center justify-center lg:justify-start space-x-8 pt-4">
-                  <div className="flex items-center space-x-2">
-                    <Star className="h-5 w-5 text-yellow-400 dark:text-yellow-300 fill-current" />
-                    <span className="text-gray-700 dark:text-gray-300 font-medium">4.9/5 Rating</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Users className="h-5 w-5 text-green-600 dark:text-green-400" />
-                    <span className="text-gray-700 dark:text-gray-300 font-medium">500+ Happy Customers</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Award className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                    <span className="text-gray-700 dark:text-gray-300 font-medium">Award Winning</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="relative hero-element">
-                <div className="relative z-10">
-                  <div className="bg-gradient-to-br from-green-100 to-emerald-100 rounded-3xl p-8 shadow-2xl transform hover:scale-105 transition-transform duration-300">
-                    <div className="aspect-square bg-gradient-to-br from-green-200 to-emerald-200 rounded-2xl flex items-center justify-center">
-                      <div className="text-center space-y-4">
-                        <Sun className="h-32 w-32 text-yellow-500 animate-pulse" />
-                        <div className="flex space-x-2 justify-center">
-                          <Battery className="h-16 w-16 text-green-600 animate-bounce" />
-                          <Zap className="h-16 w-16 text-blue-600 animate-pulse" />
-                          <Leaf className="h-16 w-16 text-emerald-600 animate-bounce" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="absolute -top-4 -right-4 w-24 h-24 bg-gradient-to-br from-yellow-200 to-orange-200 rounded-full opacity-60 animate-pulse"></div>
-                <div className="absolute -bottom-4 -left-4 w-32 h-32 bg-gradient-to-br from-blue-200 to-cyan-200 rounded-full opacity-60 animate-pulse animation-delay-2000"></div>
-              </div>
+      <div className="relative bg-gradient-to-br from-green-600 to-emerald-700 text-white">
+        <div className="container mx-auto px-4 py-20">
+          <div className="max-w-4xl mx-auto text-center">
+            <Badge className="mb-4 bg-white/20 text-white hover:bg-white/30">
+              🌱 Eco-Friendly Energy Solutions
+            </Badge>
+            <h1 className="text-4xl md:text-6xl font-bold mb-6">
+              Power Your Future with Clean Energy
+            </h1>
+            <p className="text-xl mb-8 max-w-2xl mx-auto text-green-100">
+              Discover our premium range of solar panels, batteries, and renewable energy solutions designed for a sustainable tomorrow.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button size="lg" className="bg-white text-green-700 hover:bg-green-50">
+                Shop All Products
+                <ChevronRight className="ml-2 h-5 w-5" />
+              </Button>
+              <Button variant="outline" size="lg" className="bg-transparent border-white text-white hover:bg-white/10">
+                Installation Guide
+              </Button>
             </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* Animated Stats Section */}
-      <section ref={statsRef} className="py-20 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-green-600 via-emerald-600 to-cyan-600 dark:from-green-800 dark:via-emerald-800 dark:to-cyan-800"></div>
-        <div className="absolute inset-0 bg-black/20 dark:bg-black/40"></div>
-        <div className="container px-4 relative z-10">
-          <div className="grid md:grid-cols-4 gap-8 text-center text-white">
-            {stats.map((stat, index) => (
-              <div key={index} className="stat-item group">
-                <div className="bg-white/10 dark:bg-white/5 backdrop-blur-sm rounded-2xl p-6 hover:bg-white/20 dark:hover:bg-white/10 transition-all duration-300 hover:scale-105">
-                  <stat.icon className="h-12 w-12 mx-auto mb-4 text-yellow-300 dark:text-yellow-200 group-hover:animate-bounce" />
-                  <div className="text-4xl md:text-5xl font-bold mb-2">{stat.number}</div>
-                  <div className="text-green-100 dark:text-green-200 text-lg">{stat.label}</div>
+      {/* Categories Bar */}
+      <div className="bg-white shadow-sm">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between py-3 overflow-x-auto">
+            {featuredCategories.map((cat, index) => (
+              <Link
+                key={index}
+                href={cat.href}
+                className="flex flex-col items-center min-w-[80px] hover:opacity-75 transition-opacity"
+              >
+                <div className={`${cat.color} w-12 h-12 rounded-full flex items-center justify-center text-white mb-1`}>
+                  <cat.icon className="h-6 w-6" />
+                </div>
+                <span className="text-xs font-medium text-center">{cat.name}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Main Banners */}
+      <div className="container mx-auto px-4 py-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {banners.map((banner, index) => (
+            <Card key={index} className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
+              <div className={`bg-gradient-to-br ${banner.color} p-6 h-40 flex flex-col justify-between text-white`}>
+                <div>
+                  <h3 className="text-2xl font-bold mb-1">{banner.title}</h3>
+                  <p className="text-sm opacity-90">{banner.subtitle}</p>
+                </div>
+                <Button variant="secondary" size="sm" className="w-fit">
+                  Shop Now <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      {/* Features Bar */}
+      <div className="bg-white border-y">
+        <div className="container mx-auto px-4 py-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {features.map((feature, index) => (
+              <div key={index} className="flex items-center gap-3">
+                <feature.icon className="h-8 w-8 text-green-600" />
+                <div>
+                  <p className="font-semibold text-sm">{feature.title}</p>
+                  <p className="text-xs text-gray-600">{feature.description}</p>
                 </div>
               </div>
             ))}
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* Features Section */}
-      <section ref={featuresRef} className="py-20 bg-white dark:bg-gray-900 relative overflow-hidden">
-        <div className="container px-4">
-          <div className="text-center mb-16">
-            <Badge className="mb-4 bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/50 dark:to-emerald-900/50 text-green-800 dark:text-green-200 border-green-200 dark:border-green-700">
-              <Lightbulb className="h-4 w-4 mr-2" />
-              Why Choose Us
-            </Badge>
-            <h2 className="text-3xl md:text-5xl font-bold mb-6">
-              <span className="bg-gradient-to-r from-green-600 to-emerald-600 dark:from-green-400 dark:to-emerald-400 bg-clip-text text-transparent">
-                Why Choose Green Energy Solutions?
-              </span>
-            </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-              We provide cutting-edge renewable energy solutions with unmatched quality and service for a sustainable future.
-            </p>
-          </div>
+      {/* Top Deals Section */}
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            <Zap className="h-6 w-6 text-yellow-500" />
+            Top Deals
+          </h2>
+          <Link href="/products?deals=true">
+            <Button variant="link" className="text-blue-600">
+              View All <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </Link>
+        </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            {features.map((feature, index) => (
-              <Card key={index} className="feature-card group hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border-0 bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900">
-                <CardHeader className="text-center pb-4">
-                  <div className={`w-20 h-20 bg-gradient-to-br ${feature.gradient} rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300`}>
-                    <feature.icon className="h-10 w-10 text-white" />
-                  </div>
-                  <CardTitle className="text-xl mb-2 group-hover:text-green-600 dark:group-hover:text-green-400 dark:text-gray-100 transition-colors">
-                    {feature.title}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="text-center">
-                  <CardDescription className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
-                    {feature.description}
-                  </CardDescription>
-                  <div className="flex flex-wrap justify-center gap-2">
-                    {feature.features.map((feat, i) => (
-                      <Badge key={i} variant="secondary" className="text-xs dark:bg-gray-700 dark:text-gray-200">
-                        <CheckCircle className="h-3 w-3 mr-1 text-green-500 dark:text-green-400" />
-                        {feat}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          {products.slice(0, 6).map((product) => (
+            <Link key={product.id} href={`/products/${product.slug}`}>
+              <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer">
+                <CardContent className="p-4">
+                  <div className="aspect-square relative mb-3 bg-gray-100 rounded-lg overflow-hidden">
+                    {product.images[0] && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={product.images[0]}
+                        alt={product.name}
+                        className="object-cover w-full h-full"
+                      />
+                    )}
+                    {product.comparePrice && (
+                      <Badge className="absolute top-2 left-2 bg-red-500">
+                        {Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)}% OFF
                       </Badge>
-                    ))}
+                    )}
+                  </div>
+                  <h3 className="font-semibold text-sm mb-2 line-clamp-2">{product.name}</h3>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-green-600 font-bold">₹{product.price.toLocaleString()}</span>
+                    {product.comparePrice && (
+                      <span className="text-gray-400 text-sm line-through">₹{product.comparePrice.toLocaleString()}</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1 text-xs">
+                    <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                    <span className="font-semibold">{product.rating || 4.5}</span>
+                    <span className="text-gray-500">({product.reviews || 128})</span>
                   </div>
                 </CardContent>
               </Card>
-            ))}
-          </div>
+            </Link>
+          ))}
         </div>
-      </section>
+      </div>
 
-      {/* Testimonials Section */}
-      <section ref={testimonialsRef} className="py-20 bg-gradient-to-br from-emerald-50 to-cyan-50">
-        <div className="container px-4">
-          <div className="text-center mb-16">
-            <Badge className="mb-4 bg-gradient-to-r from-emerald-100 to-cyan-100 text-emerald-800 border-emerald-200">
-              <Heart className="h-4 w-4 mr-2" />
-              Customer Stories
-            </Badge>
-            <h2 className="text-3xl md:text-5xl font-bold mb-6">
-              <span className="bg-gradient-to-r from-emerald-600 to-cyan-600 bg-clip-text text-transparent">
-                What Our Customers Say
-              </span>
+      {/* Trending Products Section */}
+      <div className="bg-white py-8">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold flex items-center gap-2">
+              <TrendingUp className="h-6 w-6 text-green-500" />
+              Trending Now
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Real stories from real customers who have transformed their lives with green energy
-            </p>
+            <Link href="/products">
+              <Button variant="link" className="text-blue-600">
+                View All <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </Link>
           </div>
 
-          <div className="max-w-4xl mx-auto">
-            <div className="relative">
-              <div className="testimonial-card bg-white rounded-3xl shadow-2xl p-8 md:p-12">
-                <div className="flex items-center mb-6">
-                  <div className="text-6xl mr-4">👨‍💼</div>
-                  <div>
-                    <h3 className="text-xl font-bold text-gray-900">Rajesh Kumar</h3>
-                    <p className="text-gray-600">Homeowner</p>
-                    <div className="flex items-center mt-1">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className="h-4 w-4 text-yellow-400 fill-current" />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <blockquote className="text-lg text-gray-700 italic leading-relaxed">
-                  &quot;Green Energy Solutions transformed my home with solar panels. I&apos;m saving 70% on my electricity bills!&quot;
-                </blockquote>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Products Section */}
-      <section id="products" ref={productsRef} className="py-20 bg-white dark:bg-gray-900">
-        <div className="container px-4">
-          <div className="text-center mb-16">
-            <Badge className="mb-4 bg-gradient-to-r from-green-100 to-emerald-100 dark:from-green-900/50 dark:to-emerald-900/50 text-green-800 dark:text-green-200 border-green-200 dark:border-green-700">
-              <Sparkles className="h-4 w-4 mr-2" />
-              Featured Products
-            </Badge>
-            <h2 className="text-3xl md:text-5xl font-bold mb-6">
-              <span className="bg-gradient-to-r from-green-600 to-emerald-600 dark:from-green-400 dark:to-emerald-400 bg-clip-text text-transparent">
-                Best Selling Products
-              </span>
-            </h2>
-            <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-              Explore our top-rated products that are making a difference in the world.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {products.map((product) => (
-              <Card key={product.id} className="product-card overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 group bg-white dark:bg-gray-800">
-                <div className="relative aspect-square overflow-hidden">
-                  <img
-                    src={product.images[0]}
-                    alt={product.name}
-                    className="object-cover w-full h-full transform group-hover:scale-110 transition-transform duration-500"
-                  />
-                  <div className="absolute top-4 right-4">
-                    <Badge className="bg-green-500 hover:bg-green-600">New</Badge>
-                  </div>
-                </div>
-                <CardHeader>
-                  <div className="text-sm text-green-600 dark:text-green-400 font-medium mb-2">{product.category.name}</div>
-                  <CardTitle className="text-lg line-clamp-2 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
-                    {product.name}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex flex-col">
-                      <span className="text-2xl font-bold text-gray-900 dark:text-white">₹{product.price.toLocaleString()}</span>
-                      {product.comparePrice && (
-                        <span className="text-sm text-gray-500 line-through">₹{product.comparePrice.toLocaleString()}</span>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {products.slice(6, 16).map((product) => (
+              <Link key={product.id} href={`/products/${product.slug}`}>
+                <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer">
+                  <CardContent className="p-3">
+                    <div className="aspect-square relative mb-2 bg-gray-100 rounded-lg overflow-hidden">
+                      {product.images[0] && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={product.images[0]}
+                          alt={product.name}
+                          className="object-cover w-full h-full"
+                        />
                       )}
                     </div>
-                  </div>
-                  <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
-                    <ShoppingCart className="w-4 h-4 mr-2" />
-                    Add to Cart
-                  </Button>
-                </CardContent>
-              </Card>
+                    <h3 className="font-medium text-sm mb-1 line-clamp-2">{product.name}</h3>
+                    <div className="text-green-600 font-bold text-sm">₹{product.price.toLocaleString()}</div>
+                    <Badge variant="secondary" className="mt-2 text-xs">{product.category.name}</Badge>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
         </div>
-      </section>
+      </div>
+
+      {/* Categories Grid */}
+      <div className="container mx-auto px-4 py-8">
+        <h2 className="text-2xl font-bold mb-6">Shop by Category</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {categories.slice(0, 4).map((category) => (
+            <Card key={category.id} className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
+              <div className="bg-gradient-to-br from-gray-100 to-gray-200 p-6 h-32 flex flex-col justify-center items-center">
+                <div className="bg-white p-3 rounded-full mb-2">
+                  <Leaf className="h-6 w-6 text-green-600" />
+                </div>
+                <h3 className="text-lg font-semibold text-center">{category.name}</h3>
+              </div>
+              <CardContent className="p-4">
+                <Link href={`/products?category=${category.slug}`}>
+                  <Button variant="outline" size="sm" className="w-full">
+                    Explore <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
 
       {/* CTA Section */}
-      <section ref={ctaRef} className="py-20 bg-gradient-to-br from-green-900 to-emerald-900 text-white relative overflow-hidden">
-        <div className="absolute inset-0">
-          <div className="absolute top-0 left-0 w-full h-full bg-[url('https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?auto=format&fit=crop&q=80')] bg-cover bg-center opacity-10 mix-blend-overlay"></div>
-        </div>
-        <div className="container px-4 relative z-10 text-center">
-          <div className="cta-element mb-8">
-            <h2 className="text-4xl md:text-6xl font-bold mb-6">Ready to Switch to Green Energy?</h2>
-            <p className="text-xl md:text-2xl text-green-100 max-w-3xl mx-auto">
-              Join thousands of satisfied customers who are making a positive impact on the environment while saving money.
-            </p>
-          </div>
-          <div className="cta-element flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/contact">
-              <Button size="lg" className="bg-white text-green-900 hover:bg-green-50 text-lg px-8 py-6">
-                Get a Quote
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </Link>
-            <Link href="/products">
-              <Button variant="outline" size="lg" className="border-2 border-white text-white hover:bg-white/10 text-lg px-8 py-6">
-                View All Products
-              </Button>
-            </Link>
+      <div className="bg-gradient-to-br from-green-600 to-emerald-700 text-white py-16">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to Make the Switch to Green Energy?</h2>
+          <p className="text-xl mb-8 max-w-2xl mx-auto text-green-100">
+            Join thousands of satisfied customers who are reducing their carbon footprint while saving money.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button size="lg" className="bg-white text-green-700 hover:bg-green-50">
+              Get a Free Consultation
+            </Button>
+            <Button variant="outline" size="lg" className="bg-transparent border-white text-white hover:bg-white/10">
+              Contact Sales
+            </Button>
           </div>
         </div>
-      </section>
+      </div>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white py-12">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div>
+              <h3 className="text-2xl font-bold text-green-400 mb-4">GreenEnergy</h3>
+              <p className="text-gray-400 mb-4">
+                Providing sustainable energy solutions for homes and businesses since 2015.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4">Products</h4>
+              <ul className="space-y-2 text-gray-400">
+                <li><Link href="/products/solar-panels" className="hover:text-white">Solar Panels</Link></li>
+                <li><Link href="/products/batteries" className="hover:text-white">Batteries</Link></li>
+                <li><Link href="/products/accessories" className="hover:text-white">Accessories</Link></li>
+                <li><Link href="/products" className="hover:text-white">All Products</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4">Company</h4>
+              <ul className="space-y-2 text-gray-400">
+                <li><Link href="/about" className="hover:text-white">About Us</Link></li>
+                <li><Link href="/contact" className="hover:text-white">Contact</Link></li>
+                <li><Link href="/blog" className="hover:text-white">Blog</Link></li>
+                <li><Link href="/careers" className="hover:text-white">Careers</Link></li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4">Support</h4>
+              <ul className="space-y-2 text-gray-400">
+                <li><Link href="/support" className="hover:text-white">Help Center</Link></li>
+                <li><Link href="/warranty" className="hover:text-white">Warranty</Link></li>
+                <li><Link href="/returns" className="hover:text-white">Returns</Link></li>
+                <li><Link href="/shipping" className="hover:text-white">Shipping</Link></li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+            <p>&copy; {new Date().getFullYear()} Green Energy Solutions. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
