@@ -9,7 +9,7 @@ interface TemplateRendererProps {
 }
 
 const templateComponents: Record<string, any> = {
-  default: lazy(() => import('@/app/page')),
+  default: lazy(() => import('@/app/templates/default/page')),
   flipkart: lazy(() => import('@/app/templates/flipkart/page')),
   neomorphic: lazy(() => import('@/app/templates/neomorphic/page')),
 };
