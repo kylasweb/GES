@@ -1,13 +1,19 @@
-import { AccelerateAdapter } from '@prisma/adapter-accelerate'
-import { PrismaClient } from '@prisma/client'
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const { PrismaClient } = require('@prisma/client');
 
 // For direct database connection
-export const databaseUrl = process.env.DATABASE_URL
+export const databaseUrl = process.env.DATABASE_URL;
 
-// For Prisma Accelerate (if using)
-export const accelerateUrl = process.env.ACCELERATE_URL
+// Default export for compatibility
+export default {
+    databaseUrl
+};
 
 // You can also export a pre-configured client if needed
-// export const prisma = new PrismaClient({
-//   adapter: databaseUrl ? new AccelerateAdapter(databaseUrl) : undefined,
-// })
+// exports.prisma = new PrismaClient({
+//   datasources: {
+//     db: {
+//       url: databaseUrl,
+//     },
+//   },
+// });
