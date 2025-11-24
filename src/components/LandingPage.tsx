@@ -18,9 +18,7 @@ import {
   Leaf,
   Sun,
   Battery,
-  Wrench,
-  Menu,
-  X
+  Wrench
 } from 'lucide-react';
 
 interface Product {
@@ -30,7 +28,11 @@ interface Product {
   price: number;
   comparePrice?: number;
   images: string[];
-  category: { name: string };
+  category: { 
+    id: string;
+    name: string;
+    slug: string;
+  };
   rating?: number;
   reviews?: number;
 }
@@ -40,6 +42,7 @@ interface Deal {
   name: string;
   discount: number;
   productId: string;
+  product?: Product;
 }
 
 interface Category {
@@ -48,35 +51,42 @@ interface Category {
   slug: string;
 }
 
+interface SiteSettings {
+  id?: string;
+  siteName?: string;
+  logo?: string;
+  favicon?: string;
+  maintenanceMode?: boolean;
+  config?: any;
+  activeTemplate?: any;
+}
+
 export function LandingPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [deals, setDeals] = useState<Deal[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>({});
   const [isLoading, setIsLoading] = useState(true);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [productsRes, dealsRes, categoriesRes] = await Promise.all([
-          fetch('/api/v1/products?featured=true&limit=20'),
-          fetch('/api/v1/deals/active'),
-          fetch('/api/v1/categories?limit=8')
-        ]);
-
-        if (productsRes.ok) {
-          const data = await productsRes.json();
-          setProducts(data.data?.products || data.products || []);
+        // Fetch landing data
+        const landingRes = await fetch('/api/v1/landing-data');
+        
+        // Fetch site settings (logo, site name, etc.)
+        const settingsRes = await fetch('/api/v1/settings/site');
+        
+        if (landingRes.ok) {
+          const landingData = await landingRes.json();
+          setProducts(landingData.products || []);
+          setDeals(landingData.deals || []);
+          setCategories(landingData.categories || []);
         }
-
-        if (dealsRes.ok) {
-          const data = await dealsRes.json();
-          setDeals(data.deals || []);
-        }
-
-        if (categoriesRes.ok) {
-          const data = await categoriesRes.json();
-          setCategories(data.data?.categories || data.categories || []);
+        
+        if (settingsRes.ok) {
+          const settingsData = await settingsRes.json();
+          setSiteSettings(settingsData);
         }
       } catch (error) {
         console.error('Failed to fetch data:', error);
@@ -102,16 +112,19 @@ export function LandingPage() {
       title: 'Mega Solar Sale',
       subtitle: 'Up to 50% OFF on Solar Panels',
       color: 'from-yellow-400 to-orange-500',
+      href: '/products/solar-panels'
     },
     {
       title: 'Battery Bonanza',
       subtitle: 'Extra 30% OFF on all Batteries',
       color: 'from-blue-400 to-cyan-500',
+      href: '/products/batteries'
     },
     {
       title: 'Green Friday Deals',
       subtitle: 'Massive discounts on everything',
       color: 'from-green-400 to-emerald-500',
+      href: '/products?deals=true'
     }
   ];
 
@@ -144,65 +157,27 @@ export function LandingPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <Link href="/" className="text-2xl font-bold text-green-600">
-                GreenEnergy
-              </Link>
-            </div>
-            
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center space-x-8">
-              <Link href="/products" className="text-gray-700 hover:text-green-600 font-medium">Products</Link>
-              <Link href="/categories" className="text-gray-700 hover:text-green-600 font-medium">Categories</Link>
-              <Link href="/deals" className="text-gray-700 hover:text-green-600 font-medium">Deals</Link>
-              <Link href="/about" className="text-gray-700 hover:text-green-600 font-medium">About</Link>
-              <Link href="/contact" className="text-gray-700 hover:text-green-600 font-medium">Contact</Link>
-            </nav>
-            
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="icon">
-                <ShoppingCart className="h-6 w-6" />
-              </Button>
-              <Button className="bg-green-600 hover:bg-green-700 hidden md:flex">
-                Sign In
-              </Button>
-              
-              {/* Mobile menu button */}
-              <button 
-                className="md:hidden"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              >
-                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-              </button>
-            </div>
-          </div>
-          
-          {/* Mobile Navigation */}
-          {mobileMenuOpen && (
-            <div className="md:hidden py-4 border-t">
-              <div className="flex flex-col space-y-3">
-                <Link href="/products" className="text-gray-700 hover:text-green-600 font-medium">Products</Link>
-                <Link href="/categories" className="text-gray-700 hover:text-green-600 font-medium">Categories</Link>
-                <Link href="/deals" className="text-gray-700 hover:text-green-600 font-medium">Deals</Link>
-                <Link href="/about" className="text-gray-700 hover:text-green-600 font-medium">About</Link>
-                <Link href="/contact" className="text-gray-700 hover:text-green-600 font-medium">Contact</Link>
-                <Button className="bg-green-600 hover:bg-green-700 w-full">
-                  Sign In
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-      </header>
-
       {/* Hero Section */}
       <div className="relative bg-gradient-to-br from-green-600 to-emerald-700 text-white">
-        <div className="container mx-auto px-4 py-20">
+        <div className="container mx-auto px-4 py-16 md:py-20">
           <div className="max-w-4xl mx-auto text-center">
+            {/* Logo Area */}
+            <div className="flex justify-center mb-6">
+              <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 inline-flex">
+                <div className="bg-white rounded-xl p-3 shadow-lg">
+                  {siteSettings.logo || (siteSettings.config && siteSettings.config.logo) ? (
+                    <img 
+                      src={siteSettings.logo || siteSettings.config.logo} 
+                      alt={siteSettings.siteName || "Green Energy Solutions"} 
+                      className="h-12 w-12 object-contain"
+                    />
+                  ) : (
+                    <Leaf className="h-12 w-12 text-green-600" />
+                  )}
+                </div>
+              </div>
+            </div>
+            
             <Badge className="mb-4 bg-white/20 text-white hover:bg-white/30">
               🌱 Eco-Friendly Energy Solutions
             </Badge>
@@ -213,13 +188,17 @@ export function LandingPage() {
               Discover our premium range of solar panels, batteries, and renewable energy solutions designed for a sustainable tomorrow.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" className="bg-white text-green-700 hover:bg-green-50">
-                Shop All Products
-                <ChevronRight className="ml-2 h-5 w-5" />
-              </Button>
-              <Button variant="outline" size="lg" className="bg-transparent border-white text-white hover:bg-white/10">
-                Installation Guide
-              </Button>
+              <Link href="/products">
+                <Button size="lg" className="bg-white text-green-700 hover:bg-green-50">
+                  Shop All Products
+                  <ChevronRight className="ml-2 h-5 w-5" />
+                </Button>
+              </Link>
+              <Link href="/about">
+                <Button variant="outline" size="lg" className="bg-transparent border-white text-white hover:bg-white/10">
+                  Installation Guide
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -249,17 +228,19 @@ export function LandingPage() {
       <div className="container mx-auto px-4 py-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {banners.map((banner, index) => (
-            <Card key={index} className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
-              <div className={`bg-gradient-to-br ${banner.color} p-6 h-40 flex flex-col justify-between text-white`}>
-                <div>
-                  <h3 className="text-2xl font-bold mb-1">{banner.title}</h3>
-                  <p className="text-sm opacity-90">{banner.subtitle}</p>
+            <Link key={index} href={banner.href} className="block">
+              <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow h-full">
+                <div className={`bg-gradient-to-br ${banner.color} p-6 h-40 flex flex-col justify-between text-white`}>
+                  <div>
+                    <h3 className="text-2xl font-bold mb-1">{banner.title}</h3>
+                    <p className="text-sm opacity-90">{banner.subtitle}</p>
+                  </div>
+                  <Button variant="secondary" size="sm" className="w-fit">
+                    Shop Now <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
                 </div>
-                <Button variant="secondary" size="sm" className="w-fit">
-                  Shop Now <ChevronRight className="h-4 w-4 ml-1" />
-                </Button>
-              </div>
-            </Card>
+              </Card>
+            </Link>
           ))}
         </div>
       </div>
@@ -301,7 +282,7 @@ export function LandingPage() {
               <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer">
                 <CardContent className="p-4">
                   <div className="aspect-square relative mb-3 bg-gray-100 rounded-lg overflow-hidden">
-                    {product.images[0] && (
+                    {product.images && product.images[0] && (
                       <img
                         src={product.images[0]}
                         alt={product.name}
@@ -354,7 +335,7 @@ export function LandingPage() {
                 <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer">
                   <CardContent className="p-3">
                     <div className="aspect-square relative mb-2 bg-gray-100 rounded-lg overflow-hidden">
-                      {product.images[0] && (
+                      {product.images && product.images[0] && (
                         <img
                           src={product.images[0]}
                           alt={product.name}
@@ -364,7 +345,7 @@ export function LandingPage() {
                     </div>
                     <h3 className="font-medium text-sm mb-1 line-clamp-2">{product.name}</h3>
                     <div className="text-green-600 font-bold text-sm">₹{product.price.toLocaleString()}</div>
-                    <Badge variant="secondary" className="mt-2 text-xs">{product.category.name}</Badge>
+                    <Badge variant="secondary" className="mt-2 text-xs">{product.category?.name || 'Uncategorized'}</Badge>
                   </CardContent>
                 </Card>
               </Link>
@@ -405,59 +386,19 @@ export function LandingPage() {
             Join thousands of satisfied customers who are reducing their carbon footprint while saving money.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="bg-white text-green-700 hover:bg-green-50">
-              Get a Free Consultation
-            </Button>
-            <Button variant="outline" size="lg" className="bg-transparent border-white text-white hover:bg-white/10">
-              Contact Sales
-            </Button>
+            <Link href="/contact">
+              <Button size="lg" className="bg-white text-green-700 hover:bg-green-50">
+                Get a Free Consultation
+              </Button>
+            </Link>
+            <Link href="/contact">
+              <Button variant="outline" size="lg" className="bg-transparent border-white text-white hover:bg-white/10">
+                Contact Sales
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
-
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <h3 className="text-2xl font-bold text-green-400 mb-4">GreenEnergy</h3>
-              <p className="text-gray-400 mb-4">
-                Providing sustainable energy solutions for homes and businesses since 2015.
-              </p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Products</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link href="/products/solar-panels" className="hover:text-white">Solar Panels</Link></li>
-                <li><Link href="/products/batteries" className="hover:text-white">Batteries</Link></li>
-                <li><Link href="/products/accessories" className="hover:text-white">Accessories</Link></li>
-                <li><Link href="/products" className="hover:text-white">All Products</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Company</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link href="/about" className="hover:text-white">About Us</Link></li>
-                <li><Link href="/contact" className="hover:text-white">Contact</Link></li>
-                <li><Link href="/blog" className="hover:text-white">Blog</Link></li>
-                <li><Link href="/careers" className="hover:text-white">Careers</Link></li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Support</h4>
-              <ul className="space-y-2 text-gray-400">
-                <li><Link href="/support" className="hover:text-white">Help Center</Link></li>
-                <li><Link href="/warranty" className="hover:text-white">Warranty</Link></li>
-                <li><Link href="/returns" className="hover:text-white">Returns</Link></li>
-                <li><Link href="/shipping" className="hover:text-white">Shipping</Link></li>
-              </ul>
-            </div>
-          </div>
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; {new Date().getFullYear()} Green Energy Solutions. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

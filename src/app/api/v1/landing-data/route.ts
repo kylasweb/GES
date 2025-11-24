@@ -41,7 +41,30 @@ export async function GET() {
             })
         ]);
 
-        const landingData = { categories, products, deals };
+        // Fetch product details for each deal (similar to the active deals API)
+        const dealsWithProducts = await Promise.all(
+            deals.map(async (deal) => {
+                const product = await db.product.findUnique({
+                    where: { id: deal.productId },
+                    select: {
+                        id: true,
+                        name: true,
+                        slug: true,
+                        price: true,
+                        images: true,
+                        category: {
+                            select: {
+                                name: true,
+                                slug: true,
+                            },
+                        },
+                    },
+                });
+                return { ...deal, product };
+            })
+        );
+
+        const landingData = { categories, products, deals: dealsWithProducts };
 
         // Update cache
         cachedData = landingData;
