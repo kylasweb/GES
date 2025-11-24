@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client'
-import config from '../../prisma.config'
+import config from '../../prisma.config.js'
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
