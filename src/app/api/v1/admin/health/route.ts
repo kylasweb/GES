@@ -50,6 +50,20 @@ export async function GET(request: NextRequest) {
         const overallStatus = allStatuses.includes('down') ? 'unhealthy' :
             allStatuses.includes('degraded') ? 'degraded' : 'healthy';
 
+        // Log health check results in production
+        if (process.env.NODE_ENV === 'production') {
+            console.log('Health Check Results:', {
+                timestamp: new Date().toISOString(),
+                overallStatus,
+                services: {
+                    database: databaseHealth.status,
+                    payment: paymentHealth.status,
+                    email: emailHealth.status,
+                    storage: storageHealth.status,
+                }
+            });
+        }
+
         // Response
         return NextResponse.json({
             success: true,
@@ -86,6 +100,16 @@ export async function GET(request: NextRequest) {
         });
     } catch (error) {
         console.error('Health check error:', error);
+
+        // Log error details in production
+        if (process.env.NODE_ENV === 'production') {
+            console.error('Health check failed in production:', {
+                error: error instanceof Error ? error.message : 'Unknown error',
+                stack: error instanceof Error ? error.stack : undefined,
+                timestamp: new Date().toISOString()
+            });
+        }
+
         return NextResponse.json(
             {
                 success: false,

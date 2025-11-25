@@ -18,6 +18,14 @@ export async function checkPaymentGateway(): Promise<HealthCheckResult> {
         const missingVars = requiredVars.filter(v => !process.env[v]);
 
         if (missingVars.length > 0) {
+            // Log warning in production
+            if (process.env.NODE_ENV === 'production') {
+                console.warn('PhonePe configuration incomplete in production:', {
+                    missingVars,
+                    timestamp: new Date().toISOString()
+                });
+            }
+
             return {
                 status: 'down',
                 responseTime: Date.now() - startTime,
@@ -41,6 +49,14 @@ export async function checkPaymentGateway(): Promise<HealthCheckResult> {
             details: `PhonePe configured (${isProduction ? 'Production' : 'Test'} mode)`,
         };
     } catch (error) {
+        // Log error in production
+        if (process.env.NODE_ENV === 'production') {
+            console.error('Payment gateway health check failed:', {
+                error: error instanceof Error ? error.message : 'Unknown error',
+                timestamp: new Date().toISOString()
+            });
+        }
+
         return {
             status: 'down',
             responseTime: Date.now() - startTime,

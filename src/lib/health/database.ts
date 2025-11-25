@@ -31,6 +31,14 @@ export async function checkDatabase(): Promise<HealthCheckResult> {
             details: `Connected to PostgreSQL. ${userCount} users in database.`,
         };
     } catch (error) {
+        // Log error in production
+        if (process.env.NODE_ENV === 'production') {
+            console.error('Database health check failed:', {
+                error: error instanceof Error ? error.message : 'Unknown error',
+                timestamp: new Date().toISOString()
+            });
+        }
+
         return {
             status: 'down',
             responseTime: Date.now() - startTime,
@@ -82,6 +90,15 @@ export async function checkDatabasePerformance(): Promise<{
         return { simple, complex, write };
     } catch (error) {
         console.error('Database performance check failed:', error);
+
+        // Log error in production
+        if (process.env.NODE_ENV === 'production') {
+            console.error('Database performance check failed in production:', {
+                error: error instanceof Error ? error.message : 'Unknown error',
+                timestamp: new Date().toISOString()
+            });
+        }
+
         return { simple: -1, complex: -1, write: -1 };
     }
 }

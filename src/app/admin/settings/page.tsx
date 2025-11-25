@@ -115,7 +115,7 @@ export default function SettingsPage() {
         },
         security: {
             twoFactorAuth: false,
-            sessionTimeout: 30,
+            sessionTimeout: 120, // Increased from 30 to 120 minutes for better admin experience
             passwordPolicy: 'strong',
             ipWhitelist: []
         }

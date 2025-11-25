@@ -13,6 +13,16 @@ export async function checkEmailService(): Promise<HealthCheckResult> {
         const settings = await db.siteSettings.findFirst();
 
         if (!settings?.smtpHost || !settings?.smtpUser || !settings?.smtpPassword) {
+            // Log warning in production
+            if (process.env.NODE_ENV === 'production') {
+                console.warn('SMTP not configured in production settings:', {
+                    hasHost: !!settings?.smtpHost,
+                    hasUser: !!settings?.smtpUser,
+                    hasPassword: !!settings?.smtpPassword,
+                    timestamp: new Date().toISOString()
+                });
+            }
+
             return {
                 status: 'down',
                 responseTime: Date.now() - startTime,
@@ -45,6 +55,14 @@ export async function checkEmailService(): Promise<HealthCheckResult> {
             details: `SMTP connected to ${settings.smtpHost}:${settings.smtpPort}`,
         };
     } catch (error) {
+        // Log error in production
+        if (process.env.NODE_ENV === 'production') {
+            console.error('Email service health check failed:', {
+                error: error instanceof Error ? error.message : 'Unknown error',
+                timestamp: new Date().toISOString()
+            });
+        }
+
         return {
             status: 'down',
             responseTime: Date.now() - startTime,
@@ -78,6 +96,14 @@ export async function getEmailServiceDetails() {
             from: settings.smtpFromEmail || settings.smtpUser,
         };
     } catch (error) {
+        // Log error in production
+        if (process.env.NODE_ENV === 'production') {
+            console.error('Failed to fetch email service details in production:', {
+                error: error instanceof Error ? error.message : 'Unknown error',
+                timestamp: new Date().toISOString()
+            });
+        }
+
         return {
             configured: false,
             error: 'Failed to fetch settings',

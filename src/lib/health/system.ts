@@ -53,6 +53,14 @@ export function checkSystemHealth() {
     const memoryStatus = metrics.memory.percentage > 90 ? 'critical' :
         metrics.memory.percentage > 75 ? 'warning' : 'healthy';
 
+    // Log warnings in production
+    if (process.env.NODE_ENV === 'production' && memoryStatus !== 'healthy') {
+        console.warn(`System memory usage high: ${metrics.memory.percentage}%`, {
+            memoryMetrics: metrics.memory,
+            timestamp: new Date().toISOString()
+        });
+    }
+
     return {
         status: memoryStatus,
         metrics,

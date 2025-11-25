@@ -39,6 +39,14 @@ export async function checkStorage(): Promise<HealthCheckResult> {
             details: 'Read/write test passed',
         };
     } catch (error) {
+        // Log error in production
+        if (process.env.NODE_ENV === 'production') {
+            console.error('Storage health check failed:', {
+                error: error instanceof Error ? error.message : 'Unknown error',
+                timestamp: new Date().toISOString()
+            });
+        }
+
         return {
             status: 'down',
             responseTime: Date.now() - startTime,
@@ -64,6 +72,14 @@ export async function getStorageDetails() {
             path: publicDir,
         };
     } catch (error) {
+        // Log error in production
+        if (process.env.NODE_ENV === 'production') {
+            console.error('Failed to access storage in production:', {
+                error: error instanceof Error ? error.message : 'Unknown error',
+                timestamp: new Date().toISOString()
+            });
+        }
+
         return {
             accessible: false,
             error: 'Failed to access storage',
