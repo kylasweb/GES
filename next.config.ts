@@ -8,14 +8,17 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Enable standalone output for custom server deployment
-  output: 'standalone',
   // Vercel-specific configurations
   poweredByHeader: false,
   // Ensure trailing slashes are handled correctly
   trailingSlash: false,
   // Enable compression
   compress: true,
+  // Enable experimental features
+  experimental: {
+    optimizeCss: true,
+    webpackBuildWorker: true,
+  },
 };
 
 export default nextConfig;
