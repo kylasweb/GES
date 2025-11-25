@@ -152,11 +152,11 @@ export function LandingPage() {
   ];
 
   if (isLoading) {
-    return <div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>;
+    return <div className="bg-gray-50 flex items-center justify-center">Loading...</div>;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="bg-gray-50">
       {/* Hero Section */}
       <div className="relative bg-gradient-to-br from-green-600 to-emerald-700 text-white">
         <div className="container mx-auto px-4 py-16 md:py-20">
@@ -189,14 +189,16 @@ export function LandingPage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/products">
-                <Button size="lg" className="bg-white text-green-700 hover:bg-green-50">
-                  Shop All Products
-                  <ChevronRight className="ml-2 h-5 w-5" />
+                <Button asChild size="lg" className="bg-white text-green-700 hover:bg-green-50">
+                  <span>
+                    Shop All Products
+                    <ChevronRight className="ml-2 h-5 w-5" />
+                  </span>
                 </Button>
               </Link>
               <Link href="/about">
-                <Button variant="outline" size="lg" className="bg-transparent border-white text-white hover:bg-white/10">
-                  Installation Guide
+                <Button asChild variant="outline" size="lg" className="bg-transparent border-white text-white hover:bg-white/10">
+                  <span>Installation Guide</span>
                 </Button>
               </Link>
             </div>
@@ -387,13 +389,13 @@ export function LandingPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/contact">
-              <Button size="lg" className="bg-white text-green-700 hover:bg-green-50">
-                Get a Free Consultation
+              <Button asChild size="lg" className="bg-white text-green-700 hover:bg-green-50">
+                <span>Get a Free Consultation</span>
               </Button>
             </Link>
             <Link href="/contact">
-              <Button variant="outline" size="lg" className="bg-transparent border-white text-white hover:bg-white/10">
-                Contact Sales
+              <Button asChild variant="outline" size="lg" className="bg-transparent border-white text-white hover:bg-white/10">
+                <span>Contact Sales</span>
               </Button>
             </Link>
           </div>
