@@ -5,14 +5,14 @@ import { Server } from 'socket.io';
 import next from 'next';
 
 const dev = process.env.NODE_ENV !== 'production';
-const currentPort = 3000;
-const hostname = '0.0.0.0';
+const currentPort = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+const hostname = process.env.HOSTNAME || '0.0.0.0';
 
 // Custom server with Socket.IO integration
 async function createCustomServer() {
   try {
     // Create Next.js app
-    const nextApp = next({ 
+    const nextApp = next({
       dev,
       dir: process.cwd(),
       // In production, use the current directory where .next is located
@@ -54,5 +54,14 @@ async function createCustomServer() {
   }
 }
 
-// Start the server
-createCustomServer();
+// Only start the server if this file is being run directly (not imported)
+if (require.main === module) {
+  createCustomServer();
+}
+
+// Export for use with Vercel
+export default async function handler(req: any, res: any) {
+  // For Vercel, we just return a simple response
+  // Vercel handles Next.js routing automatically
+  res.status(200).json({ message: 'Server is running' });
+}
