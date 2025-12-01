@@ -448,7 +448,7 @@ export default function AdminDashboard() {
                                 <p className="font-semibold text-orange-600">{product.quantity} left</p>
                                 <p className="text-sm text-gray-600">Threshold: {product.lowStockThreshold}</p>
                               </div>
-                              <Link href={`/admin/inventory/${product.id}/restock`}>
+                              <Link href="/admin/inventory">
                                 <Button variant="outline" size="sm">
                                   Restock
                                 </Button>
