@@ -4,6 +4,7 @@ export async function GET() {
   return NextResponse.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    message: 'Application is running'
+    environment: process.env.NODE_ENV,
+    vercelRegion: process.env.VERCEL_REGION || 'local',
   });
 }
