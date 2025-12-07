@@ -12,7 +12,7 @@ function checkAdminRole(user: any, requiredRoles: string[] = ['SUPER_ADMIN']) {
 // GET - Get single media
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const token = request.headers.get('authorization')?.replace('Bearer ', '');
@@ -31,8 +31,9 @@ export async function GET(
             );
         }
 
+        const { id } = await params;
         const media = await db.media.findUnique({
-            where: { id: params.id },
+            where: { id },
         });
 
         if (!media) {
@@ -58,7 +59,7 @@ export async function GET(
 // PUT - Update media metadata
 export async function PUT(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const token = request.headers.get('authorization')?.replace('Bearer ', '');
@@ -77,6 +78,7 @@ export async function PUT(
             );
         }
 
+        const { id } = await params;
         const body = await request.json();
         const { alt, caption, folder, tags } = body;
 
@@ -87,7 +89,7 @@ export async function PUT(
         if (tags !== undefined) updateData.tags = Array.isArray(tags) ? tags : tags.split(',').map((t: string) => t.trim());
 
         const media = await db.media.update({
-            where: { id: params.id },
+            where: { id },
             data: updateData,
         });
 
@@ -107,7 +109,7 @@ export async function PUT(
 // DELETE - Delete single media
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const token = request.headers.get('authorization')?.replace('Bearer ', '');
@@ -126,8 +128,9 @@ export async function DELETE(
             );
         }
 
+        const { id } = await params;
         const media = await db.media.findUnique({
-            where: { id: params.id },
+            where: { id },
         });
 
         if (!media) {
@@ -152,12 +155,12 @@ export async function DELETE(
 
         // Delete from database
         await db.media.delete({
-            where: { id: params.id },
+            where: { id },
         });
 
         return NextResponse.json({
             success: true,
-            data: { id: params.id },
+            data: { id },
         });
     } catch (error) {
         console.error('Media delete error:', error);

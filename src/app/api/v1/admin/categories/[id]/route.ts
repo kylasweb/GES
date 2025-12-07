@@ -4,7 +4,7 @@ import { verifyAuth } from '@/lib/auth';
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const user = verifyAuth(request);
@@ -15,8 +15,9 @@ export async function GET(
             );
         }
 
+        const { id } = await params;
         const category = await db.category.findUnique({
-            where: { id: params.id },
+            where: { id },
             include: {
                 _count: {
                     select: {
@@ -48,7 +49,7 @@ export async function GET(
 
 export async function PUT(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const user = verifyAuth(request);
@@ -59,10 +60,11 @@ export async function PUT(
             );
         }
 
+        const { id } = await params;
         const body = await request.json();
 
         const category = await db.category.update({
-            where: { id: params.id },
+            where: { id },
             data: {
                 name: body.name,
                 slug: body.slug,
@@ -89,7 +91,7 @@ export async function PUT(
 
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const user = verifyAuth(request);
@@ -100,9 +102,11 @@ export async function DELETE(
             );
         }
 
+        const { id } = await params;
+
         // Check if category has products
         const productsCount = await db.product.count({
-            where: { categoryId: params.id },
+            where: { categoryId: id },
         });
 
         if (productsCount > 0) {
@@ -113,7 +117,7 @@ export async function DELETE(
         }
 
         await db.category.delete({
-            where: { id: params.id },
+            where: { id },
         });
 
         return NextResponse.json({

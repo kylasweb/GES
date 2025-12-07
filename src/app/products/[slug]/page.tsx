@@ -61,7 +61,7 @@ async function getProduct(slug: string) {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-    const { slug } = await params;
+    const { slug } = params;
     const product = await getProduct(slug);
 
     if (!product) {
@@ -83,7 +83,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function ProductPage({ params }: PageProps) {
-    const { slug } = await params;
+    const { slug } = params;
     const product = await getProduct(slug);
 
     if (!product) {

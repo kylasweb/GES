@@ -5,7 +5,7 @@ import { verifyAuth } from '@/lib/auth';
 // GET single feature flag
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const user = await verifyAuth(request);
@@ -16,8 +16,9 @@ export async function GET(
             );
         }
 
+        const { id } = await params;
         const flag = await prisma.featureFlag.findUnique({
-            where: { id: params.id }
+            where: { id }
         });
 
         if (!flag) {
@@ -43,7 +44,7 @@ export async function GET(
 // PUT update feature flag
 export async function PUT(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const user = await verifyAuth(request);
@@ -54,6 +55,7 @@ export async function PUT(
             );
         }
 
+        const { id } = await params;
         const body = await request.json();
         const { enabled, rollout, name, description, config } = body;
 
@@ -65,7 +67,7 @@ export async function PUT(
         if (config !== undefined) updateData.config = config;
 
         const flag = await prisma.featureFlag.update({
-            where: { id: params.id },
+            where: { id },
             data: updateData
         });
 
@@ -85,7 +87,7 @@ export async function PUT(
 // DELETE feature flag
 export async function DELETE(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const user = await verifyAuth(request);
@@ -96,8 +98,9 @@ export async function DELETE(
             );
         }
 
+        const { id } = await params;
         await prisma.featureFlag.delete({
-            where: { id: params.id }
+            where: { id }
         });
 
         return NextResponse.json({
