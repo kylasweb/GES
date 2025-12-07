@@ -16,6 +16,7 @@ import { MediaPicker } from '@/components/media-picker';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import '@/app/globals.css';
 
 interface ProductFormData {
     name: string;
