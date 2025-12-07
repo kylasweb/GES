@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Save, Package, Upload, X, Plus, ImageIcon, Sparkles } from 'lucide-react';
+import { ArrowLeft, Save, Package, Upload, X, Plus, ImageIcon, Sparkles, Wand2, FileText } from 'lucide-react';
 import { useAuthStore } from '@/lib/store/auth';
 import { AdminSidebar } from '@/components/admin/sidebar';
 import { MediaPicker } from '@/components/media-picker';
@@ -349,6 +349,131 @@ export default function NewProductPage() {
         }
     };
 
+    // Add AI generation states
+    const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
+    const [isGeneratingFeatures, setIsGeneratingFeatures] = useState(false);
+    
+    // Initialize Puter.js for AI functionality
+    const initPuter = () => {
+        if (typeof window !== 'undefined' && !window.puter) {
+            const script = document.createElement('script');
+            script.src = 'https://js.puter.com/v2/';
+            script.async = true;
+            document.head.appendChild(script);
+        }
+    };
+    
+    // Generate AI product description
+    const generateDescription = async () => {
+        if (!formData.name || !formData.categoryId) {
+            toast({
+                title: 'Missing Information',
+                description: 'Please enter a product name and select a category first.',
+                variant: 'destructive',
+            });
+            return;
+        }
+        
+        setIsGeneratingDescription(true);
+        initPuter();
+        
+        try {
+            // Get category name for better context
+            const categoryName = categories.find(cat => cat.id === formData.categoryId)?.name || '';
+            
+            const prompt = `Write a compelling product description for "${formData.name}" in the ${categoryName} category. Include key features, benefits, and a call-to-action. Keep it between 150-300 words and make it SEO-friendly.`;
+            
+            // Wait for Puter.js to load
+            let attempts = 0;
+            while (!window.puter && attempts < 50) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+            
+            if (!window.puter) {
+                throw new Error('Failed to load AI service');
+            }
+            
+            const response = await window.puter.ai.chat(prompt, { model: 'gpt-5-nano' });
+            const description = response.trim();
+            
+            setFormData(prev => ({
+                ...prev,
+                description
+            }));
+            
+            toast({
+                title: 'Success',
+                description: 'Product description generated successfully!',
+            });
+        } catch (error) {
+            console.error('Error generating description:', error);
+            toast({
+                title: 'Error',
+                description: 'Failed to generate description. Please try again.',
+                variant: 'destructive',
+            });
+        } finally {
+            setIsGeneratingDescription(false);
+        }
+    };
+    
+    // Generate AI product features
+    const generateFeatures = async () => {
+        if (!formData.name || !formData.categoryId) {
+            toast({
+                title: 'Missing Information',
+                description: 'Please enter a product name and select a category first.',
+                variant: 'destructive',
+            });
+            return;
+        }
+        
+        setIsGeneratingFeatures(true);
+        initPuter();
+        
+        try {
+            // Get category name for better context
+            const categoryName = categories.find(cat => cat.id === formData.categoryId)?.name || '';
+            
+            const prompt = `Generate 5-8 key features for "${formData.name}" in the ${categoryName} category. Return as a simple list with one feature per line, without numbering or bullet points.`;
+            
+            // Wait for Puter.js to load
+            let attempts = 0;
+            while (!window.puter && attempts < 50) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+            
+            if (!window.puter) {
+                throw new Error('Failed to load AI service');
+            }
+            
+            const response = await window.puter.ai.chat(prompt, { model: 'gpt-5-nano' });
+            const featuresText = response.trim();
+            const featuresArray = featuresText.split('\n').filter(feature => feature.trim() !== '');
+            
+            setFormData(prev => ({
+                ...prev,
+                features: featuresArray
+            }));
+            
+            toast({
+                title: 'Success',
+                description: 'Product features generated successfully!',
+            });
+        } catch (error) {
+            console.error('Error generating features:', error);
+            toast({
+                title: 'Error',
+                description: 'Failed to generate features. Please try again.',
+                variant: 'destructive',
+            });
+        } finally {
+            setIsGeneratingFeatures(false);
+        }
+    };
+
     return (
         <div className="flex min-h-screen bg-gray-50">
             <AdminSidebar />
@@ -453,9 +578,22 @@ export default function NewProductPage() {
                                         </div>
 
                                         <div>
-                                            <Label htmlFor="description" className="text-sm font-medium">
-                                                Description <span className="text-red-500">*</span>
-                                            </Label>
+                                            <div className="flex items-center justify-between">
+                                                <Label htmlFor="description" className="text-sm font-medium">
+                                                    Description <span className="text-red-500">*</span>
+                                                </Label>
+                                                <Button
+                                                    type="button"
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={generateDescription}
+                                                    disabled={isGeneratingDescription || !formData.name || !formData.categoryId}
+                                                    className="flex items-center gap-1"
+                                                >
+                                                    <Wand2 className="w-4 h-4" />
+                                                    {isGeneratingDescription ? 'Generating...' : 'AI Generate'}
+                                                </Button>
+                                            </div>
                                             <Textarea
                                                 id="description"
                                                 value={formData.description}
@@ -537,44 +675,55 @@ export default function NewProductPage() {
                                 </Card>
 
                                 {/* Features */}
-                                {formData.features && formData.features.length > 0 && (
-                                    <Card>
-                                        <CardHeader>
+                                <Card>
+                                    <CardHeader>
+                                        <div className="flex items-center justify-between">
                                             <CardTitle>Key Features</CardTitle>
-                                        </CardHeader>
-                                        <CardContent className="space-y-4">
-                                            <div className="flex space-x-2">
-                                                <Input
-                                                    placeholder="Enter a feature"
-                                                    value={newFeature}
-                                                    onChange={(e) => setNewFeature(e.target.value)}
-                                                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addFeature())}
-                                                />
-                                                <Button type="button" onClick={addFeature} variant="outline">
-                                                    <Plus className="w-4 h-4" />
-                                                </Button>
-                                            </div>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={generateFeatures}
+                                                disabled={isGeneratingFeatures || !formData.name || !formData.categoryId}
+                                                className="flex items-center gap-1"
+                                            >
+                                                <Wand2 className="w-4 h-4" />
+                                                {isGeneratingFeatures ? 'Generating...' : 'AI Generate'}
+                                            </Button>
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <div className="flex space-x-2">
+                                            <Input
+                                                placeholder="Enter a feature"
+                                                value={newFeature}
+                                                onChange={(e) => setNewFeature(e.target.value)}
+                                                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addFeature())}
+                                            />
+                                            <Button type="button" onClick={addFeature} variant="outline">
+                                                <Plus className="w-4 h-4" />
+                                            </Button>
+                                        </div>
 
-                                            {formData.features.length > 0 && (
-                                                <ul className="space-y-2">
-                                                    {formData.features.map((feature, index) => (
-                                                        <li key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                                                            <span className="text-sm">• {feature}</span>
-                                                            <Button
-                                                                type="button"
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                onClick={() => removeFeature(feature)}
-                                                            >
-                                                                <X className="w-4 h-4" />
-                                                            </Button>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            )}
-                                        </CardContent>
-                                    </Card>
-                                )}
+                                        {formData.features && formData.features.length > 0 && (
+                                            <ul className="space-y-2">
+                                                {formData.features.map((feature, index) => (
+                                                    <li key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                                                        <span className="text-sm">• {feature}</span>
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => removeFeature(feature)}
+                                                        >
+                                                            <X className="w-4 h-4" />
+                                                        </Button>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                    </CardContent>
+                                </Card>
 
                                 {/* Inventory */}
                                 <Card>
