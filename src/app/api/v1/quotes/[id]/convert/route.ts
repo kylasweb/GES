@@ -12,7 +12,7 @@ const convertSchema = z.object({
 // POST - Convert quote to order (admin only)
 export async function POST(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const token = request.headers.get('authorization')?.replace('Bearer ', '');
@@ -20,6 +20,7 @@ export async function POST(
             return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
         }
 
+        const { id } = await params;
         const user = await verifyToken(token);
         if (!user || !['SUPER_ADMIN', 'ORDER_MANAGER'].includes(user.role || '')) {
             return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
@@ -29,7 +30,7 @@ export async function POST(
         const validated = convertSchema.parse(body);
 
         const quote = await db.quote.findUnique({
-            where: { id: params.id }
+            where: { id }
         });
 
         if (!quote) {
@@ -68,7 +69,7 @@ export async function POST(
 
         // Update quote
         await db.quote.update({
-            where: { id: params.id },
+            where: { id },
             data: {
                 convertedToOrderId: order.id,
                 status: 'ACCEPTED'

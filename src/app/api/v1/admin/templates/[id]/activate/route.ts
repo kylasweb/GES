@@ -5,7 +5,7 @@ import { verifyAuth } from '@/lib/auth';
 // POST activate template
 export async function POST(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const user = await verifyAuth(request);
@@ -16,7 +16,7 @@ export async function POST(
             );
         }
 
-        const templateId = params.id;
+        const { id: templateId } = await params;
 
         // Check if template exists
         const template = await prisma.landingTemplate.findUnique({

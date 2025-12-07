@@ -13,14 +13,15 @@ const updateQuoteSchema = z.object({
 // GET - Get single quote
 export async function GET(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const token = request.headers.get('authorization')?.replace('Bearer ', '');
         const user = token ? await verifyToken(token) : null;
 
+        const { id } = await params;
         const quote = await db.quote.findUnique({
-            where: { id: params.id },
+            where: { id },
             include: {
                 user: { select: { name: true, email: true, phone: true } }
             }
@@ -46,7 +47,7 @@ export async function GET(
 // PATCH - Update quote (admin only)
 export async function PATCH(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const token = request.headers.get('authorization')?.replace('Bearer ', '');
@@ -54,6 +55,7 @@ export async function PATCH(
             return NextResponse.json({ success: false, error: 'Authentication required' }, { status: 401 });
         }
 
+        const { id } = await params;
         const user = await verifyToken(token);
         if (!user || !['SUPER_ADMIN', 'ORDER_MANAGER'].includes(user.role || '')) {
             return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 403 });
@@ -69,7 +71,7 @@ export async function PATCH(
         if (validated.adminNotes !== undefined) updateData.adminNotes = validated.adminNotes;
 
         const quote = await db.quote.update({
-            where: { id: params.id },
+            where: { id },
             data: updateData
         });
 
