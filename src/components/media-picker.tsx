@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Image as ImageIcon, Search, Upload, X, Check } from 'lucide-react';
 import { useAuthStore } from '@/lib/store/auth';
 import { useToast } from '@/hooks/use-toast';
+import Image from 'next/image';
 
 interface MediaFile {
     id: string;
@@ -168,10 +169,12 @@ export function MediaPicker({
                                     onClick={() => toggleSelect(item.url)}
                                 >
                                     {item.type === 'IMAGE' ? (
-                                        <img
+                                        <Image
                                             src={item.thumbnailUrl || item.url}
                                             alt={item.alt || item.originalName}
-                                            className="w-full h-full object-cover"
+                                            fill
+                                            className="object-cover"
+                                            sizes="25vw"
                                         />
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center">

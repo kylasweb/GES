@@ -139,10 +139,12 @@ export default async function ProductPage({ params }: PageProps) {
                     <div className="space-y-4">
                         <div className="relative aspect-square bg-white rounded-lg overflow-hidden border">
                             {images.length > 0 ? (
-                                <img
+                                <Image
                                     src={images[0] || ''}
                                     alt={product.name}
-                                    className="object-contain w-full h-full"
+                                    fill
+                                    className="object-contain"
+                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                                 />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center text-gray-400">
@@ -170,10 +172,12 @@ export default async function ProductPage({ params }: PageProps) {
                                             key={idx}
                                             className="relative aspect-square bg-white rounded-lg overflow-hidden border hover:border-green-600 cursor-pointer"
                                         >
-                                            <img
+                                            <Image
                                                 src={img}
                                                 alt={`${product.name} ${idx + 1}`}
-                                                className="object-contain w-full h-full"
+                                                fill
+                                                className="object-contain"
+                                                sizes="25vw"
                                             />
                                         </div>
                                     ) : null
