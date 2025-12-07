@@ -1,3 +1,4 @@
 server.ts
 dev.log
 server.log
+prisma.config.ts

@@ -9,6 +9,7 @@ export const db =
   globalForPrisma.prisma ??
   new PrismaClient({
     log: process.env.NODE_ENV === 'development' ? ['query', 'info', 'warn', 'error'] : ['error'],
+    // Use the JavaScript config file for Vercel compatibility
     datasources: {
       db: {
         url: process.env.DATABASE_URL!,
