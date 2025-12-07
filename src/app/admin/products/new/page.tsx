@@ -394,23 +394,47 @@ export default function NewProductPage() {
                 throw new Error('Failed to load AI service');
             }
             
-            const response = await window.puter.ai.chat(prompt, { model: 'gpt-5-nano' });
-            const description = response.trim();
+            // Add timeout and error handling for the AI request
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
             
-            setFormData(prev => ({
-                ...prev,
-                description
-            }));
-            
-            toast({
-                title: 'Success',
-                description: 'Product description generated successfully!',
-            });
-        } catch (error) {
+            try {
+                const response = await window.puter.ai.chat(prompt, { 
+                    model: 'gpt-5-nano',
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                
+                // Ensure response is a string before trimming
+                const description = typeof response === 'string' ? response.trim() : 
+                                  response && typeof response.toString === 'function' ? response.toString().trim() : '';
+                
+                if (!description) {
+                    throw new Error('Empty response from AI service');
+                }
+                
+                setFormData(prev => ({
+                    ...prev,
+                    description
+                }));
+                
+                toast({
+                    title: 'Success',
+                    description: 'Product description generated successfully!',
+                });
+            } catch (abortError) {
+                clearTimeout(timeoutId);
+                if (controller.signal.aborted) {
+                    throw new Error('AI request timed out after 30 seconds');
+                }
+                throw abortError;
+            }
+        } catch (error: any) {
             console.error('Error generating description:', error);
             toast({
                 title: 'Error',
-                description: 'Failed to generate description. Please try again.',
+                description: error.message || 'Failed to generate description. Please try again.',
                 variant: 'destructive',
             });
         } finally {
@@ -449,24 +473,49 @@ export default function NewProductPage() {
                 throw new Error('Failed to load AI service');
             }
             
-            const response = await window.puter.ai.chat(prompt, { model: 'gpt-5-nano' });
-            const featuresText = response.trim();
-            const featuresArray = featuresText.split('\n').filter(feature => feature.trim() !== '');
+            // Add timeout and error handling for the AI request
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
             
-            setFormData(prev => ({
-                ...prev,
-                features: featuresArray
-            }));
-            
-            toast({
-                title: 'Success',
-                description: 'Product features generated successfully!',
-            });
-        } catch (error) {
+            try {
+                const response = await window.puter.ai.chat(prompt, { 
+                    model: 'gpt-5-nano',
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                
+                // Ensure response is a string before processing
+                const featuresText = typeof response === 'string' ? response.trim() : 
+                                   response && typeof response.toString === 'function' ? response.toString().trim() : '';
+                
+                if (!featuresText) {
+                    throw new Error('Empty response from AI service');
+                }
+                
+                const featuresArray = featuresText.split('\n').filter(feature => feature.trim() !== '');
+                
+                setFormData(prev => ({
+                    ...prev,
+                    features: featuresArray
+                }));
+                
+                toast({
+                    title: 'Success',
+                    description: 'Product features generated successfully!',
+                });
+            } catch (abortError) {
+                clearTimeout(timeoutId);
+                if (controller.signal.aborted) {
+                    throw new Error('AI request timed out after 30 seconds');
+                }
+                throw abortError;
+            }
+        } catch (error: any) {
             console.error('Error generating features:', error);
             toast({
                 title: 'Error',
-                description: 'Failed to generate features. Please try again.',
+                description: error.message || 'Failed to generate features. Please try again.',
                 variant: 'destructive',
             });
         } finally {
